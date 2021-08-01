@@ -9,8 +9,6 @@ sim:/vga_tb/max_sim_time_g \
 sim:/vga_tb/clk \
 sim:/vga_tb/rst_n \
 sim:/vga_tb/dut_sw_in \
-sim:/vga_tb/dut_sync_n_out \
-sim:/vga_tb/dut_blank_n_out \
 sim:/vga_tb/dut_v_sync_out \
 sim:/vga_tb/dut_h_sync_out \
 sim:/vga_tb/dut_clk_px_out \
