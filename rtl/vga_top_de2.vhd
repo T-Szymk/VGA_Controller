@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : VGA Controller Top
+-- Title      : VGA Controller Top - Intel Cyclone II DE-2 Implementation
 -- Project    : VGA Controller
 --------------------------------------------------------------------------------
--- File       : vga_top.vhd
+-- File       : vga_top_de2.vhd
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
 -- Created    : 2021-06-24
@@ -10,8 +10,8 @@
 -- Platform   : -
 -- Standard   : VHDL'08
 --------------------------------------------------------------------------------
--- Description: Top level design for vga controller
---
+-- Description: Top level design for vga controller to be used with the 
+--              cyclone II DE-2 development board
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
@@ -48,26 +48,26 @@ END ENTITY vga_top;
 
 ARCHITECTURE structural of vga_top IS 
 
---  COMPONENT vga_clk_div -- FOR SIM *********************************************
---    GENERIC (
---              ref_clk_freq_g : INTEGER := 50_000_000;
---              px_clk_freq_g  : INTEGER := 25_000_000
---    );
---    PORT    ( 
---              clk        : IN STD_LOGIC;
---              rst_n      : IN STD_LOGIC;
---  
---              clk_px_out : OUT STD_LOGIC
---    );
---  END COMPONENT; -- FOR SIM ****************************************************
+  COMPONENT vga_clk_div -- FOR SIM *********************************************
+    GENERIC (
+              ref_clk_freq_g : INTEGER := 50_000_000;
+              px_clk_freq_g  : INTEGER := 25_000_000
+    );
+    PORT    ( 
+              clk        : IN STD_LOGIC;
+              rst_n      : IN STD_LOGIC;
   
-  COMPONENT clk_gen -- generated using Quartus *********************************
-    PORT (
-  	    	areset : IN STD_LOGIC;
-  	    	inclk0 : IN STD_LOGIC;
-  	    	c0		 : OUT STD_LOGIC 
-  	 );
-  END COMPONENT; -- generated using Quartus ************************************
+              clk_px_out : OUT STD_LOGIC
+    );
+  END COMPONENT; -- FOR SIM ****************************************************
+  
+--  COMPONENT clk_gen -- generated using Quartus *********************************
+--  	PORT (
+--  	    	areset : IN STD_LOGIC;
+--  	    	inclk0 : IN STD_LOGIC;
+--  	    	c0		 : OUT STD_LOGIC 
+--  	     );
+--  END COMPONENT; -- generated using Quartus ************************************
   
   COMPONENT vga_rst_sync IS
     PORT (
@@ -163,23 +163,23 @@ BEGIN ------------------------------------------------------------------
              rst_n_out => rst_n_s
   );
 
---  i_vga_clk_div : vga_clk_div -- Used in simulation ****************************
---    GENERIC MAP (
---                  ref_clk_freq_g => ref_clk_freq_g, 
---                  px_clk_freq_g  => px_clk_freq_g
---    )
---    PORT MAP    (
---                  clk        => clk,
---                  rst_n      => rst_n_s,
---                  clk_px_out => clk_px_out_s
---    ); -- Used in simulation ***************************************************
+  i_vga_clk_div : vga_clk_div -- Used in simulation ****************************
+    GENERIC MAP (
+                  ref_clk_freq_g => ref_clk_freq_g, 
+                  px_clk_freq_g  => px_clk_freq_g
+    )
+    PORT MAP    (
+                  clk        => clk,
+                  rst_n      => rst_n_s,
+                  clk_px_out => clk_px_out_s
+    ); -- Used in simulation ***************************************************
 
-  i_clk_gen : clk_gen -- Used in synthesis *************************************
-  	PORT MAP (
-  	    	     areset => NOT rst_n_s,
-  	    	     inclk0 => clk,
-  	    	     c0	   => clk_px_out_s
-  	); -- Used in synthesis ****************************************************
+--  i_clk_gen : clk_gen -- Used in synthesis *************************************
+--  	PORT MAP (
+--  	    	     areset => NOT rst_n_s,
+--  	    	     inclk0 => clk,
+--  	    	     c0	   => clk_px_out_s
+--  	); -- Used in synthesis ****************************************************
   
   gen_sync : FOR idx IN (3-1) DOWNTO 0 GENERATE
   BEGIN
@@ -214,9 +214,9 @@ BEGIN ------------------------------------------------------------------
 
   i_vga_colr_mux : vga_colr_mux
    PORT MAP (
-    r_colr_in => colr_arr_sw_s(0),
-    g_colr_in => colr_arr_sw_s(1),
-    b_colr_in => colr_arr_sw_s(2),
+    r_colr_in => colr_arr_gen_s(0),
+    g_colr_in => colr_arr_gen_s(1),
+    b_colr_in => colr_arr_gen_s(2),
     r_en_in   => colr_en_s(0),
     g_en_in   => colr_en_s(1),
     b_en_in   => colr_en_s(2),
@@ -227,9 +227,9 @@ BEGIN ------------------------------------------------------------------
 
    i_vga_colr_gen : vga_colr_gen
    GENERIC MAP (
-              r_cntr_inc_g => 2,
+              r_cntr_inc_g => 10,
               g_cntr_inc_g => 5,
-              b_cntr_inc_g => 10
+              b_cntr_inc_g => 15
     )
     PORT MAP (
            clk       => clk_px_out_s,

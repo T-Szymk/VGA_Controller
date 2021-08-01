@@ -47,6 +47,11 @@ END ENTITY vga_controller;
 
 ARCHITECTURE rtl OF vga_controller IS 
 
+  CONSTANT h_disp_lo_lim_c : INTEGER := h_sync_px_g + h_b_porch_px_g;
+  CONSTANT h_disp_hi_lim_c : INTEGER := h_disp_lo_lim_c + width_g;
+  CONSTANT v_disp_lo_lim_c : INTEGER := v_sync_lns_g + v_b_porch_lns_g;
+  CONSTANT v_disp_hi_lim_c : INTEGER := v_disp_lo_lim_c + height_g;
+
   SUBTYPE pxl_ctr_t IS INTEGER RANGE (h_sync_px_g +
                                       h_b_porch_px_g +
                                       h_f_porch_px_g +
@@ -59,9 +64,9 @@ ARCHITECTURE rtl OF vga_controller IS
   SIGNAL pixel_ctr_r : pxl_ctr_t;
   SIGNAL line_ctr_r  : line_ctr_t;
 
-  SIGNAL v_sync_s : STD_LOGIC;
-  SIGNAL h_sync_s : STD_LOGIC;
-
+  SIGNAL v_sync_r  : STD_LOGIC;
+  SIGNAL h_sync_r  : STD_LOGIC;
+  SIGNAL colr_en_r : STD_LOGIC_VECTOR(3-1 DOWNTO 0); 
 BEGIN 
 
   sync_cntrs : PROCESS (clk, rst_n) IS 
@@ -96,43 +101,67 @@ BEGIN
     END IF;
   END PROCESS sync_cntrs;
 
-  comb_h_sync : PROCESS (pixel_ctr_r) IS  -- TODO: make this synchronous
+  sync_h_sync : PROCESS (clk, rst_n) IS
   BEGIN
+
+    IF rst_n = '0' THEN
+
+      h_sync_r <= '0';
+
+    ELSIF RISING_EDGE(clk) THEN
 	
-    IF pixel_ctr_r < h_sync_px_g THEN
-      h_sync_s <= '0';
-	  ELSE 
-	    h_sync_s <= '1';
-	  END IF;
+      IF pixel_ctr_r < h_sync_px_g THEN
+        h_sync_r <= '0';
+	    ELSE 
+	      h_sync_r <= '1';
+	    END IF;
 
-
-  END PROCESS comb_h_sync; -- TODO: make this synchronous
-
-  comb_v_sync : PROCESS (line_ctr_r) IS 
-  BEGIN
-	
-    IF line_ctr_r < v_sync_lns_g THEN
-      v_sync_s <= '0';
-    ELSE 
-      v_sync_s <= '1';
     END IF;
 
-  END PROCESS comb_v_sync; 
 
-  comb_enable : PROCESS (pixel_ctr_r, line_ctr_r) IS -- TODO: make this synchronous
+  END PROCESS sync_h_sync;
+
+  sync_v_sync : PROCESS (clk, rst_n) IS 
   BEGIN
+
+    IF rst_n = '0' THEN
+
+      v_sync_r <= '0';
+  	
+    ELSIF RISING_EDGE(clk) THEN  
+
+      IF line_ctr_r < v_sync_lns_g THEN
+        v_sync_r <= '0';
+      ELSE 
+        v_sync_r <= '1';
+      END IF; 
+    
+    END IF;
+
+  END PROCESS sync_v_sync; 
+
+  sync_enable : PROCESS (clk, rst_n) IS 
+  BEGIN
+
+    IF rst_n = '0' THEN
+
+        colr_en_r <= (OTHERS => '0');
+
+    ELSIF RISING_EDGE(clk) THEN
     -- only disable colours when counters are outside of the "displayable range" i.e. not in the sync region or porch region
-    -- TODO: Simplify the fuck out of this...
-    IF ((pixel_ctr_r >= h_sync_px_g + h_b_porch_px_g - 1)  AND (pixel_ctr_r < h_sync_px_g + h_b_porch_px_g + width_g)) AND 
-       ((line_ctr_r >= v_sync_lns_g + v_b_porch_lns_g)     AND (line_ctr_r < v_sync_lns_g + v_b_porch_lns_g + height_g)) THEN
-      colr_en_out <= (OTHERS => '1');
-	 ELSE 
-	    colr_en_out <= (OTHERS => '0');
-	 END IF;
+      IF ((pixel_ctr_r >= h_disp_lo_lim_c - 1)  AND (pixel_ctr_r < h_disp_hi_lim_c)) AND 
+         ((line_ctr_r >= v_disp_lo_lim_c) AND (line_ctr_r < v_disp_hi_lim_c)) THEN
+        
+        colr_en_r <= (OTHERS => '1');
+      ELSE 
+        colr_en_r <= (OTHERS => '0');
+      END IF;
 
-  END PROCESS comb_enable;
+    END IF;
+  END PROCESS sync_enable;
 
-  h_sync_out <= h_sync_s;
-  v_sync_out <= v_sync_s;
-
+  h_sync_out  <= h_sync_r;
+  v_sync_out  <= v_sync_r;
+  colr_en_out <= colr_en_r;
+  
 END ARCHITECTURE rtl;

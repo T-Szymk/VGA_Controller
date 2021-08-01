@@ -21,13 +21,14 @@ LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 
 ENTITY vga_sw_sync IS 
+  GENERIC (depth_colr_g : INTEGER := 4);
   PORT (
          clk     : IN STD_LOGIC;
          rst_n   : IN STD_LOGIC; 
          sw_in   : IN STD_LOGIC;
-         colr_in : IN STD_LOGIC_VECTOR(10-1 DOWNTO 0);
+         colr_in : IN STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
 
-         colr_out : OUT STD_LOGIC_VECTOR(10-1 DOWNTO 0)
+         colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0)
        );
 END ENTITY vga_sw_sync;
 
