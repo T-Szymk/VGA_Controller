@@ -241,7 +241,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       WHEN V_SYNC =>
 
-        IF ln_cntr = 1 THEN
+        IF ln_cntr = 2 THEN
           next_state <= V_B_PORCH;
         ELSE
           next_state <= V_SYNC;
