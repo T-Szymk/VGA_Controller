@@ -241,38 +241,38 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       WHEN V_SYNC =>
 
-        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = (v_sync_lns_g - 1) THEN
+        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = (v_sync_lns_g - 1) THEN -- end of line 1
           next_state <= V_B_PORCH;
         END IF; 
 
       WHEN V_B_PORCH =>
 
-        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = (v_sync_lns_g + v_b_porch_lns_g - 1)) THEN
+        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = (v_sync_lns_g + v_b_porch_lns_g - 1)) THEN -- end of line 34
           next_state <= H_SYNC;
         END IF; 
 
       WHEN H_SYNC =>
 
-        IF pxl_cntr = h_sync_px_g - 1 THEN
+        IF pxl_cntr = h_sync_px_g - 1 THEN -- pxl 95
           next_state <= H_B_PORCH;
         END IF;
 
       WHEN H_B_PORCH =>
 
-        IF pxl_cntr = (h_sync_px_g + h_b_porch_px_g - 1) THEN
+        IF pxl_cntr = (h_sync_px_g + h_b_porch_px_g - 1) THEN -- pxl 143 
           next_state <= DISPLAY;
         END IF;
 
       WHEN DISPLAY =>
 
-        IF pxl_cntr = (h_sync_px_g + h_b_porch_px_g + width_g - 1) THEN
+        IF pxl_cntr = (h_sync_px_g + h_b_porch_px_g + width_g - 1) THEN -- pxl 783
           next_state <= H_F_PORCH;
         END IF;
 
       WHEN H_F_PORCH =>
           
         IF pxl_cntr = pxl_cntr_max_c THEN
-          IF ln_cntr = (v_sync_lns_g + v_b_porch_lns_g + height_g - 1) THEN
+          IF ln_cntr = (v_sync_lns_g + v_b_porch_lns_g + height_g - 1) THEN -- end of line 514
             next_state <= V_F_PORCH;
           ELSE 
             next_state <= H_SYNC;
@@ -281,7 +281,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       WHEN V_F_PORCH =>
 
-        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = 52(v_sync_lns_g + v_b_porch_lns_g + height_g + v_f_porch_lns_g - 1)4 THEN
+        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = 52(v_sync_lns_g + v_b_porch_lns_g + height_g + v_f_porch_lns_g - 1) THEN -- end of line 524
           next_state <= V_SYNC;
         END IF;
 
