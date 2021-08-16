@@ -25,7 +25,7 @@ ENTITY vga_controller_tb IS
   GENERIC (
     width_g         : INTEGER := 640;
     height_g        : INTEGER := 480;
-    h_sync_px_g     : INTEGER := 95;
+    h_sync_px_g     : INTEGER := 96;
     h_b_porch_px_g  : INTEGER := 48;
     h_f_porch_px_g  : INTEGER := 15;
     v_sync_lns_g    : INTEGER := 2;
@@ -241,38 +241,38 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       WHEN V_SYNC =>
 
-        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = 1 THEN
+        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = (v_sync_lns_g - 1) THEN
           next_state <= V_B_PORCH;
         END IF; 
 
       WHEN V_B_PORCH =>
 
-        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = 34 THEN
+        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = (v_sync_lns_g + v_b_porch_lns_g - 1)) THEN
           next_state <= H_SYNC;
         END IF; 
 
       WHEN H_SYNC =>
 
-        IF pxl_cntr = 95 THEN
+        IF pxl_cntr = h_sync_px_g - 1 THEN
           next_state <= H_B_PORCH;
         END IF;
 
       WHEN H_B_PORCH =>
 
-        IF pxl_cntr = 143 THEN
+        IF pxl_cntr = (h_sync_px_g + h_b_porch_px_g - 1) THEN
           next_state <= DISPLAY;
         END IF;
 
       WHEN DISPLAY =>
 
-        IF pxl_cntr = 783 THEN
+        IF pxl_cntr = (h_sync_px_g + h_b_porch_px_g + width_g - 1) THEN
           next_state <= H_F_PORCH;
         END IF;
 
       WHEN H_F_PORCH =>
           
         IF pxl_cntr = pxl_cntr_max_c THEN
-          IF ln_cntr = 515 THEN
+          IF ln_cntr = (v_sync_lns_g + v_b_porch_lns_g + height_g - 1) THEN
             next_state <= V_F_PORCH;
           ELSE 
             next_state <= H_SYNC;
@@ -281,7 +281,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       WHEN V_F_PORCH =>
 
-        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = 524 THEN
+        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = 52(v_sync_lns_g + v_b_porch_lns_g + height_g + v_f_porch_lns_g - 1)4 THEN
           next_state <= V_SYNC;
         END IF;
 
