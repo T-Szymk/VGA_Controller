@@ -80,7 +80,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       RETURN '0';
     END IF;
 
-  END;
+  END rising_edge_detect;
 
   FUNCTION falling_edge_detect(
     curr_val : STD_LOGIC;
@@ -95,27 +95,72 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       RETURN '0';
     END IF;
 
-  END;
+  END falling_edge_detect;
+
+  FUNCTION reduce_OR( 
+    vec : STD_LOGIC_VECTOR 
+  ) RETURN STD_ULOGIC IS 
+
+    VARIABLE result : STD_ULOGIC;
+  
+  BEGIN
+  
+    FOR idx IN vec'RANGE loop
+      
+      IF idx = vec'LEFT THEN]
+        result := vec(idx);
+      ELSE 
+        result := result OR vec(idx);
+      END IF;
+
+      EXIT WHEN result = '1';
+
+    END LOOP;
+    
+    RETURN result;
+
+  END reduce_OR;
+
+  FUNCTION reduce_AND( 
+    vec : STD_LOGIC_VECTOR 
+  ) RETURN STD_ULOGIC;
+
+    VARIABLE result : STD_ULOGIC := '1';
+
+  BEGIN
+  
+    FOR idx IN vec'RANGE LOOP 
+      
+      IF idx = vec'LEFT THEN
+        result := vec(idx);
+      ELSE 
+        result := result AND 
+      END IF;
+
+      EXIT WHEN result = '0';
+
+    END LOOP;
+
+    RETURN result;
+
+  END reduce_AND;
 
   ------------------------------------------------------------------------------
 
   -- VARIABLES / CONSTANTS / TYPES ---------------------------------------------
 
   CONSTANT max_sim_time_c : TIME := 1.2 SEC;
-  CONSTANT pxl_cntr_max_c   : INTEGER := width_g  + h_sync_px_g  + h_b_porch_px_g  + h_f_porch_px_g - 1;
-  CONSTANT ln_cntr_max_c  : INTEGER := height_g + v_sync_lns_g + v_b_porch_lns_g + v_f_porch_lns_g - 1;
-
+  
   TYPE state_t IS (IDLE, 
                    V_SYNC, V_B_PORCH, 
                    H_SYNC, H_B_PORCH, 
                    DISPLAY,
-  	               H_F_PORCH, V_F_PORCH);
+  	               F_PORCH);
 
   SIGNAL curr_state, next_state : state_t;
 
   SIGNAL clk, rst_n      : STD_LOGIC;
   
-  SIGNAL pxl_cntr, ln_cntr   : INTEGER := 0;
   SIGNAL h_sync_out_dut_old  : STD_LOGIC;
   SIGNAL v_sync_out_dut_old  : STD_LOGIC;
   SIGNAL colr_en_out_dut_old : STD_LOGIC_VECTOR(3-1 DOWNTO 0);
@@ -163,54 +208,6 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   END PROCESS clk_gen; ---------------------------------------------------------
 
-  sync_cntrs : PROCESS (clk, rst_n) IS -----------------------------------------
-  BEGIN
-  
-    IF rst_n = '0' THEN
-
-      pxl_cntr <= 0;
-      ln_cntr  <= 0;
-
-    ELSIF RISING_EDGE(clk) THEN 
-
-      IF pxl_cntr = pxl_cntr_max_c THEN
-
-        pxl_cntr <= 0;
-        -- increment the line counter
-        IF ln_cntr = ln_cntr_max_c THEN
-
-          ln_cntr <= 0;
-
-        ELSE 
-
-          ln_cntr  <= ln_cntr + 1;
-
-        END IF;
-
-      ELSE 
-
-        pxl_cntr <= pxl_cntr + 1;
-
-      END IF;
-    END IF;
-
-  END PROCESS sync_cntrs; ------------------------------------------------------
-
-  sync_fsm : PROCESS (clk, rst_n) IS -------------------------------------------
-  BEGIN
-
-  IF rst_n = '0' THEN 
-
-    curr_state <= IDLE;
-
-  ELSIF RISING_EDGE(clk) THEN
-
-    curr_state <= next_state;
-
-  END IF;
-
-  END PROCESS sync_fsm; --------------------------------------------------------
-
   sync_edge_detect : PROCESS (clk, rst_n) IS -----------------------------------
   BEGIN
 
@@ -230,67 +227,97 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   END PROCESS sync_edge_detect; ------------------------------------------------
 
-  next_state_comb : PROCESS (ALL) IS -------------------------------------------
+  sync_fsm : PROCESS (clk, rst_n) IS -------------------------------------------
   BEGIN
 
-    CASE curr_state IS 
+  IF rst_n = '0' THEN 
 
-      WHEN IDLE =>
+    curr_state <= IDLE;
 
+  ELSIF RISING_EDGE(clk) THEN
+
+    curr_state <= next_state;
+
+  END IF;
+
+  END PROCESS sync_fsm; --------------------------------------------------------
+
+  tb_next_state : PROCESS (ALL) IS ---------------------------------------------
+  BEGIN
+
+    CASE curr_state IS
+
+      WHEN IDLE =>    ----------------
+        
         next_state <= V_SYNC;
 
       WHEN V_SYNC =>
 
-        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = (v_sync_lns_g - 1) THEN -- end of line 1
+        -- assert v_sync is low
+        -- assert h_sync is high
+        -- assert reduce_OR of colr_en_out_dut is 0
+
+        IF rising_edge_detect(v_sync_out_dut, v_sync_out_dut_old) = '1' THEN
           next_state <= V_B_PORCH;
-        END IF; 
+        END IF;
 
-      WHEN V_B_PORCH =>
+      WHEN V_B_PORCH =>    ----------------
 
-        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = (v_sync_lns_g + v_b_porch_lns_g - 1)) THEN -- end of line 34
+        -- assert v_sync is high
+        -- assert h_sync is high
+        -- assert reduce_OR of colr_en_out_dut is 0
+
+        IF falling_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
           next_state <= H_SYNC;
-        END IF; 
+        END IF;
 
-      WHEN H_SYNC =>
+      WHEN H_SYNC =>    ----------------
 
-        IF pxl_cntr = h_sync_px_g - 1 THEN -- pxl 95
+        -- assert h_sync is low
+        -- assert v_sync is high
+        -- assert reduce_OR of colr_en_out_dut is 0
+
+        IF rising_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
           next_state <= H_B_PORCH;
         END IF;
 
-      WHEN H_B_PORCH =>
+      WHEN H_B_PORCH =>    ----------------
 
-        IF pxl_cntr = (h_sync_px_g + h_b_porch_px_g - 1) THEN -- pxl 143 
+        -- assert h_sync is high
+        -- assert v_sync is high
+        -- assert reduce_OR of colr_en_out_dut is 0
+
+        IF rising_edge_detect(colr_en_out_dut(0), colr_en_out_dut_old(0)) = '1' THEN
           next_state <= DISPLAY;
         END IF;
 
-      WHEN DISPLAY =>
+      WHEN DISPLAY =>    ----------------
 
-        IF pxl_cntr = (h_sync_px_g + h_b_porch_px_g + width_g - 1) THEN -- pxl 783
+        -- assert h_sync is high
+        -- assert v_sync is high
+        -- assert that reduce_AND of colr_en_out_dut is 1
+
+        IF falling_edge_detect(colr_en_out_dut(0), colr_en_out_dut_old(0)) 
           next_state <= H_F_PORCH;
         END IF;
 
-      WHEN H_F_PORCH =>
-          
-        IF pxl_cntr = pxl_cntr_max_c THEN
-          IF ln_cntr = (v_sync_lns_g + v_b_porch_lns_g + height_g - 1) THEN -- end of line 514
-            next_state <= V_F_PORCH;
-          ELSE 
-            next_state <= H_SYNC;
-          END IF;
-        END IF;
+      WHEN F_PORCH => -- this could be the horizontal or vertical front porch
 
-      WHEN V_F_PORCH =>
+        -- assert h_sync is high
+        -- assert v_sync is high
+        -- assert reduce_OR of colr_en_out_dut is 0
 
-        IF pxl_cntr = pxl_cntr_max_c AND ln_cntr = 52(v_sync_lns_g + v_b_porch_lns_g + height_g + v_f_porch_lns_g - 1) THEN -- end of line 524
+        IF falling_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
+          next_state <= H_SYNC;
+        ELSIF falling_edge_detect(v_sync_out_dut, v_sync_out_dut_old) = '1' THEN
           next_state <= V_SYNC;
         END IF;
 
-      WHEN OTHERS =>
+      WHEN OTHERS =>    ----------------
 
         next_state <= IDLE;
 
     END CASE;
-
-  END PROCESS next_state_comb; -------------------------------------------------
+  END PROCESS tb_next_state; ---------------------------------------------------
 
 END ARCHITECTURE tb;
