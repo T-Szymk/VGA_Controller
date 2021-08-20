@@ -250,6 +250,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       WHEN IDLE =>    ----------------
         
         next_state <= V_SYNC;
+        -- start v_sync timer
 
       WHEN V_SYNC =>
 
@@ -259,6 +260,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         IF rising_edge_detect(v_sync_out_dut, v_sync_out_dut_old) = '1' THEN
           next_state <= V_B_PORCH;
+          -- stop v_sync timer and assert time 0.064 ms
+          -- start v_b_porch timer
         END IF;
 
       WHEN V_B_PORCH =>    ----------------
@@ -269,6 +272,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         IF falling_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
           next_state <= H_SYNC;
+          -- stop v_b_porch timer and assert time 1.048 ms
+          -- start h_sync timer
         END IF;
 
       WHEN H_SYNC =>    ----------------
@@ -279,6 +284,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         IF rising_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
           next_state <= H_B_PORCH;
+          -- stop v_b_porch timer and assert time 3.813 us
+          -- start h_b_porch timer 
         END IF;
 
       WHEN H_B_PORCH =>    ----------------
@@ -289,6 +296,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         IF rising_edge_detect(colr_en_out_dut(0), colr_en_out_dut_old(0)) = '1' THEN
           next_state <= DISPLAY;
+          -- stop h_b_porch timer and assert time 1.907 us
+          -- start display timer
         END IF;
 
       WHEN DISPLAY =>    ----------------
@@ -298,7 +307,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
         -- assert that reduce_AND of colr_en_out_dut is 1
 
         IF falling_edge_detect(colr_en_out_dut(0), colr_en_out_dut_old(0)) 
-          next_state <= H_F_PORCH;
+          next_state <= F_PORCH;
+          -- stop display timer and assert time 25.422 us
         END IF;
 
       WHEN F_PORCH => -- this could be the horizontal or vertical front porch
@@ -309,8 +319,10 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         IF falling_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
           next_state <= H_SYNC;
+          -- start h_sync timer
         ELSIF falling_edge_detect(v_sync_out_dut, v_sync_out_dut_old) = '1' THEN
           next_state <= V_SYNC;
+          -- start v_sync timer
         END IF;
 
       WHEN OTHERS =>    ----------------
