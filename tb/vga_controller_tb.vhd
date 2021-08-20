@@ -34,7 +34,8 @@ ENTITY vga_controller_tb IS
     disp_freq_g     : INTEGER := 60;
     clk_period_g    : TIME    := 40 ns; -- 25MHz
     v_sync_time_g   : TIME    := 64 us;
-    vb_porch_time_g : TIME    := 1.048 ms
+    vb_porch_time_g : TIME    := 1.056 ms;
+    h_sync_time_g   : TIME    := 3.813 us
   	);
 END ENTITY vga_controller_tb;
 
@@ -175,7 +176,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   SIGNAL frame_tmr_start    : TIME := 0 ms;
   SIGNAL v_sync_tmr_start   : TIME := 0 us;
-  SIGNAL vb_porch_tmr_start : TIME := 0 us;
+  SIGNAL vb_porch_tmr_start : TIME := 0 ms;
+  SIGNAL h_sync_tmr_start   : TIME := 0 us;
 
   ------------------------------------------------------------------------------
 
@@ -273,11 +275,13 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       WHEN V_SYNC =>
 
         IF rising_edge_detect(v_sync_out_dut, v_sync_out_dut_old) = '1' THEN
+          
           next_state <= V_B_PORCH;
 
           ASSERT (NOW - v_sync_tmr_start) = v_sync_time_g
             REPORT "FAIL@ " & TO_STRING(NOW) & ": In state '" & TO_STRING(curr_state) & 
-            "', V_SYNC time != " & TO_STRING(v_sync_time_g) & "."
+            "', V_SYNC time != " & TO_STRING(v_sync_time_g) & ", time: " & 
+            TO_STRING(NOW - v_sync_tmr_start)
             SEVERITY WARNING;
 
           vb_porch_tmr_start <= NOW; -- start v_b_porch timer    
@@ -286,14 +290,18 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       WHEN V_B_PORCH =>    ----------------
 
-        -- assert v_sync is high
-        -- assert h_sync is high
-        -- assert reduce_OR of colr_en_out_dut is 0
-
         IF falling_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
+
           next_state <= H_SYNC;
-          -- stop v_b_porch timer and assert time 1.048 ms
-          -- start h_sync timer
+          
+          ASSERT (NOW - vb_porch_tmr_start) = vb_porch_time_g -- stop v_b_porch timer and assert time 1.048 ms
+            REPORT "FAIL@ " & TO_STRING(NOW) & ": In state '" & TO_STRING(curr_state) & 
+            "', V_B_PORCH time != " & TO_STRING(vb_porch_time_g) & ", time: " & 
+            TO_STRING(NOW - vb_porch_tmr_start)
+            SEVERITY WARNING;
+
+          h_sync_tmr_start <= NOW;
+
         END IF;
 
       WHEN H_SYNC =>    ----------------
@@ -358,14 +366,11 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   BEGIN
 
     IF RISING_EDGE(clk) THEN
-
-      IF (curr_state = V_SYNC) AND (next_state = V_SYNC) THEN 
-      
-        ASSERT v_sync_out_dut = '0' -- assert v_sync is low
-          REPORT "FAIL@ " & TO_STRING(NOW) & ": In state '" & TO_STRING(curr_state) & 
-          "', signal 'V_SYNC' != 0, value: " & TO_STRING(v_sync_out_dut) & "."
-          SEVERITY WARNING;
+        
+      CASE (curr_state) IS 
          
+      WHEN V_SYNC =>
+           
         ASSERT h_sync_out_dut = '1'
           REPORT "FAIL@ " & TO_STRING(NOW) & ": In state '" & TO_STRING(curr_state) & 
           "', signal 'H_SYNC' != 1, value: " & TO_STRING(h_sync_out_dut) & "."
@@ -375,8 +380,28 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
           REPORT "FAIL@ " & TO_STRING(NOW) & ": In state '" & TO_STRING(curr_state) & 
           "', one or more signal in vector 'COLR_EN' != 0, value: " & TO_STRING(colr_en_out_dut) & "."
           SEVERITY WARNING;
-            
-      END IF;
+         
+      WHEN V_B_PORCH =>
+          
+        ASSERT h_sync_out_dut = '1'
+          REPORT "FAIL@ " & TO_STRING(NOW) & ": In state '" & TO_STRING(curr_state) & 
+          "', signal 'H_SYNC' != 1, value: " & TO_STRING(h_sync_out_dut) & "."
+          SEVERITY WARNING;
+         
+        ASSERT v_sync_out_dut = '1'
+          REPORT "FAIL@ " & TO_STRING(NOW) & ": In state '" & TO_STRING(curr_state) & 
+          "', signal 'V_SYNC' != 1, value: " & TO_STRING(v_sync_out_dut) & "."
+          SEVERITY WARNING;
+         
+        ASSERT reduce_OR(colr_en_out_dut) = '0' -- confirm no colour enable bits are enabled
+          REPORT "FAIL@ " & TO_STRING(NOW) & ": In state '" & TO_STRING(curr_state) & 
+          "', one or more signal in vector 'COLR_EN' != 0, value: " & TO_STRING(colr_en_out_dut) & "."
+          SEVERITY WARNING;
+          
+      WHEN OTHERS =>
+         
+      END CASE;
+        
     END IF;
 
   END PROCESS assert_signals;

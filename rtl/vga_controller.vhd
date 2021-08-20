@@ -106,11 +106,11 @@ BEGIN
 
     IF rst_n = '0' THEN
 
-      h_sync_r <= '0';
+      h_sync_r <= '1';
 
     ELSIF RISING_EDGE(clk) THEN
 	
-      IF pixel_ctr_r < h_sync_px_g THEN
+      IF (pixel_ctr_r < h_sync_px_g) AND (line_ctr_r > 34) AND (line_ctr_r <= 515) THEN
         h_sync_r <= '0';
 	    ELSE 
 	      h_sync_r <= '1';
@@ -126,11 +126,11 @@ BEGIN
 
     IF rst_n = '0' THEN
 
-      v_sync_r <= '0';
+      v_sync_r <= '1';
   	
     ELSIF RISING_EDGE(clk) THEN  
 
-      IF line_ctr_r < v_sync_lns_g THEN
+      IF (line_ctr_r < (v_sync_lns_g )) THEN
         v_sync_r <= '0';
       ELSE 
         v_sync_r <= '1';
