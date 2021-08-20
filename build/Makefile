@@ -49,8 +49,8 @@ compile_vga_controller:
 
 .PHONY: sim_vga_controller
 sim_vga_controller: compile_vga_colr_mux
-	vsim -voptargs="+acc" -c -onfinish exit vga_controller_tb -do "do_vga_colr_mux.do"
+	vsim -voptargs="+acc" -c -onfinish exit vga_controller_tb -do "do_vga_controller.do"
 	
 .PHONY: sim_vga_controller_gui
 sim_vga_controller_gui: compile_vga_colr_mux
-	vsim -voptargs="+acc" -onfinish stop vga_controller_tb -do "do_vga_colr_mux.do"
+	vsim -voptargs="+acc" -onfinish stop vga_controller_tb -do "do_vga_controller.do"

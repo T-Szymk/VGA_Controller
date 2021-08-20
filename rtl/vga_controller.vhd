@@ -26,9 +26,9 @@ ENTITY vga_controller IS
   GENERIC (
             width_g         : INTEGER := 640;
             height_g        : INTEGER := 480;
-            h_sync_px_g     : INTEGER := 95;
+            h_sync_px_g     : INTEGER := 96;
             h_b_porch_px_g  : INTEGER := 48;
-            h_f_porch_px_g  : INTEGER := 15;
+            h_f_porch_px_g  : INTEGER := 16;
             v_sync_lns_g    : INTEGER := 2;
             v_b_porch_lns_g : INTEGER := 33;
             v_f_porch_lns_g : INTEGER := 10

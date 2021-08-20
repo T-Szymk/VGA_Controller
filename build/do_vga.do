@@ -21,5 +21,10 @@ sim:/vga_tb/test_pxl_cntr \
 sim:/vga_tb/test_ln_cntr \
 sim:/vga_tb/test_fr_cntr
 
+set StdArithNoWarnings 1 
+run 0 ns 
+set StdArithNoWarnings 0
+
 run -all
 wave zoom full
+config wave -signalnamewidth 1
