@@ -31,7 +31,8 @@ ENTITY vga_controller_tb IS
     v_sync_lns_g    : INTEGER := 2;
     v_b_porch_lns_g : INTEGER := 33;
     v_f_porch_lns_g : INTEGER := 10;
-    clk_period      : TIME    := 20 NS
+    disp_freq_g     : INTEGER := 60;
+    clk_period      : TIME    := 40 NS -- 25MHz
   	);
 END ENTITY vga_controller_tb;
 
@@ -105,9 +106,9 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   
   BEGIN
   
-    FOR idx IN vec'RANGE loop
+    FOR idx IN vec'RANGE LOOP
       
-      IF idx = vec'LEFT THEN]
+      IF idx = vec'LEFT THEN
         result := vec(idx);
       ELSE 
         result := result OR vec(idx);
@@ -123,7 +124,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   FUNCTION reduce_AND( 
     vec : STD_LOGIC_VECTOR 
-  ) RETURN STD_ULOGIC;
+  ) RETURN STD_ULOGIC IS
 
     VARIABLE result : STD_ULOGIC := '1';
 
@@ -134,7 +135,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       IF idx = vec'LEFT THEN
         result := vec(idx);
       ELSE 
-        result := result AND 
+        result := result AND vec(idx);
       END IF;
 
       EXIT WHEN result = '0';
@@ -150,6 +151,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   -- VARIABLES / CONSTANTS / TYPES ---------------------------------------------
 
   CONSTANT max_sim_time_c : TIME := 1.2 SEC;
+  CONSTANT frame_time_c   : TIME := (1 SEC) / disp_freq_g;
   
   TYPE state_t IS (IDLE, 
                    V_SYNC, V_B_PORCH, 
@@ -251,6 +253,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
         
         next_state <= V_SYNC;
         -- start v_sync timer
+        -- start frame timer
 
       WHEN V_SYNC =>
 
@@ -306,7 +309,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
         -- assert v_sync is high
         -- assert that reduce_AND of colr_en_out_dut is 1
 
-        IF falling_edge_detect(colr_en_out_dut(0), colr_en_out_dut_old(0)) 
+        IF falling_edge_detect(colr_en_out_dut(0), colr_en_out_dut_old(0)) THEN
           next_state <= F_PORCH;
           -- stop display timer and assert time 25.422 us
         END IF;
@@ -322,7 +325,9 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
           -- start h_sync timer
         ELSIF falling_edge_detect(v_sync_out_dut, v_sync_out_dut_old) = '1' THEN
           next_state <= V_SYNC;
+          -- stop frame timer and assert time 16.67 ms (60Hz)
           -- start v_sync timer
+          -- start frame timer
         END IF;
 
       WHEN OTHERS =>    ----------------

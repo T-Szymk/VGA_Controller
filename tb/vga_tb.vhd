@@ -89,7 +89,8 @@ ARCHITECTURE tb OF vga_tb IS
   SIGNAL test_ln_cntr   : INTEGER := 0;
   SIGNAL test_fr_cntr   : INTEGER := 0;
 
-  SIGNAL old_v_sync, old_h_sync, old_colr_en : STD_LOGIC := '0';
+  SIGNAL old_v_sync, old_h_sync : STD_LOGIC := '0';
+  SIGNAL old_colr_en : STD_LOGIC_VECTOR(3-1 DOWNTO 0) := (OTHERS => '0');
 
   SIGNAL c_state, n_state : state_t; 
 
@@ -172,7 +173,7 @@ BEGIN
       old_h_sync    <= '0';
       old_v_sync    <= '0';
 
-      old_colr_en   <= '0';
+      old_colr_en   <= (OTHERS => '0');
 
     ELSIF RISING_EDGE(dut_clk_px_out) THEN 
 
@@ -188,7 +189,6 @@ BEGIN
         test_fr_cntr  <= test_fr_cntr + 1;
         test_ln_cntr  <= 0;
         test_pxl_cntr <= 0; 
-        h_timer       <= now;
 
       ELSIF old_h_sync = '1' AND dut_h_sync_out = '0' THEN -- new line mid-frame
 
@@ -217,7 +217,7 @@ BEGIN
     
     END IF; 
   
-  END PROCESS : sync_fsm;
+  END PROCESS sync_fsm;
 
   comb_n_state : PROCESS(ALL) IS 
   BEGIN 
@@ -241,6 +241,6 @@ BEGIN
       WHEN  OTHERS =>
     END CASE;
 
-  END PROCESS : comb_n_state; 
+  END PROCESS comb_n_state; 
 
 END ARCHITECTURE tb;

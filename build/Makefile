@@ -1,14 +1,17 @@
 
-RTL_FILES = ./rtl/vga_clk_div.vhd \
-            ./rtl/vga_controller.vhd \
-            ./rtl/vga_sw_sync.vhd \
-            ./rtl/vga_colr_mux.vhd \
-            ./rtl/vga_rst_sync.vhd \
-            ./rtl/vga_colr_gen.vhd \
-	          ./rtl/vga_colr_en.vhd \
-            ./rtl/vga_top_arty-a7.vhd
-TB_FILES =  ./tb/vga_tb.vhd \
-            ./tb/vga_colr_mux_tb.vhd
+RTL = ../rtl
+TB  = ../tb
+RTL_FILES = $(RTL)/vga_clk_div.vhd \
+            $(RTL)/vga_controller.vhd \
+            $(RTL)/vga_sw_sync.vhd \
+            $(RTL)/vga_colr_mux.vhd \
+            $(RTL)/vga_rst_sync.vhd \
+            $(RTL)/vga_colr_gen.vhd \
+            $(RTL)/vga_colr_en.vhd \
+            $(RTL)/vga_top_arty-a7.vhd
+TB_FILES =  $(TB)/vga_tb.vhd \
+            $(TB)/vga_colr_mux_tb.vhd \
+            $(TB)/vga_controller_tb.vhd
 
 # TOP LEVEL TESTING#############################################################
 
@@ -28,7 +31,7 @@ sim_vga_top:
 
 .PHONY: compile_vga_colr_mux
 compile_vga_colr_mux:
-	vcom -pedanticerrors -check_synthesis -2008 ./rtl/vga_colr_mux.vhd  ./tb/vga_colr_mux_tb.vhd
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_colr_mux.vhd  $(TB)/vga_colr_mux_tb.vhd
 
 .PHONY: sim_vga_colr_mux
 sim_vga_colr_mux: compile_vga_colr_mux
@@ -37,3 +40,17 @@ sim_vga_colr_mux: compile_vga_colr_mux
 .PHONY: sim_vga_colr_mux_gui
 sim_vga_colr_mux_gui: compile_vga_colr_mux
 	vsim -voptargs="+acc" -onfinish stop vga_colr_mux_tb -do "do_vga_colr_mux.do"
+
+# COLR_MUX TESTING #############################################################
+
+.PHONY: compile_vga_controller
+compile_vga_controller:
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_controller.vhd  $(TB)/vga_controller_tb.vhd
+
+.PHONY: sim_vga_controller
+sim_vga_controller: compile_vga_colr_mux
+	vsim -voptargs="+acc" -c -onfinish exit vga_controller_tb -do "do_vga_colr_mux.do"
+	
+.PHONY: sim_vga_controller_gui
+sim_vga_controller_gui: compile_vga_colr_mux
+	vsim -voptargs="+acc" -onfinish stop vga_controller_tb -do "do_vga_colr_mux.do"
