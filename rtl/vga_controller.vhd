@@ -110,7 +110,7 @@ BEGIN
 
     ELSIF RISING_EDGE(clk) THEN
 	
-      IF (pixel_ctr_r < h_sync_px_g) AND (line_ctr_r > 34) AND (line_ctr_r <= 515) THEN
+      IF (pixel_ctr_r < h_sync_px_g) THEN
         h_sync_r <= '0';
 	    ELSE 
 	      h_sync_r <= '1';
