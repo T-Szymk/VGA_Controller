@@ -37,7 +37,7 @@ ENTITY vga_controller IS
          clk   : IN STD_LOGIC;
          rst_n : IN STD_LOGIC;
 
-         colr_en_out : OUT STD_LOGIC_VECTOR(3-1 DOWNTO 0); -- (2, 1, 0) = (b_en, g_en, r_en),
+         colr_en_out : OUT STD_LOGIC; -- (2, 1, 0) = (b_en, g_en, r_en),
          v_sync_out  : OUT STD_LOGIC;
          h_sync_out  : OUT STD_LOGIC
   );
@@ -66,7 +66,7 @@ ARCHITECTURE rtl OF vga_controller IS
 
   SIGNAL v_sync_r  : STD_LOGIC;
   SIGNAL h_sync_r  : STD_LOGIC;
-  SIGNAL colr_en_r : STD_LOGIC_VECTOR(3-1 DOWNTO 0); 
+  SIGNAL colr_en_r : STD_LOGIC; 
 BEGIN 
 
   sync_cntrs : PROCESS (clk, rst_n) IS 
@@ -145,16 +145,16 @@ BEGIN
 
     IF rst_n = '0' THEN
 
-        colr_en_r <= (OTHERS => '0');
+        colr_en_r <= '0';
 
     ELSIF RISING_EDGE(clk) THEN
     -- only disable colours when counters are outside of the "displayable range" i.e. not in the sync region or porch region
       IF ((pixel_ctr_r >= h_disp_lo_lim_c - 1)  AND (pixel_ctr_r < h_disp_hi_lim_c)) AND 
          ((line_ctr_r >= v_disp_lo_lim_c) AND (line_ctr_r < v_disp_hi_lim_c)) THEN
         
-        colr_en_r <= (OTHERS => '1');
+        colr_en_r <= '1';
       ELSE 
-        colr_en_r <= (OTHERS => '0');
+        colr_en_r <= '0';
       END IF;
 
     END IF;

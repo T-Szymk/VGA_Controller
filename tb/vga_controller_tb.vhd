@@ -62,7 +62,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       clk   : IN STD_LOGIC;
       rst_n : IN STD_LOGIC;
 
-      colr_en_out : OUT STD_LOGIC_VECTOR(3-1 DOWNTO 0);
+      colr_en_out : OUT STD_LOGIC;
       v_sync_out  : OUT STD_LOGIC;
       h_sync_out  : OUT STD_LOGIC
 
@@ -161,20 +161,20 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   
   SIGNAL h_sync_out_dut_old  : STD_LOGIC := '1';
   SIGNAL v_sync_out_dut_old  : STD_LOGIC := '1';
-  SIGNAL colr_en_out_dut_old : STD_LOGIC_VECTOR(3-1 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL colr_en_out_dut_old : STD_LOGIC := '0';
 
   SIGNAL h_sync_out_dut  : STD_LOGIC := '1';
   SIGNAL v_sync_out_dut  : STD_LOGIC := '1'; 
-  SIGNAL colr_en_out_dut : STD_LOGIC_VECTOR(3-1 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL colr_en_out_dut : STD_LOGIC := '0';
 
-  SIGNAL frame_tmr_start      : TIME := 0 ms;
-  SIGNAL v_sync_tmr_start     : TIME := 0 us;
-  SIGNAL h_sync_tmr_start     : TIME := 0 us;
-  SIGNAL h_sync_tmr_int_start : TIME := 0 us;
-  SIGNAL display_tmr_start    : TIME := 0 us;
-  SIGNAL f_porch_tmr_start    : TIME := 0 us;
+  SIGNAL frame_tmr_start       : TIME := 0 ms;
+  SIGNAL v_sync_tmr_start      : TIME := 0 us;
+  SIGNAL h_sync_tmr_start      : TIME := 0 us;
+  SIGNAL h_sync_tmr_int_start  : TIME := 0 us;
+  SIGNAL display_tmr_start     : TIME := 0 us;
+  SIGNAL display_tmr_int_start : TIME := 0 us;
 
-  SIGNAL v_sync_timer_en_s, h_sync_timer_en_s  : BIT := '0';
+  SIGNAL v_sync_timer_en_s, h_sync_timer_en_s, display_timer_en_s  : BIT := '0';
 
   ------------------------------------------------------------------------------
 
@@ -226,7 +226,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       h_sync_out_dut_old  <= '1';
       v_sync_out_dut_old  <= '1';
-      colr_en_out_dut_old <= (OTHERS => '0');
+      colr_en_out_dut_old <= '0';
 
     ELSIF RISING_EDGE(clk) THEN
   
@@ -250,6 +250,12 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       h_sync_timer_en_s    <= '0';
       h_sync_tmr_int_start <= 0 SEC;
       h_sync_tmr_start     <= 0 SEC;
+      h_sync_tmr_int_start <= 0 SEC;
+      h_sync_tmr_start     <= 0 SEC;
+
+      h_sync_timer_en_s  <= '0';
+      v_sync_timer_en_s  <= '0';
+      display_timer_en_s <= '0';
 
     ELSIF RISING_EDGE(clk) THEN
   
@@ -319,6 +325,39 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
           TO_STRING(NOW - h_sync_tmr_start)
           SEVERITY WARNING;
   
+      END IF;
+
+      IF rising_edge_detect(colr_en_out_dut, colr_en_out_dut_old) = '1' THEN
+
+        IF display_timer_en_s = '1' THEN
+        
+        -- measure the time between the start of consecutive display pulses
+          ASSERT (NOW - display_tmr_int_start) = h_sync_int_time_g
+            REPORT "FAIL@ " & TO_STRING(NOW) &
+            ", DISPLAY_INT time != " & TO_STRING(h_sync_int_time_g) & ", time: " & 
+            TO_STRING(NOW - display_tmr_int_start)
+            SEVERITY WARNING;
+         
+        ELSE 
+          -- use enable to ensure that timing check is not performed on very first pulse following reset
+          display_timer_en_s <= '1';
+         
+        END IF;
+
+        display_tmr_int_start <= NOW;
+        display_tmr_start     <= NOW;
+
+      END IF; 
+
+      IF falling_edge_detect(colr_en_out_dut, colr_en_out_dut_old) = '1' THEN
+
+        -- measure the time between the start and end of display pulse
+        ASSERT (NOW - display_tmr_start) = display_time_g
+          REPORT "FAIL@ " & TO_STRING(NOW) &
+          ", DISPLAY time != " & TO_STRING(display_time_g) & ", time: " & 
+          TO_STRING(NOW - display_tmr_start)
+          SEVERITY WARNING;
+
       END IF;
 
     END IF;
