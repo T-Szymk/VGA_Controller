@@ -18,7 +18,12 @@ sim:/vga_controller_tb/h_sync_time_g \
 sim:/vga_controller_tb/display_time_g \
 sim:/vga_controller_tb/h_sync_int_time_g \
 sim:/vga_controller_tb/display_time_g \
+sim:/vga_controller_tb/h_fp_time_g \
+sim:/vga_controller_tb/h_bp_time_g \
+sim:/vga_controller_tb/v_fp_time_g \
+sim:/vga_controller_tb/v_bp_time_g \
 sim:/vga_controller_tb/disp_v_syn_time_g \
+sim:/vga_controller_tb/v_syn_disp_time_g \
 -divider " - CONSTANTS - " \
 sim:/vga_controller_tb/max_sim_time_c \
 -divider " - TB SIGNALS - " \
@@ -33,9 +38,13 @@ sim:/vga_controller_tb/h_sync_tmr_start \
 sim:/vga_controller_tb/h_sync_tmr_int_start \
 sim:/vga_controller_tb/display_tmr_start \
 sim:/vga_controller_tb/display_tmr_int_start \
+sim:/vga_controller_tb/v_syn_disp_tmr_start \
+sim:/vga_controller_tb/v_syn_h_syn_tmr_start \
 sim:/vga_controller_tb/v_sync_timer_en_s \
 sim:/vga_controller_tb/h_sync_timer_en_s \
 sim:/vga_controller_tb/display_timer_en_s \
+sim:/vga_controller_tb/v_syn_disp_timer_en_s \
+sim:/vga_controller_tb/v_syn_h_syn_timer_en_s \
 -divider " - DUT SIGNALS - " \
 sim:/vga_controller_tb/h_sync_out_dut \
 sim:/vga_controller_tb/v_sync_out_dut \
@@ -45,7 +54,7 @@ set StdArithNoWarnings 1
 run 0 ns 
 set StdArithNoWarnings 0
 
-run 1.5 ms
-#run -all
+#run 32 ms
+run -all
 wave zoom full
 config wave -signalnamewidth 1

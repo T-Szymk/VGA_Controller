@@ -5,7 +5,7 @@
 -- File       : vga_controller_tb.vhd
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
--- Created    : 2021-08-09
+-- Created    : 2021-08-22
 -- Design     : vga_controller_tb
 -- Platform   : -
 -- Standard   : VHDL'08
@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
--- 2021-08-09  1.0      TZS     Created
+-- 2021-08-22  1.0      TZS     Created
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -23,23 +23,28 @@ USE STD.ENV.FINISH;
 
 ENTITY vga_controller_tb IS 
   GENERIC (
-    width_g           : INTEGER := 640;
-    height_g          : INTEGER := 480;
-    h_sync_px_g       : INTEGER := 96;
-    h_b_porch_px_g    : INTEGER := 48;
-    h_f_porch_px_g    : INTEGER := 16;
-    v_sync_lns_g      : INTEGER := 2;
-    v_b_porch_lns_g   : INTEGER := 33;
-    v_f_porch_lns_g   : INTEGER := 10;
-    disp_freq_g       : INTEGER := 60;
-    clk_period_g      : TIME    := 40 ns; -- 25MHz
-    frame_time_g      : TIME    := 16.8 ms;
-    v_sync_time_g     : TIME    := 64 us;
-    h_sync_time_g     : TIME    := 3.84 us;
-    h_sync_int_time_g : TIME    := 32 us;
-    display_time_g    : TIME    := 25.6 us;
-    disp_v_syn_time_g : TIME    := 346.24 us -- DISPLAY + HFP + VFP
-  	);
+    width_g            : INTEGER := 640;
+    height_g           : INTEGER := 480;
+    h_sync_px_g        : INTEGER := 96;
+    h_b_porch_px_g     : INTEGER := 48;
+    h_f_porch_px_g     : INTEGER := 16;
+    v_sync_lns_g       : INTEGER := 2;
+    v_b_porch_lns_g    : INTEGER := 33;
+    v_f_porch_lns_g    : INTEGER := 10;
+    disp_freq_g        : INTEGER := 60;
+    clk_period_g       : TIME    := 40 ns; -- 25MHz
+    frame_time_g       : TIME    := 16.8 ms;
+    v_sync_time_g      : TIME    := 64 us;
+    h_sync_time_g      : TIME    := 3.84 us;
+    h_sync_int_time_g  : TIME    := 32 us;
+    display_time_g     : TIME    := 25.6 us;
+    h_fp_time_g        : TIME    := 0.64 us;
+    h_bp_time_g        : TIME    := 1.92 us;
+    v_fp_time_g        : TIME    := 320 us;
+    v_bp_time_g        : TIME    := 1.056 ms;
+    disp_v_syn_time_g  : TIME    := display_time_g + h_fp_time_g + v_fp_time_g; 
+    v_syn_disp_time_g  : TIME    := v_sync_time_g  + v_bp_time_g + h_sync_time_g + h_bp_time_g  
+    );
 END ENTITY vga_controller_tb;
 
 --------------------------------------------------------------------------------
@@ -174,8 +179,14 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   SIGNAL h_sync_tmr_int_start  : TIME := 0 us;
   SIGNAL display_tmr_start     : TIME := 0 us;
   SIGNAL display_tmr_int_start : TIME := 0 us;
+  SIGNAL v_syn_disp_tmr_start  : TIME := 0 us;
+  SIGNAL v_syn_h_syn_tmr_start : TIME := 0 us;
 
-  SIGNAL v_sync_timer_en_s, h_sync_timer_en_s, display_timer_en_s  : BIT := '0';
+  SIGNAL v_sync_timer_en_s, 
+         h_sync_timer_en_s, 
+         display_timer_en_s,
+         v_syn_disp_timer_en_s,
+         v_syn_h_syn_timer_en_s  : BIT := '0';
 
   ------------------------------------------------------------------------------
 
@@ -245,18 +256,22 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
     IF rst_n = '0' THEN
 
-      v_sync_timer_en_s    <= '0';
-      frame_tmr_start      <= 0 SEC;
-      v_sync_tmr_start     <= 0 SEC;
-      h_sync_timer_en_s    <= '0';
-      h_sync_tmr_int_start <= 0 SEC;
-      h_sync_tmr_start     <= 0 SEC;
-      h_sync_tmr_int_start <= 0 SEC;
-      h_sync_tmr_start     <= 0 SEC;
-
-      h_sync_timer_en_s  <= '0';
-      v_sync_timer_en_s  <= '0';
-      display_timer_en_s <= '0';
+      frame_tmr_start       <= 0 SEC;
+      v_sync_tmr_start      <= 0 SEC;
+      h_sync_tmr_int_start  <= 0 SEC;
+      h_sync_tmr_start      <= 0 SEC;
+      h_sync_tmr_int_start  <= 0 SEC;
+      h_sync_tmr_start      <= 0 SEC;
+      v_syn_disp_tmr_start  <= 0 SEC;
+      v_syn_h_syn_tmr_start <= 0 SEC;
+      
+      v_sync_timer_en_s      <= '0';
+      h_sync_timer_en_s      <= '0';
+      h_sync_timer_en_s      <= '0';
+      v_sync_timer_en_s      <= '0';
+      display_timer_en_s     <= '0';
+      v_syn_disp_timer_en_s  <= '0';
+      v_syn_h_syn_timer_en_s <= '0';
 
     ELSIF RISING_EDGE(clk) THEN
   
@@ -291,8 +306,13 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         END IF;
 
-        frame_tmr_start  <= NOW; -- start timer for time between v_sync pulses
-        v_sync_tmr_start <= NOW; -- start timer for time between v_sync falling/rising edges
+        v_syn_disp_timer_en_s  <= '1';
+        v_syn_h_syn_timer_en_s <= '1';
+
+        frame_tmr_start       <= NOW; -- start timer for time between v_sync pulses
+        v_sync_tmr_start      <= NOW; -- start timer for time between v_sync falling/rising edges
+        v_syn_disp_tmr_start  <= NOW; -- start timer for time between v_sync falling edge and display rising edge
+        v_syn_h_syn_tmr_start <= NOW; -- start timer for time between v_sync falling edge and following h_sync falling edge
 
       END IF;
   
@@ -325,6 +345,19 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         END IF;
 
+        IF v_syn_h_syn_timer_en_s = '1' THEN 
+
+          -- measure the time between the start of v_sync pulse and the following h_sync pulse
+          ASSERT (NOW - v_syn_h_syn_tmr_start) = h_sync_int_time_g
+            REPORT "FAIL@ " & TO_STRING(NOW) &
+            ", V_SYNC -> V_SYNC time != " & TO_STRING(h_sync_int_time_g) & ", time: " & 
+            TO_STRING(NOW - v_syn_h_syn_tmr_start)
+            SEVERITY WARNING;
+
+          v_syn_h_syn_timer_en_s <= '0';
+
+        END IF;
+
         h_sync_tmr_int_start <= NOW; -- start timer for time between h_sync pulses
         h_sync_tmr_start     <= NOW; -- start timer for time between h_sync falling/rising edges
 
@@ -346,7 +379,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         IF display_timer_en_s = '1' THEN
         
-        -- measure the time between the start of consecutive display pulses
+          -- measure the time between the start of consecutive display pulses
           ASSERT (NOW - display_tmr_int_start) = h_sync_int_time_g
             REPORT "FAIL@ " & TO_STRING(NOW) &
             ", DISPLAY_INT time != " & TO_STRING(h_sync_int_time_g) & ", time: " & 
@@ -357,6 +390,19 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
           -- use enable to ensure that timing check is not performed on very first pulse following reset
           display_timer_en_s <= '1';
          
+        END IF;
+
+        IF v_syn_disp_timer_en_s = '1' THEN 
+
+          -- measure the time between the start of the v_sync pulse and the start of the first display pulse
+          ASSERT (NOW - v_syn_disp_tmr_start) = v_syn_disp_time_g
+            REPORT "FAIL@ " & TO_STRING(NOW) &
+            ", V_SYNC -> DISPLAY time != " & TO_STRING(v_syn_disp_time_g) & ", time: " & 
+            TO_STRING(NOW - v_syn_disp_tmr_start)
+            SEVERITY WARNING;
+
+          v_syn_disp_timer_en_s <= '0';
+
         END IF;
 
         display_tmr_int_start <= NOW; -- start timer for time between intra-frame display pulses 
