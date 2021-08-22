@@ -37,7 +37,8 @@ ENTITY vga_controller_tb IS
     v_sync_time_g     : TIME    := 64 us;
     h_sync_time_g     : TIME    := 3.84 us;
     h_sync_int_time_g : TIME    := 32 us;
-    display_time_g    : TIME    := 25.6 us
+    display_time_g    : TIME    := 25.6 us;
+    disp_v_syn_time_g : TIME    := 346.24 us -- DISPLAY + HFP + VFP
   	);
 END ENTITY vga_controller_tb;
 
@@ -73,7 +74,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   
   -- SUBROUTINES----------------------------------------------------------------
   
-  FUNCTION rising_edge_detect(
+  FUNCTION rising_edge_detect(                                              ----
     curr_val : STD_LOGIC;
     prev_val : STD_LOGIC
   ) RETURN STD_LOGIC IS
@@ -86,9 +87,9 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       RETURN '0';
     END IF;
 
-  END rising_edge_detect;
+  END rising_edge_detect;                                                   ----
 
-  FUNCTION falling_edge_detect(
+  FUNCTION falling_edge_detect(                                             ----
     curr_val : STD_LOGIC;
     prev_val : STD_LOGIC
   ) RETURN STD_LOGIC IS
@@ -101,9 +102,9 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       RETURN '0';
     END IF;
 
-  END falling_edge_detect;
+  END falling_edge_detect;                                                  ----
 
-  FUNCTION reduce_OR( 
+  FUNCTION reduce_OR(                                                       ----
     vec : STD_LOGIC_VECTOR 
   ) RETURN STD_ULOGIC IS 
 
@@ -125,9 +126,9 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
     
     RETURN result;
 
-  END reduce_OR;
+  END reduce_OR;                                                           ----- 
 
-  FUNCTION reduce_AND( 
+  FUNCTION reduce_AND(                                                     -----
     vec : STD_LOGIC_VECTOR 
   ) RETURN STD_ULOGIC IS
 
@@ -149,7 +150,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
     RETURN result;
 
-  END reduce_AND;
+  END reduce_AND;                                                           ----
 
   ------------------------------------------------------------------------------
 
@@ -277,8 +278,21 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         END IF;
 
-        frame_tmr_start  <= NOW;
-        v_sync_tmr_start <= NOW;
+        IF display_timer_en_s = '1' THEN
+          
+          -- measure the time between the start of final display pulse in a frame and the start of the v_sync pulse
+          ASSERT (NOW - display_tmr_int_start) = disp_v_syn_time_g
+            REPORT "FAIL@ " & TO_STRING(NOW) &
+            ", DISPLAY -> V_SYNC time != " & TO_STRING(disp_v_syn_time_g) & ", time: " & 
+            TO_STRING(NOW - display_tmr_int_start)
+            SEVERITY WARNING;
+
+          display_timer_en_s <= '0'; -- clear enable to ensure timing of display resets as it is the start of a new frame 
+
+        END IF;
+
+        frame_tmr_start  <= NOW; -- start timer for time between v_sync pulses
+        v_sync_tmr_start <= NOW; -- start timer for time between v_sync falling/rising edges
 
       END IF;
   
@@ -293,7 +307,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   
       END IF;
 
-    -- H_SYNC CHECK
+      -- H_SYNC CHECK
       IF falling_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
 
         IF h_sync_timer_en_s = '1' THEN 
@@ -311,8 +325,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
         END IF;
 
-        h_sync_tmr_int_start <= NOW;
-        h_sync_tmr_start     <= NOW;
+        h_sync_tmr_int_start <= NOW; -- start timer for time between h_sync pulses
+        h_sync_tmr_start     <= NOW; -- start timer for time between h_sync falling/rising edges
 
       END IF;
   
@@ -326,7 +340,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
           SEVERITY WARNING;
   
       END IF;
-
+      
+      -- DISPLAY CHECK
       IF rising_edge_detect(colr_en_out_dut, colr_en_out_dut_old) = '1' THEN
 
         IF display_timer_en_s = '1' THEN
@@ -344,8 +359,10 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
          
         END IF;
 
-        display_tmr_int_start <= NOW;
-        display_tmr_start     <= NOW;
+        display_tmr_int_start <= NOW; -- start timer for time between intra-frame display pulses 
+                                      -- (also measures time between final display pulse of the 
+                                      -- frame and the v_sync pulse of the following frame)
+        display_tmr_start     <= NOW; -- start timer for time between display falling/rising edges
 
       END IF; 
 
