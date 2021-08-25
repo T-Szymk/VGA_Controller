@@ -157,11 +157,26 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   END reduce_AND;                                                           ----
 
+  PROCEDURE assert_time(                                                    ----
+    timer     : TIME;
+    comp_time : TIME;
+    message   : STRING
+  ) IS 
+  BEGIN 
+  
+    ASSERT (NOW - timer) = comp_time
+      REPORT "FAIL@ " & TO_STRING(NOW) &
+      ", " & message & " time != " & TO_STRING(comp_time) & ", time: " & 
+      TO_STRING(NOW - timer)
+      SEVERITY WARNING;
+
+  END assert_time;                                                          ----
+
   ------------------------------------------------------------------------------
 
   -- VARIABLES / CONSTANTS / TYPES ---------------------------------------------
 
-  CONSTANT max_sim_time_c : TIME := 1.2 SEC;
+  CONSTANT max_sim_time_c : TIME := 2.5 SEC;
 
   SIGNAL clk, rst_n      : STD_LOGIC := '0';
   
@@ -281,11 +296,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
         IF v_sync_timer_en_s = '1' THEN 
 
           -- measure the time between the start of consecutive v_sync pulses
-          ASSERT (NOW - frame_tmr_start) = frame_time_g
-            REPORT "FAIL@ " & TO_STRING(NOW) &
-            ", V_SYNC_INT time != " & TO_STRING(frame_time_g) & ", time: " & 
-            TO_STRING(NOW - frame_tmr_start)
-            SEVERITY WARNING;
+          assert_time(frame_tmr_start, frame_time_g, "V_SYNC_INT");
 
         ELSE 
           -- use enable to ensure that timing check is not performed on very first pulse following reset
@@ -296,11 +307,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
         IF display_timer_en_s = '1' THEN
           
           -- measure the time between the start of final display pulse in a frame and the start of the v_sync pulse
-          ASSERT (NOW - display_tmr_int_start) = disp_v_syn_time_g
-            REPORT "FAIL@ " & TO_STRING(NOW) &
-            ", DISPLAY -> V_SYNC time != " & TO_STRING(disp_v_syn_time_g) & ", time: " & 
-            TO_STRING(NOW - display_tmr_int_start)
-            SEVERITY WARNING;
+          assert_time(display_tmr_int_start, disp_v_syn_time_g, "DISPLAY");
 
           display_timer_en_s <= '0'; -- clear enable to ensure timing of display resets as it is the start of a new frame 
 
@@ -319,11 +326,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       IF rising_edge_detect(v_sync_out_dut, v_sync_out_dut_old) = '1' THEN
         
         -- measure the time between the start and end of v_sync pulse
-        ASSERT (NOW - v_sync_tmr_start) = v_sync_time_g
-          REPORT "FAIL@ " & TO_STRING(NOW) & 
-          ", V_SYNC time != " & TO_STRING(v_sync_time_g) & ", time: " & 
-          TO_STRING(NOW - v_sync_tmr_start)
-          SEVERITY WARNING;
+        assert_time(v_sync_tmr_start, v_sync_time_g, "V_SYNC");
   
       END IF;
 
@@ -333,11 +336,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
         IF h_sync_timer_en_s = '1' THEN 
           
           -- measure the time between the start of consecutive h_sync pulses
-          ASSERT (NOW - h_sync_tmr_int_start) = h_sync_int_time_g
-            REPORT "FAIL@ " & TO_STRING(NOW) &
-            ", H_SYNC_INT time != " & TO_STRING(h_sync_int_time_g) & ", time: " & 
-            TO_STRING(NOW - h_sync_tmr_int_start)
-            SEVERITY WARNING;
+          assert_time(h_sync_tmr_int_start, h_sync_int_time_g, "H_SYNC_INT");
 
         ELSE 
           -- use enable to ensure that timing check is not performed on very first pulse following reset
@@ -348,11 +347,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
         IF v_syn_h_syn_timer_en_s = '1' THEN 
 
           -- measure the time between the start of v_sync pulse and the following h_sync pulse
-          ASSERT (NOW - v_syn_h_syn_tmr_start) = h_sync_int_time_g
-            REPORT "FAIL@ " & TO_STRING(NOW) &
-            ", V_SYNC -> V_SYNC time != " & TO_STRING(h_sync_int_time_g) & ", time: " & 
-            TO_STRING(NOW - v_syn_h_syn_tmr_start)
-            SEVERITY WARNING;
+          assert_time(v_syn_h_syn_tmr_start, h_sync_int_time_g, "V_SYNC");
 
           v_syn_h_syn_timer_en_s <= '0';
 
@@ -366,11 +361,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       IF rising_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
         
         -- measure the time between the start and end of h_sync pulse
-        ASSERT (NOW - h_sync_tmr_start) = h_sync_time_g
-          REPORT "FAIL@ " & TO_STRING(NOW) & 
-          ", H_SYNC time != " & TO_STRING(h_sync_time_g) & ", time: " & 
-          TO_STRING(NOW - h_sync_tmr_start)
-          SEVERITY WARNING;
+        assert_time(h_sync_tmr_start, h_sync_time_g, "H_SYNC");
   
       END IF;
       
@@ -380,11 +371,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
         IF display_timer_en_s = '1' THEN
         
           -- measure the time between the start of consecutive display pulses
-          ASSERT (NOW - display_tmr_int_start) = h_sync_int_time_g
-            REPORT "FAIL@ " & TO_STRING(NOW) &
-            ", DISPLAY_INT time != " & TO_STRING(h_sync_int_time_g) & ", time: " & 
-            TO_STRING(NOW - display_tmr_int_start)
-            SEVERITY WARNING;
+          assert_time(display_tmr_int_start, h_sync_int_time_g, "DISPLAY_INT");
          
         ELSE 
           -- use enable to ensure that timing check is not performed on very first pulse following reset
@@ -395,11 +382,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
         IF v_syn_disp_timer_en_s = '1' THEN 
 
           -- measure the time between the start of the v_sync pulse and the start of the first display pulse
-          ASSERT (NOW - v_syn_disp_tmr_start) = v_syn_disp_time_g
-            REPORT "FAIL@ " & TO_STRING(NOW) &
-            ", V_SYNC -> DISPLAY time != " & TO_STRING(v_syn_disp_time_g) & ", time: " & 
-            TO_STRING(NOW - v_syn_disp_tmr_start)
-            SEVERITY WARNING;
+          assert_time(v_syn_disp_tmr_start, v_syn_disp_time_g, "V_SYNC -> DISPLAY");
 
           v_syn_disp_timer_en_s <= '0';
 
@@ -415,11 +398,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       IF falling_edge_detect(colr_en_out_dut, colr_en_out_dut_old) = '1' THEN
 
         -- measure the time between the start and end of display pulse
-        ASSERT (NOW - display_tmr_start) = display_time_g
-          REPORT "FAIL@ " & TO_STRING(NOW) &
-          ", DISPLAY time != " & TO_STRING(display_time_g) & ", time: " & 
-          TO_STRING(NOW - display_tmr_start)
-          SEVERITY WARNING;
+        assert_time(display_tmr_start, display_time_g, "DISPLAY");
 
       END IF;
 
