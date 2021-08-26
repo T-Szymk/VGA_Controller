@@ -57,8 +57,8 @@ ARCHITECTURE rtl OF vga_controller IS
   CONSTANT h_disp_max_px_c     : INTEGER := h_b_porch_max_px_c + width_px_g;
   CONSTANT h_f_porch_max_px_c  : INTEGER := h_disp_max_px_c + h_f_porch_px_g;
 
-  SUBTYPE pxl_ctr_t  IS INTEGER RANGE (h_f_porch_max_c - 1) DOWNTO 0;
-  SUBTYPE line_ctr_t IS INTEGER RANGE (v_f_porch_max_c - 1) DOWNTO 0;
+  SUBTYPE pxl_ctr_t  IS INTEGER RANGE (h_f_porch_max_px_c - 1) DOWNTO 0;
+  SUBTYPE line_ctr_t IS INTEGER RANGE (v_f_porch_max_lns_c - 1) DOWNTO 0;
   
   TYPE hstate_t IS (H_IDLE, H_SYNC, H_B_PORCH, H_F_PORCH, H_DISPLAY);
   TYPE vstate_t IS (V_IDLE, V_SYNC, V_B_PORCH, V_F_PORCH, V_DISPLAY);
@@ -127,6 +127,8 @@ BEGIN
   comb_ns : PROCESS (ALL) IS 
   BEGIN 
 
+    -- HORIZONTAL STATES -------------------------------------------------------
+
     CASE h_c_state IS
       
       WHEN H_IDLE =>
@@ -135,39 +137,90 @@ BEGIN
       
       WHEN H_SYNC =>
 
-        IF px_clk_ctr_r = h_sync_max_lns_c - 1 THEN
+        IF pixel_ctr_r = h_sync_max_px_c - 1 THEN
           h_n_state <= H_B_PORCH;
+        ELSE 
+          h_n_state <= H_SYNC;
         END IF;
 
       WHEN H_B_PORCH =>
 
-        IF px_clk_ctr_r = v_b_porch_max_lns_c - 1 THEN
+        IF pixel_ctr_r = h_b_porch_max_px_c - 1 THEN
           h_n_state <= H_DISPLAY;
+        ELSE 
+          h_n_state <= H_B_PORCH;
         END IF;
 
       WHEN H_DISPLAY =>
 
-        IF px_clk_ctr_r = v_disp_max_lns_c - 1 THEN
+        IF pixel_ctr_r = h_disp_max_px_c - 1 THEN
           h_n_state <= H_F_PORCH;
+        ELSE
+          h_n_state <= H_DISPLAY;
         END IF;
 
       WHEN H_F_PORCH =>
 
-        IF px_clk_ctr_r = v_f_porch_max_lns_c - 1 THEN
+        IF pixel_ctr_r = h_f_porch_max_px_c - 1 THEN
           h_n_state <= H_SYNC;
+        ELSE 
+          h_n_state <= H_F_PORCH;
         END IF;
 
       WHEN OTHERS =>
+
+        h_n_state <= H_IDLE;
+
     END CASE;
 
+    -- VERTICAL STATES ---------------------------------------------------------
+
     CASE v_c_state IS 
+
+      WHEN V_IDLE =>
+
+        v_n_state <= V_SYNC;
+      
+      WHEN V_SYNC =>
+
+        IF pixel_ctr_r = v_sync_max_lns_c - 1 THEN
+          v_n_state <= V_B_PORCH;
+        ELSE 
+          v_n_state <= V_SYNC;
+        END IF;
+
+      WHEN V_B_PORCH =>
+
+        IF pixel_ctr_r = v_b_porch_max_lns_c - 1 THEN
+          v_n_state <= V_DISPLAY;
+        ELSE 
+          v_n_state <= V_B_PORCH;
+        END IF;
+
+      WHEN V_DISPLAY =>
+
+        IF pixel_ctr_r = v_disp_max_lns_c - 1 THEN
+          v_n_state <= V_F_PORCH;
+        ELSE
+          v_n_state <= V_DISPLAY;
+        END IF;
+
+      WHEN V_F_PORCH =>
+
+        IF pixel_ctr_r = v_f_porch_max_lns_c - 1 THEN
+          v_n_state <= V_SYNC;
+        ELSE 
+          v_n_state <= V_F_PORCH;
+        END IF;
+
       WHEN OTHERS =>
+
+        v_n_state <= V_IDLE;
     END CASE;
 
   END PROCESS comb_ns; --------------------------------------------------------- 
 
   -- if v_display && h_display enable output
-
 
   h_sync_out  <= h_sync_r;
   v_sync_out  <= v_sync_r;
