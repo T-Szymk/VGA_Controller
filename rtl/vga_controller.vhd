@@ -126,6 +126,10 @@ BEGIN
 
   comb_ns : PROCESS (ALL) IS 
   BEGIN 
+  
+    -- default assignments to avoid latch inference
+    h_n_state <= h_c_state;
+    v_n_state <= v_c_state;
 
     -- HORIZONTAL STATES -------------------------------------------------------
 
