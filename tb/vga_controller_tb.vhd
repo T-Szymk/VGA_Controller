@@ -23,8 +23,8 @@ USE STD.ENV.FINISH;
 
 ENTITY vga_controller_tb IS 
   GENERIC (
-    width_g            : INTEGER := 640;
-    height_g           : INTEGER := 480;
+    width_px_g         : INTEGER := 640;
+    height_lns_g       : INTEGER := 480;
     h_sync_px_g        : INTEGER := 96;
     h_b_porch_px_g     : INTEGER := 48;
     h_f_porch_px_g     : INTEGER := 16;
@@ -55,8 +55,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   COMPONENT vga_controller IS -- DUT
     GENERIC (
-      width_g         : INTEGER;
-      height_g        : INTEGER;
+      width_px_g      : INTEGER;
+      height_lns_g    : INTEGER;
       h_sync_px_g     : INTEGER;
       h_b_porch_px_g  : INTEGER;
       h_f_porch_px_g  : INTEGER;
@@ -209,14 +209,14 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   i_DUT : vga_controller  
     GENERIC MAP(
-    	width_g         => width_g,   
-      height_g        => height_g,    
+    	width_px_g      => width_px_g,   
+      height_lns_g    => height_lns_g,    
       h_sync_px_g     => h_sync_px_g,       
       h_b_porch_px_g  => h_b_porch_px_g,          
-      h_f_porch_px_g  => h_f_porch_px_g,          
+      h_f_porch_px_g  => h_f_porch_px_g,      
       v_sync_lns_g    => v_sync_lns_g,        
       v_b_porch_lns_g => v_b_porch_lns_g,           
-      v_f_porch_lns_g => v_f_porch_lns_g          
+      v_f_porch_lns_g => v_f_porch_lns_g       
     )
     PORT MAP (
       clk         => clk,

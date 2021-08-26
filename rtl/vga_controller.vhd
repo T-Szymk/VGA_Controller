@@ -18,14 +18,15 @@
 -- 2021-06-24  1.0      TZS     Created
 -- 2021-06-26  1.1      TZS     Added enable signals,
 --                              Removed blank control
+-- 2021-08-26  1.2      TZS     Refactored to use a state machine
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 
 ENTITY vga_controller IS 
   GENERIC (
-            width_g         : INTEGER := 640;
-            height_g        : INTEGER := 480;
+            width_px_g      : INTEGER := 640;
+            height_lns_g    : INTEGER := 480;
             h_sync_px_g     : INTEGER := 96;
             h_b_porch_px_g  : INTEGER := 48;
             h_f_porch_px_g  : INTEGER := 16;
@@ -43,23 +44,28 @@ ENTITY vga_controller IS
   );
 END ENTITY vga_controller;
 
---------------------------------------------------------------------------------
+  -- VARIABLES / CONSTANTS / TYPES ---------------------------------------------
 
 ARCHITECTURE rtl OF vga_controller IS 
 
-  CONSTANT h_disp_lo_lim_c : INTEGER := h_sync_px_g + h_b_porch_px_g;
-  CONSTANT h_disp_hi_lim_c : INTEGER := h_disp_lo_lim_c + width_g;
-  CONSTANT v_disp_lo_lim_c : INTEGER := v_sync_lns_g + v_b_porch_lns_g;
-  CONSTANT v_disp_hi_lim_c : INTEGER := v_disp_lo_lim_c + height_g;
+  CONSTANT v_sync_max_lns_c    : INTEGER := v_sync_lns_g;
+  CONSTANT v_b_porch_max_lns_c : INTEGER := v_sync_max_lns_c + v_b_porch_lns_g;
+  CONSTANT v_disp_max_lns_c    : INTEGER := v_b_porch_max_lns_c + height_lns_g;
+  CONSTANT v_f_porch_max_lns_c : INTEGER := v_disp_max_lns_c + v_f_porch_lns_g;
+  CONSTANT h_sync_max_px_c     : INTEGER := h_sync_px_g;
+  CONSTANT h_b_porch_max_px_c  : INTEGER := h_sync_max_px_c + h_b_porch_px_g;
+  CONSTANT h_disp_max_px_c     : INTEGER := h_b_porch_max_px_c + width_px_g;
+  CONSTANT h_f_porch_max_px_c  : INTEGER := h_disp_max_px_c + h_f_porch_px_g;
 
-  SUBTYPE pxl_ctr_t IS INTEGER RANGE (h_sync_px_g +
-                                      h_b_porch_px_g +
-                                      h_f_porch_px_g +
-                                      width_g - 1) DOWNTO 0;
-  SUBTYPE line_ctr_t IS INTEGER RANGE (v_sync_lns_g +
-                                      v_b_porch_lns_g +
-                                      v_f_porch_lns_g +
-                                      height_g - 1) DOWNTO 0;
+  SUBTYPE pxl_ctr_t  IS INTEGER RANGE (h_f_porch_max_c - 1) DOWNTO 0;
+  SUBTYPE line_ctr_t IS INTEGER RANGE (v_f_porch_max_c - 1) DOWNTO 0;
+  
+  TYPE hstate_t IS (H_IDLE, H_SYNC, H_B_PORCH, H_F_PORCH, H_DISPLAY);
+  TYPE vstate_t IS (V_IDLE, V_SYNC, V_B_PORCH, V_F_PORCH, V_DISPLAY);
+
+  SIGNAL h_c_state, h_n_state : hstate_t;
+  SIGNAL v_c_state, v_n_state : vstate_t;
+
 
   SIGNAL pixel_ctr_r : pxl_ctr_t;
   SIGNAL line_ctr_r  : line_ctr_t;
@@ -69,7 +75,7 @@ ARCHITECTURE rtl OF vga_controller IS
   SIGNAL colr_en_r : STD_LOGIC; 
 BEGIN 
 
-  sync_cntrs : PROCESS (clk, rst_n) IS 
+  sync_cntrs : PROCESS (clk, rst_n) IS -- line/pxl counters --------------------
   BEGIN 
 
     IF rst_n = '0' THEN 
@@ -99,66 +105,69 @@ BEGIN
 
       END IF;
     END IF;
-  END PROCESS sync_cntrs;
+  END PROCESS sync_cntrs; ------------------------------------------------------    
 
-  sync_h_sync : PROCESS (clk, rst_n) IS
-  BEGIN
+  sync_fsm : PROCESS (clk, rst_n) IS -------------------------------------------
+  BEGIN 
+  
+    IF rst_n = '0' THEN 
 
-    IF rst_n = '0' THEN
-
-      h_sync_r <= '1';
-
-    ELSIF RISING_EDGE(clk) THEN
-	
-      IF (pixel_ctr_r < h_sync_px_g) THEN
-        h_sync_r <= '0';
-	    ELSE 
-	      h_sync_r <= '1';
-	    END IF;
-
-    END IF;
-
-
-  END PROCESS sync_h_sync;
-
-  sync_v_sync : PROCESS (clk, rst_n) IS 
-  BEGIN
-
-    IF rst_n = '0' THEN
-
-      v_sync_r <= '1';
-  	
-    ELSIF RISING_EDGE(clk) THEN  
-
-      IF (line_ctr_r < (v_sync_lns_g )) THEN
-        v_sync_r <= '0';
-      ELSE 
-        v_sync_r <= '1';
-      END IF; 
-    
-    END IF;
-
-  END PROCESS sync_v_sync; 
-
-  sync_enable : PROCESS (clk, rst_n) IS 
-  BEGIN
-
-    IF rst_n = '0' THEN
-
-        colr_en_r <= '0';
+      h_c_state <= H_IDLE;
+      v_c_state <= V_IDLE;
 
     ELSIF RISING_EDGE(clk) THEN
-    -- only disable colours when counters are outside of the "displayable range" i.e. not in the sync region or porch region
-      IF ((pixel_ctr_r >= h_disp_lo_lim_c) AND (pixel_ctr_r < h_disp_hi_lim_c)) AND 
-         ((line_ctr_r >= v_disp_lo_lim_c)  AND (line_ctr_r < v_disp_hi_lim_c)) THEN
-        
-        colr_en_r <= '1';
-      ELSE 
-        colr_en_r <= '0';
-      END IF;
+
+      h_c_state <= h_n_state;
+      v_c_state <= v_n_state;
 
     END IF;
-  END PROCESS sync_enable;
+
+  END PROCESS sync_fsm;  -------------------------------------------------------
+
+  comb_ns : PROCESS (ALL) IS 
+  BEGIN 
+
+    CASE h_c_state IS
+      
+      WHEN H_IDLE =>
+
+        h_n_state <= H_SYNC;
+      
+      WHEN H_SYNC =>
+
+        IF px_clk_ctr_r = h_sync_max_lns_c - 1 THEN
+          h_n_state <= H_B_PORCH;
+        END IF;
+
+      WHEN H_B_PORCH =>
+
+        IF px_clk_ctr_r = v_b_porch_max_lns_c - 1 THEN
+          h_n_state <= H_DISPLAY;
+        END IF;
+
+      WHEN H_DISPLAY =>
+
+        IF px_clk_ctr_r = v_disp_max_lns_c - 1 THEN
+          h_n_state <= H_F_PORCH;
+        END IF;
+
+      WHEN H_F_PORCH =>
+
+        IF px_clk_ctr_r = v_f_porch_max_lns_c - 1 THEN
+          h_n_state <= H_SYNC;
+        END IF;
+
+      WHEN OTHERS =>
+    END CASE;
+
+    CASE v_c_state IS 
+      WHEN OTHERS =>
+    END CASE;
+
+  END PROCESS comb_ns; --------------------------------------------------------- 
+
+  -- if v_display && h_display enable output
+
 
   h_sync_out  <= h_sync_r;
   v_sync_out  <= v_sync_r;

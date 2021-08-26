@@ -31,14 +31,14 @@ sim_vga_top:
 
 .PHONY: compile_vga_colr_mux
 compile_vga_colr_mux:
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_colr_mux.vhd  $(TB)/vga_colr_mux_tb.vhd
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_colr_mux.vhd $(TB)/vga_colr_mux_tb.vhd
 
 .PHONY: sim_vga_colr_mux
-sim_vga_colr_mux: compile_vga_colr_mux
+sim_vga_colr_mux: 
 	vsim -voptargs="+acc" -c -onfinish exit vga_colr_mux_tb -do "do_vga_colr_mux.do"
 	
 .PHONY: sim_vga_colr_mux_gui
-sim_vga_colr_mux_gui: compile_vga_colr_mux
+sim_vga_colr_mux_gui: 
 	vsim -voptargs="+acc" -onfinish stop vga_colr_mux_tb -do "do_vga_colr_mux.do"
 
 # COLR_MUX TESTING #############################################################
@@ -48,9 +48,9 @@ compile_vga_controller:
 	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_controller.vhd  $(TB)/vga_controller_tb.vhd
 
 .PHONY: sim_vga_controller
-sim_vga_controller: compile_vga_colr_mux
+sim_vga_controller: 
 	vsim -voptargs="+acc" -c -onfinish exit vga_controller_tb -do "do_vga_controller.do"
 	
 .PHONY: sim_vga_controller_gui
-sim_vga_controller_gui: compile_vga_colr_mux
+sim_vga_controller_gui: 
 	vsim -voptargs="+acc" -onfinish stop vga_controller_tb -do "do_vga_controller_gui.do"
