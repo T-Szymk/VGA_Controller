@@ -13,3 +13,4 @@ Prototyping on the DE2 board (uses ADV7123 DAC) + Arty A7-100T (uses Digilent VG
 * Modify top level to use a single bit colour enable signal
 * Update top level tb to run basic tests.
 * Update build scripts to compile, run unit tests and then system tests.
+
