@@ -216,6 +216,7 @@ BEGIN
       WHEN OTHERS =>
 
         v_n_state <= V_IDLE;
+        
     END CASE;
 
   END PROCESS comb_ns; --------------------------------------------------------- 
