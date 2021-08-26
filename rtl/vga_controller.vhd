@@ -139,32 +139,24 @@ BEGIN
 
         IF pixel_ctr_r = h_sync_max_px_c - 1 THEN
           h_n_state <= H_B_PORCH;
-        ELSE 
-          h_n_state <= H_SYNC;
         END IF;
 
       WHEN H_B_PORCH =>
 
         IF pixel_ctr_r = h_b_porch_max_px_c - 1 THEN
           h_n_state <= H_DISPLAY;
-        ELSE 
-          h_n_state <= H_B_PORCH;
         END IF;
 
       WHEN H_DISPLAY =>
 
         IF pixel_ctr_r = h_disp_max_px_c - 1 THEN
           h_n_state <= H_F_PORCH;
-        ELSE
-          h_n_state <= H_DISPLAY;
         END IF;
 
       WHEN H_F_PORCH =>
 
         IF pixel_ctr_r = h_f_porch_max_px_c - 1 THEN
           h_n_state <= H_SYNC;
-        ELSE 
-          h_n_state <= H_F_PORCH;
         END IF;
 
       WHEN OTHERS =>
@@ -185,38 +177,30 @@ BEGIN
 
         IF pixel_ctr_r = v_sync_max_lns_c - 1 THEN
           v_n_state <= V_B_PORCH;
-        ELSE 
-          v_n_state <= V_SYNC;
         END IF;
 
       WHEN V_B_PORCH =>
 
         IF pixel_ctr_r = v_b_porch_max_lns_c - 1 THEN
           v_n_state <= V_DISPLAY;
-        ELSE 
-          v_n_state <= V_B_PORCH;
         END IF;
 
       WHEN V_DISPLAY =>
 
         IF pixel_ctr_r = v_disp_max_lns_c - 1 THEN
           v_n_state <= V_F_PORCH;
-        ELSE
-          v_n_state <= V_DISPLAY;
         END IF;
 
       WHEN V_F_PORCH =>
 
         IF pixel_ctr_r = v_f_porch_max_lns_c - 1 THEN
           v_n_state <= V_SYNC;
-        ELSE 
-          v_n_state <= V_F_PORCH;
         END IF;
 
       WHEN OTHERS =>
 
         v_n_state <= V_IDLE;
-        
+
     END CASE;
 
   END PROCESS comb_ns; --------------------------------------------------------- 
