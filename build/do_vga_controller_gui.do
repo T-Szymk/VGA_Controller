@@ -2,8 +2,8 @@ add log -r sim:/vga_controller_tb/*
 
 add wave -position insertpoint  \
 -divider " - GENERICS - " \
-sim:/vga_controller_tb/width_g \
-sim:/vga_controller_tb/height_g \
+sim:/vga_controller_tb/width_px_g \
+sim:/vga_controller_tb/height_lns_g \
 sim:/vga_controller_tb/h_sync_px_g \
 sim:/vga_controller_tb/h_b_porch_px_g \
 sim:/vga_controller_tb/h_f_porch_px_g \
@@ -54,7 +54,7 @@ set StdArithNoWarnings 1
 run 0 ns 
 set StdArithNoWarnings 0
 
-run 32 ms
-#run -all
+#run 32 ms
+run -all
 wave zoom full
 config wave -signalnamewidth 1

@@ -176,7 +176,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   -- VARIABLES / CONSTANTS / TYPES ---------------------------------------------
 
-  CONSTANT max_sim_time_c : TIME := 0.05 SEC;
+  CONSTANT max_sim_time_c : TIME := 0.5 SEC;
 
   SIGNAL clk, rst_n      : STD_LOGIC := '0';
   

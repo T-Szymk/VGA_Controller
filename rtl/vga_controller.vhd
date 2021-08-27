@@ -211,9 +211,9 @@ BEGIN
 
   -- if v_display && h_display enable output
 
-  h_sync_s <= '0' WHEN h_c_state = H_SYNC ELSE '1';
-  v_sync_s <= '0' WHEN v_c_state = V_SYNC ELSE '1';
-  colr_en_out <= '1' WHEN (h_c_state = H_DISPLAY AND v_c_state = V_DISPLAY) ELSE '0'; 
+  h_sync_s  <= '0' WHEN h_c_state = H_SYNC ELSE '1';
+  v_sync_s  <= '0' WHEN v_c_state = V_SYNC ELSE '1';
+  colr_en_s <= '1' WHEN (h_c_state = H_DISPLAY AND v_c_state = V_DISPLAY) ELSE '0'; 
 
   h_sync_out  <= h_sync_s;
   v_sync_out  <= v_sync_s;
