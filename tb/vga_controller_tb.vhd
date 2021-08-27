@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
--- 2021-08-22  1.0      TZS     Created
+-- 2021-08-28  1.0      TZS     Created
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -176,7 +176,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   -- VARIABLES / CONSTANTS / TYPES ---------------------------------------------
 
-  CONSTANT max_sim_time_c : TIME := 0.5 SEC;
+  CONSTANT max_sim_time_c : TIME := 1.5 SEC;
 
   SIGNAL clk, rst_n      : STD_LOGIC := '0';
   

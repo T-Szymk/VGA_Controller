@@ -18,7 +18,7 @@
 -- 2021-06-24  1.0      TZS     Created
 -- 2021-06-26  1.1      TZS     Added enable signals,
 --                              Removed blank control
--- 2021-08-26  1.2      TZS     Refactored to use a state machine
+-- 2021-08-28  1.2      TZS     Refactored to use a state machine
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -80,8 +80,8 @@ BEGIN
 
     IF rst_n = '0' THEN 
 
-      pixel_ctr_r <= 0;
-      line_ctr_r  <= 0;
+      pixel_ctr_r <= pxl_ctr_t'HIGH;
+      line_ctr_r  <= line_ctr_t'HIGH;
 
     ELSIF RISING_EDGE(clk) THEN 
 
@@ -179,25 +179,25 @@ BEGIN
       
       WHEN V_SYNC =>
 
-        IF pixel_ctr_r = v_sync_max_lns_c - 1 THEN
+        IF (line_ctr_r = (v_sync_max_lns_c - 1) AND pixel_ctr_r = pxl_ctr_t'HIGH) THEN
           v_n_state <= V_B_PORCH;
         END IF;
 
       WHEN V_B_PORCH =>
 
-        IF pixel_ctr_r = v_b_porch_max_lns_c - 1 THEN
+        IF (line_ctr_r = (v_b_porch_max_lns_c - 1) AND pixel_ctr_r = pxl_ctr_t'HIGH) THEN
           v_n_state <= V_DISPLAY;
         END IF;
 
       WHEN V_DISPLAY =>
 
-        IF pixel_ctr_r = v_disp_max_lns_c - 1 THEN
+        IF (line_ctr_r = (v_disp_max_lns_c - 1) AND pixel_ctr_r = pxl_ctr_t'HIGH) THEN
           v_n_state <= V_F_PORCH;
         END IF;
 
       WHEN V_F_PORCH =>
 
-        IF pixel_ctr_r = v_f_porch_max_lns_c - 1 THEN
+        IF (line_ctr_r = (v_f_porch_max_lns_c - 1) AND pixel_ctr_r = pxl_ctr_t'HIGH) THEN
           v_n_state <= V_SYNC;
         END IF;
 
