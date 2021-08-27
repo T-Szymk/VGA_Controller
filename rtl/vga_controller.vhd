@@ -70,9 +70,9 @@ ARCHITECTURE rtl OF vga_controller IS
   SIGNAL pixel_ctr_r : pxl_ctr_t;
   SIGNAL line_ctr_r  : line_ctr_t;
 
-  SIGNAL v_sync_r  : STD_LOGIC;
-  SIGNAL h_sync_r  : STD_LOGIC;
-  SIGNAL colr_en_r : STD_LOGIC; 
+  SIGNAL v_sync_s  : STD_LOGIC;
+  SIGNAL h_sync_s  : STD_LOGIC;
+  SIGNAL colr_en_s : STD_LOGIC; 
 BEGIN 
 
   sync_cntrs : PROCESS (clk, rst_n) IS -- line/pxl counters --------------------
@@ -126,7 +126,7 @@ BEGIN
 
   comb_ns : PROCESS (ALL) IS 
   BEGIN 
-  
+
     -- default assignments to avoid latch inference
     h_n_state <= h_c_state;
     v_n_state <= v_c_state;
@@ -211,9 +211,13 @@ BEGIN
 
   -- if v_display && h_display enable output
 
-  h_sync_out  <= h_sync_r;
-  v_sync_out  <= v_sync_r;
-  colr_en_out <= colr_en_r;
+  h_sync_s <= '0' WHEN h_c_state = H_SYNC ELSE '1';
+  v_sync_s <= '0' WHEN v_c_state = V_SYNC ELSE '1';
+  colr_en_out <= '1' WHEN (h_c_state = H_DISPLAY AND v_c_state = V_DISPLAY) ELSE '0'; 
+
+  h_sync_out  <= h_sync_s;
+  v_sync_out  <= v_sync_s;
+  colr_en_out <= colr_en_s;
   
 END ARCHITECTURE rtl;
 
