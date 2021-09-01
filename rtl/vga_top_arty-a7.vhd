@@ -137,16 +137,16 @@ ARCHITECTURE structural of vga_top IS
 
   TYPE colr_arr_t IS ARRAY(3-1 DOWNTO 0) OF STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
 
-  SIGNAL clk_px_out_s : STD_LOGIC;
-  SIGNAL rst_n_s      : STD_LOGIC;
-  SIGNAL v_sync_s     : STD_LOGIC;
-  SIGNAL h_sync_s     : STD_LOGIC;
-  SIGNAL colr_en_s    : STD_LOGIC;
-  SIGNAL sw_out_s     : STD_LOGIC_VECTOR(3-1 DOWNTO 0);
-  SIGNAL colr_arr_s   : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
+  SIGNAL clk_px_out_s   : STD_LOGIC;
+  SIGNAL rst_n_s        : STD_LOGIC;
+  SIGNAL v_sync_s       : STD_LOGIC;
+  SIGNAL h_sync_s       : STD_LOGIC;
+  SIGNAL colr_en_s      : STD_LOGIC;
+  SIGNAL sw_out_s       : STD_LOGIC_VECTOR(3-1 DOWNTO 0);
+  SIGNAL colr_arr_s     : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
+  SIGNAL colr_arr_gen_s : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
 
   SIGNAL colr_arr_sw_s  : colr_arr_t;
-  SIGNAL colr_arr_gen_s : colr_arr_t;
 
 BEGIN ------------------------------------------------------------------
 
@@ -183,7 +183,7 @@ BEGIN ------------------------------------------------------------------
                  clk      => clk_px_out_s,
                  rst_n    => rst_n_s,
                  sw_in    => sw_in(idx),
-                 colr_in  => colr_arr_gen_s(idx),
+                 colr_in  => colr_arr_gen_s(((idx+1)*depth_colr_g)-1 DOWNTO (idx*depth_colr_g)-1),
                  colr_out => colr_arr_sw_s(idx)
       );
   END GENERATE gen_sync;
@@ -211,8 +211,10 @@ BEGIN ------------------------------------------------------------------
     GENERIC MAP (
       depth_colr_g => depth_colr_g)
     PORT MAP (
-      colr_in  => (colr_arr_gen_s(0) & colr_arr_gen_s(1) & colr_arr_gen_s(2)),
-      en_in    => (colr_en_s & colr_en_s & colr_en_s),
+      colr_in  => (colr_arr_gen_s),
+      en_in(0)    => colr_en_s,
+      en_in(1)    => colr_en_s,
+      en_in(2)    => colr_en_s,
       colr_out => (colr_arr_s)
     );
 
@@ -227,9 +229,9 @@ BEGIN ------------------------------------------------------------------
       clk       => clk_px_out_s,
       rst_n     => rst_n_s,
       trig_in   => v_sync_s,  
-      r_colr_out => colr_arr_gen_s(0),
-      g_colr_out => colr_arr_gen_s(1),
-      b_colr_out => colr_arr_gen_s(2) 
+      r_colr_out => colr_arr_s((3*depth_colr_g)-1 DOWNTO (2*depth_colr_g)),
+      g_colr_out => colr_arr_s((2*depth_colr_g)-1 DOWNTO (depth_colr_g)),
+      b_colr_out => colr_arr_s((2*depth_colr_g)-1 DOWNTO 0)
     );
 
   clk_px_out  <= clk_px_out_s;
@@ -238,7 +240,7 @@ BEGIN ------------------------------------------------------------------
 
   r_colr_out <= colr_arr_s((3*depth_colr_g)-1 DOWNTO (2*depth_colr_g));
   g_colr_out <= colr_arr_s((2*depth_colr_g)-1 DOWNTO depth_colr_g);
-  b_colr_out <= colr_arr_s(depth_colr_g-1 DOWNTO 0);
+  b_colr_out <= colr_arr_s(depth_colr_g-1     DOWNTO 0);
 
 END ARCHITECTURE structural;
 
