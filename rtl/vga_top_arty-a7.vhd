@@ -111,36 +111,38 @@ ARCHITECTURE structural of vga_top IS
     GENERIC (depth_colr_g : INTEGER := 4);
     PORT (
       colr_in : IN STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
-      en_in   : IN STD_LOGIC_VECTOR(3-1 DOWNTO 0);
+      en_in   : IN STD_LOGIC;
     
       colr_out : OUT STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0)
     );
   END COMPONENT;
 
-  COMPONENT vga_colr_gen IS 
-    GENERIC (
-              r_cntr_inc_g : INTEGER := 10;
-              g_cntr_inc_g : INTEGER := 50;
-              b_cntr_inc_g : INTEGER := 15;
-	            depth_colr_g : INTEGER := 4
-    );
-    PORT (
-           clk       : IN STD_LOGIC;
-           rst_n     : IN STD_LOGIC;
-           trig_in   : IN STD_LOGIC; -- take from v_sync
-    
-           r_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
-           g_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
-           b_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0)
-    );
-  END COMPONENT;
+  --COMPONENT vga_colr_gen IS 
+  --  GENERIC (
+  --            r_cntr_inc_g : INTEGER := 10;
+  --            g_cntr_inc_g : INTEGER := 50;
+  --            b_cntr_inc_g : INTEGER := 15;
+	--            depth_colr_g : INTEGER := 4
+  --  );
+  --  PORT (
+  --         clk       : IN STD_LOGIC;
+  --         rst_n     : IN STD_LOGIC;
+  --         trig_in   : IN STD_LOGIC; -- take from v_sync
+  --  
+  --         r_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
+  --         g_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
+  --         b_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0)
+  --  );
+  --END COMPONENT;
 
   SIGNAL clk_px_out_s   : STD_LOGIC;
   SIGNAL rst_n_s        : STD_LOGIC;
   SIGNAL v_sync_s       : STD_LOGIC;
   SIGNAL h_sync_s       : STD_LOGIC;
   SIGNAL colr_en_s      : STD_LOGIC;
-  SIGNAL sw_out_s       : STD_LOGIC_VECTOR(3-1 DOWNTO 0);
+
+  SIGNAL colr_sw_arr_s  : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
+  SIGNAL colr_gen_arr_s : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
   SIGNAL colr_arr_s     : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
 
 BEGIN ------------------------------------------------------------------
@@ -178,8 +180,8 @@ BEGIN ------------------------------------------------------------------
                  clk      => clk_px_out_s,
                  rst_n    => rst_n_s,
                  sw_in    => sw_in(idx),
-                 colr_in  => colr_arr_gen_s(((idx+1)*depth_colr_g)-1 DOWNTO (idx*depth_colr_g)-1),
-                 colr_out => colr_arr_sw_s(idx)
+                 colr_in  => colr_gen_arr_s(((idx+1)*depth_colr_g)-1 DOWNTO (idx*depth_colr_g)-1),
+                 colr_out => colr_sw_arr_s(((idx+1)*depth_colr_g)-1 DOWNTO (idx*depth_colr_g)-1)
       );
   END GENERATE gen_sync;
 
@@ -206,10 +208,8 @@ BEGIN ------------------------------------------------------------------
     GENERIC MAP (
       depth_colr_g => depth_colr_g)
     PORT MAP (
-      colr_in  => (colr_arr_gen_s),
-      en_in(0)    => colr_en_s,
-      en_in(1)    => colr_en_s,
-      en_in(2)    => colr_en_s,
+      colr_in  => (colr_gen_arr_s),
+      en_in    => colr_en_s,
       colr_out => (colr_arr_s)
     );
 
