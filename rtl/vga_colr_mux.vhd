@@ -18,6 +18,8 @@
 -- Date        Version  Author  Description
 -- 2021-06-26  1.0      TZS     Created
 -- 2021-07-24  1.1      TZS     Modified inputs and outputs to use single signal
+-- 2021-09-04  1.2      TZS     Set mux to change all colour signals instead of
+--                              individual colours separately.
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -26,7 +28,7 @@ ENTITY vga_colr_mux IS
   GENERIC (depth_colr_g : INTEGER := 4);
   PORT (
     colr_in : IN STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
-    en_in   : IN STD_LOGIC_VECTOR(3-1 DOWNTO 0);
+    en_in   : IN STD_LOGIC;
   
     colr_out : OUT STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0)
   );
@@ -37,13 +39,8 @@ END ENTITY vga_colr_mux;
 ARCHITECTURE rtl OF vga_colr_mux IS 
 BEGIN 
 
-  mux_gen : FOR idx IN 3-1 DOWNTO 0 GENERATE
-
-    WITH en_in(idx) SELECT colr_out( ((idx+1) * depth_colr_g)-1 DOWNTO (idx * depth_colr_g) ) <=
-    colr_in(((idx+1) * depth_colr_g)-1 DOWNTO (idx * depth_colr_g)) WHEN '1',
-    (OTHERS => '0') WHEN OTHERS;
-
-  END GENERATE; 
+  WITH en_in SELECT colr_out <= colr_in WHEN '1',
+                                (OTHERS => '0') WHEN OTHERS;
   
 END ARCHITECTURE rtl; 
 
