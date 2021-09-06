@@ -23,6 +23,8 @@ USE IEEE.STD_LOGIC_1164.ALL;
 
 ENTITY vga_top IS
   GENERIC (
+            CONF_SIM       : BIT     := '1';
+            CONF_PATT_GEN  : BIT     := '1';
             ref_clk_freq_g : INTEGER := 50_000_000;
             px_clk_freq_g  : INTEGER := 25_000_000;
             height_px_g    : INTEGER := 480;
@@ -48,18 +50,18 @@ END ENTITY vga_top;
 
 ARCHITECTURE structural of vga_top IS 
 
-  --COMPONENT vga_clk_div -- FOR SIM *********************************************
-  --  GENERIC (
-  --            ref_clk_freq_g : INTEGER := 50_000_000;
-  --            px_clk_freq_g  : INTEGER := 25_000_000
-  --  );
-  --  PORT    ( 
-  --            clk        : IN STD_LOGIC;
-  --            rst_n      : IN STD_LOGIC;
-  --
-  --            clk_px_out : OUT STD_LOGIC
-  --  );
-  --END COMPONENT; -- FOR SIM ****************************************************
+  COMPONENT vga_clk_div -- FOR SIM *********************************************
+    GENERIC (
+              ref_clk_freq_g : INTEGER := 50_000_000;
+              px_clk_freq_g  : INTEGER := 25_000_000
+    );
+    PORT    ( 
+              clk        : IN STD_LOGIC;
+              rst_n      : IN STD_LOGIC;
+  
+              clk_px_out : OUT STD_LOGIC
+    );
+  END COMPONENT; -- FOR SIM ****************************************************
   
   COMPONENT clk_gen -- FOR FPGA **********************************************
  --TODO: Add XILINX clocking block instantiation
@@ -154,24 +156,27 @@ BEGIN ------------------------------------------------------------------
              rst_n_out => rst_n_s
   );
 
-  i_vga_clk_div : vga_clk_div -- Used in simulation ****************************
-    GENERIC MAP (
-                  ref_clk_freq_g => ref_clk_freq_g, 
-                  px_clk_freq_g  => px_clk_freq_g
-    )
-    PORT MAP    (
-                  clk        => clk,
-                  rst_n      => rst_n_s,
-                  clk_px_out => clk_px_out_s
-    ); -- Used in simulation ***************************************************
+  gen_clk_src: IF CONF_SIM = '1' GENERATE
 
---  i_clk_gen : clk_gen -- Used in synthesis *************************************
---  	PORT MAP (
---  	    	     areset => NOT rst_n_s,
---  	    	     inclk0 => clk,
---  	    	     c0	   => clk_px_out_s
---  	); -- Used in synthesis ****************************************************
-  
+    i_vga_clk_div : vga_clk_div -- Used in simulation ****************************
+      GENERIC MAP (
+                    ref_clk_freq_g => ref_clk_freq_g, 
+                    px_clk_freq_g  => px_clk_freq_g
+      )
+      PORT MAP    (
+                    clk        => clk,
+                    rst_n      => rst_n_s,
+                    clk_px_out => clk_px_out_s
+      ); -- Used in simulation ***************************************************
+  ELSE GENERATE 
+      i_clk_gen : clk_gen -- Used in synthesis *************************************
+      	PORT MAP (
+      	    	     areset => NOT rst_n_s,
+      	    	     inclk0 => clk,
+      	    	     c0	   => clk_px_out_s
+      	); -- Used in synthesis ****************************************************
+  END GENERATE gen_clk_src;
+
   gen_sync : FOR idx IN (3-1) DOWNTO 0 GENERATE
   BEGIN
     i_sw_sync : vga_sw_sync
@@ -213,6 +218,8 @@ BEGIN ------------------------------------------------------------------
       colr_out => (colr_arr_s)
     );
 
+  gen_patt_gen : IF CONF_PATT_GEN = '1' GENERATE
+
    --i_vga_colr_gen : vga_colr_gen
    --GENERIC MAP (
     --  r_cntr_inc_g => 10,
@@ -228,6 +235,7 @@ BEGIN ------------------------------------------------------------------
     --  g_colr_out => colr_arr_s((2*depth_colr_g)-1 DOWNTO (depth_colr_g)),
     --  b_colr_out => colr_arr_s((2*depth_colr_g)-1 DOWNTO 0)
     --);
+  END GENERATE gen_patt_gen;
 
   clk_px_out  <= clk_px_out_s;
   v_sync_out  <= v_sync_s;
