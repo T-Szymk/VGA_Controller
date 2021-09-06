@@ -17,6 +17,7 @@
 -- Date        Version  Author  Description
 -- 2021-07-04  1.0      TZS     Created
 -- 2021-09-01  1.1      TZS     Updated top level as component ports were moded
+-- 2021-09-06  1.2      TZS     Added Xilinx MMCM component
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -25,7 +26,7 @@ ENTITY vga_top IS
   GENERIC (
             CONF_SIM       : BIT     := '1';
             CONF_PATT_GEN  : BIT     := '1';
-            ref_clk_freq_g : INTEGER := 50_000_000;
+            ref_clk_freq_g : INTEGER := 100_000_000; -- input oscillator on arty-a7
             px_clk_freq_g  : INTEGER := 25_000_000;
             height_px_g    : INTEGER := 480;
             width_px_g     : INTEGER := 680;
@@ -64,7 +65,12 @@ ARCHITECTURE structural of vga_top IS
   END COMPONENT; -- FOR SIM ****************************************************
   
   COMPONENT clk_gen -- FOR FPGA **********************************************
- --TODO: Add XILINX clocking block instantiation
+    PORT (
+      clk        : IN  STD_LOGIC;
+      rst_n      : IN  STD_LOGIC;
+
+      clk_px_out : OUT STD_LOGIC
+    );
   END COMPONENT; -- FOR FPGA *************************************************
   
   COMPONENT vga_rst_sync IS
@@ -171,9 +177,9 @@ BEGIN ------------------------------------------------------------------
   ELSE GENERATE 
       i_clk_gen : clk_gen -- Used in synthesis *************************************
       	PORT MAP (
-      	    	     areset => NOT rst_n_s,
-      	    	     inclk0 => clk,
-      	    	     c0	   => clk_px_out_s
+      	    	     clk        => rst_n_s,
+      	    	     rst_n      => rst_n,
+      	    	     clk_px_out	=> clk_px_out_s
       	); -- Used in synthesis ****************************************************
   END GENERATE gen_clk_src;
 
