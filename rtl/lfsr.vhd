@@ -1,3 +1,21 @@
+-------------------------------------------------------------------------------
+-- Title      : Linear Feedback Shift Register
+-- Project    : VGA Controller
+--------------------------------------------------------------------------------
+-- File       : lfsr.vhd
+-- Author(s)  : Thomas Szymkowiak
+-- Company    : TUNI
+-- Created    : 2021-09-06
+-- Design     : lfsr
+-- Platform   : -
+-- Standard   : VHDL'08
+--------------------------------------------------------------------------------
+-- Description: Variable size linear feedback shift register. Bit 0 and 1 XORd.
+--------------------------------------------------------------------------------
+-- Revisions:
+-- Date        Version  Author  Description
+-- 2021-09-06  1.0      TZS     Created
+--------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.NUMERIC_STD.ALL;
