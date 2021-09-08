@@ -16,6 +16,7 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2021-06-24  1.0      TZS     Created
+-- 2021-09-08  1.1      TZS     Refactored to use LFSR based generator
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -23,15 +24,12 @@ USE IEEE.NUMERIC_STD.ALL;
 
 ENTITY vga_colr_gen IS 
 GENERIC (
-          r_cntr_inc_g : INTEGER := 10;
-          g_cntr_inc_g : INTEGER := 5;
-          b_cntr_inc_g : INTEGER := 15;
+          frame_rate_g : INTEGER := 60;
           depth_colr_g : INTEGER := 4
         );
 PORT (
        clk       : IN STD_LOGIC;
        rst_n     : IN STD_LOGIC;
-       trig_in   : IN STD_LOGIC; -- take from v_sync
 
        r_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
        g_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
@@ -42,47 +40,37 @@ END ENTITY vga_colr_gen;
 --------------------------------------------------------------------------------
 ARCHITECTURE rtl OF vga_colr_gen IS
 
-  SIGNAL trig_old_r : STD_LOGIC;
-  SIGNAL r_colr_r, g_colr_r, b_colr_r : UNSIGNED(depth_colr_g-1 DOWNTO 0);
+  COMPONENT lfsr
+    GENERIC (
+      SIZE : INTEGER := 6
+    );
+    PORT (
+      clk      : IN STD_LOGIC;
+      rst_n    : IN STD_LOGIC;
+      shift_en : IN STD_LOGIC;
+      lfsr_out : OUT STD_LOGIC_VECTOR(SIZE-1 DOWNTO 0)
+    );
+  END COMPONENT;
+
+  COMPONENT vga_colr_gen_cntr
+    GENERIC (
+      frame_rate_g : INTEGER := 60 -- FPS
+    );
+    PORT (
+      clk    : IN STD_LOGIC;
+      rst_n  : IN STD_LOGIC;
+    
+      en_out : OUT STD_LOGIC
+    );
+  END COMPONENT;
+
+  TYPE colr_arr_t IS ARRAY(2 DOWNTO 0) OF STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
+
+  SIGNAL colr_arr_r : colr_arr_t;
 
 BEGIN
 
-  PROCESS(clk, rst_n) IS
-  BEGIN 
-
-    IF rst_n = '0' THEN
-
-      trig_old_r <= '1';
-      r_colr_r <= (OTHERS => '0');
-      g_colr_r <= (OTHERS => '0');
-      b_colr_r <= (OTHERS => '0');
-
-
-    ELSIF RISING_EDGE(clk) THEN
-
-      IF trig_old_r = '1' AND trig_in = '0' THEN -- falling edge of v_sync
-
-        r_colr_r <= r_colr_r + r_cntr_inc_g;
-        g_colr_r <= g_colr_r + g_cntr_inc_g;
-        b_colr_r <= b_colr_r + b_cntr_inc_g;
-
-      ELSE 
-
-        r_colr_r <= r_colr_r;
-        g_colr_r <= g_colr_r;
-        b_colr_r <= b_colr_r;
-
-      END IF;
-
-      trig_old_r <= trig_in;
-
-    END IF;
-
-  END PROCESS;
-
-  r_colr_out <= STD_LOGIC_VECTOR(r_colr_r);
-  g_colr_out <= STD_LOGIC_VECTOR(g_colr_r);
-  b_colr_out <= STD_LOGIC_VECTOR(b_colr_r);
+  
 
 END ARCHITECTURE rtl;
 --------------------------------------------------------------------------------
