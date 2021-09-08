@@ -8,6 +8,7 @@ RTL_FILES = $(RTL)/vga_clk_div.vhd \
             $(RTL)/vga_rst_sync.vhd \
             $(RTL)/vga_colr_gen.vhd \
             $(RTL)/vga_colr_en.vhd \
+            $(RTL)/vga_colr_gen_cntr.vhd \
             $(RTL)/lfsr.vhd \
             $(RTL)/xilinx_top_clk.vhd \
             $(RTL)/vga_top_arty-a7.vhd 

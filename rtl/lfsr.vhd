@@ -27,6 +27,7 @@ ENTITY lfsr IS
   PORT (
   	clk      : IN STD_LOGIC;
   	rst_n    : IN STD_LOGIC;
+  	shift_en : IN STD_LOGIC;
     lfsr_out : OUT STD_LOGIC_VECTOR(SIZE-1 DOWNTO 0)
   );
 END ENTITY lfsr;
@@ -48,10 +49,12 @@ BEGIN
 
     
     ELSIF RISING_EDGE(clk) THEN
-
-      lfsr_r <= lfsr_r srl 1;
-      lfsr_r(SIZE-1) <= lfsr_r(0) XOR lfsr_r(1);
-
+      
+      IF shift_en = '1' THEN
+        lfsr_r <= lfsr_r srl 1;
+        lfsr_r(SIZE-1) <= lfsr_r(0) XOR lfsr_r(1);
+      END IF;
+      
     END IF;
 
   END PROCESS;
