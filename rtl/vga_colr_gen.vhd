@@ -16,7 +16,7 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2021-06-24  1.0      TZS     Created
--- 2021-09-08  1.1      TZS     Refactored to use LFSR based generator
+-- 2021-09-09  1.1      TZS     Refactored to use LFSR based generator
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -68,9 +68,36 @@ ARCHITECTURE rtl OF vga_colr_gen IS
 
   SIGNAL colr_arr_r : colr_arr_t;
 
-BEGIN
+  SIGNAL shift_en_s : STD_LOGIC;
 
+BEGIN
   
+  gen_lfsr : FOR idx IN 2 DOWNTO 0 GENERATE
+    i_lfsr : lfsr 
+      GENERIC MAP (
+        SIZE => depth_colr_g    
+      )
+      PORT MAP (
+        clk      => clk,
+        rst_n    => rst_n,
+        shift_en => shift_en_s,
+        lfsr_out => colr_arr_r(idx)
+      );
+  END GENERATE gen_lfsr;
+  
+  i_vga_colr_gen_ctr : vga_colr_gen_cntr
+    GENERIC MAP (
+      frame_rate_g => frame_rate_g
+    )
+    PORT MAP(
+      clk    => clk,
+      rst_n  => rst_n,
+      en_out => shift_en_s
+    );
+
+  r_colr_out <= colr_arr_r(0);
+  g_colr_out <= colr_arr_r(1);
+  b_colr_out <= colr_arr_r(2);
 
 END ARCHITECTURE rtl;
 --------------------------------------------------------------------------------
