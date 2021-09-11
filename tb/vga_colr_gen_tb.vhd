@@ -21,6 +21,9 @@ LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 
 ENTITY vga_colr_gen_tb IS 
+  GENERIC (
+    frame_rate_g : INTEGER := 60
+  );
 END ENTITY vga_colr_gen_tb;
 
 --------------------------------------------------------------------------------
