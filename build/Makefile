@@ -15,7 +15,8 @@ RTL_FILES = $(RTL)/vga_clk_div.vhd \
             $(RTL)/vga_top_arty-a7.vhd 
 TB_FILES =  $(TB)/vga_tb.vhd \
             $(TB)/vga_colr_mux_tb.vhd \
-            $(TB)/vga_controller_tb.vhd
+            $(TB)/vga_controller_tb.vhd \
+            $(TB)/vga_colr_gen_tb.vhd
 
 # TOP LEVEL TESTING#############################################################
 
