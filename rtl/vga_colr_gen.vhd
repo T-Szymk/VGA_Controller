@@ -54,7 +54,7 @@ ARCHITECTURE rtl OF vga_colr_gen IS
 
   COMPONENT vga_colr_gen_cntr
     GENERIC (
-      frame_rate_g : INTEGER := 60 -- FPS
+      frame_rate_g : INTEGER := 60  -- FPS
     );
     PORT (
       clk    : IN STD_LOGIC;
@@ -87,7 +87,7 @@ BEGIN
   
   i_vga_colr_gen_ctr : vga_colr_gen_cntr
     GENERIC MAP (
-      frame_rate_g => frame_rate_g
+      frame_rate_g => frame_rate_g 
     )
     PORT MAP(
       clk    => clk,

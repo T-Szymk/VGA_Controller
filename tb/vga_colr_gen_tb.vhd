@@ -23,8 +23,9 @@ USE STD.ENV.FINISH;
 
 ENTITY vga_colr_gen_tb IS 
   GENERIC (
-    frame_rate_g : INTEGER := 60;
-    depth_colr_g : INTEGER := 4
+    frame_period_g : TIME    := 100 ms; -- 25MHz
+    frame_rate_g   : INTEGER := 10;
+    depth_colr_g   : INTEGER := 4
   );
 END ENTITY vga_colr_gen_tb;
 
@@ -47,6 +48,8 @@ ARCHITECTURE tb of vga_colr_gen_tb IS
     );
   END COMPONENT;
 
+  CONSTANT max_sim_time_c : TIME := 3 SEC;
+
   SIGNAL clk, rst_n : STD_LOGIC := '0';
   SIGNAL r_colr_out_tb, g_colr_out_tb, b_colr_out_tb : STD_LOGIC_VECTOR(
                                     depth_colr_g-1 DOWNTO 0) := (OTHERS => '0'); 
@@ -68,11 +71,20 @@ BEGIN
 
     -- ADD TEST LOGIC HERE!!!
 
+  rst_n <= '1' after 4 * 50 NS;
+
   TEST_MNGR : PROCESS 
   BEGIN 
   
-    WAIT UNTIL (NOW > 50 NS) AND (clk = '1'); 
-    REPORT "Calling 'FINISH'";
+    WHILE NOW < max_sim_time_c LOOP
+      clk <= NOT clk;
+      WAIT FOR frame_period_g / 2;
+    END LOOP;
+
+    ASSERT now < max_sim_time_c
+      REPORT "SIMULATION COMPLETE!"
+      SEVERITY NOTE;
+
     FINISH;
     
   END PROCESS;

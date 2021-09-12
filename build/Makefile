@@ -72,4 +72,4 @@ sim_vga_colr_gen: compile_vga_colr_gen
 	
 .PHONY: compile_vga_colr_gen
 sim_vga_colr_gen_gui: compile_vga_colr_gen
-	vsim -voptargs="+acc" -onfinish stop vga_colr_gen_tb -do "do_vga_colr_gen.do"
+	vsim -voptargs="+acc" -onfinish stop vga_colr_gen_tb -do "do_vga_colr_gen_gui.do"
