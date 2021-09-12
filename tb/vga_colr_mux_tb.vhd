@@ -35,7 +35,7 @@ ARCHITECTURE tb OF vga_colr_mux_tb IS
     GENERIC (depth_colr_g : INTEGER := 4);
     PORT (
       colr_in : IN STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
-      en_in   : IN STD_LOGIC_VECTOR(3-1 DOWNTO 0);
+      en_in   : IN STD_LOGIC;
     
       colr_out : OUT STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0)
     );
@@ -44,7 +44,7 @@ ARCHITECTURE tb OF vga_colr_mux_tb IS
 
   SIGNAL colr_i_s : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0) := (OTHERS => '1');
   SIGNAL colr_o_s : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL en_i_s   : UNSIGNED(3-1 DOWNTO 0)                        := (OTHERS => '0'); 
+  SIGNAL en_i_s   : STD_LOGIC := '0'; 
 
   BEGIN -- architecture tb
 
@@ -52,7 +52,7 @@ ARCHITECTURE tb OF vga_colr_mux_tb IS
     GENERIC MAP ( depth_colr_g => depth_colr_g 
     )
     PORT MAP    ( colr_in      => colr_i_s,
-                  en_in        => STD_LOGIC_VECTOR(en_i_s),
+                  en_in        => en_i_s,
                   colr_out     => colr_o_s
     ); 
 
@@ -63,38 +63,34 @@ ARCHITECTURE tb OF vga_colr_mux_tb IS
     WAIT FOR 10 NS;
     
     IF NOW > 0 NS THEN 
-
-      FOR idx IN 3-1 DOWNTO 0 LOOP
       
-        IF en_i_s(idx) = '1' THEN
+        IF en_i_s = '1' THEN
         
-          ASSERT colr_o_s(((idx+1) * depth_colr_g)-1 DOWNTO (idx * depth_colr_g)) = colr_i_s( ((idx+1) * depth_colr_g)-1 DOWNTO (idx * depth_colr_g) )
-            REPORT "TEST FAIL: Output #" & TO_STRING(idx) & " doesn't match input #" & TO_STRING(idx) & " when corresponding enable is '1'" &
-                    LF & "Input value:  " & TO_HSTRING(colr_i_s( ((idx+1) * depth_colr_g)-1 DOWNTO (idx * depth_colr_g) )) &
-                    LF & "Output value: " & TO_HSTRING(colr_o_s( ((idx+1) * depth_colr_g)-1 DOWNTO (idx * depth_colr_g) ))
+          ASSERT colr_o_s = colr_i_s
+            REPORT "TEST FAIL: Output doesn't match input when corresponding enable is '1'" &
+                    LF & "Input value:  " & TO_HSTRING(colr_i_s) &
+                    LF & "Output value: " & TO_HSTRING(colr_o_s)
             SEVERITY WARNING;
         
         ELSE  
         
-          ASSERT OR(colr_o_s(((idx+1) * depth_colr_g)-1 DOWNTO (idx * depth_colr_g))) = '0'
-            REPORT "TEST FAIL: Output #" & TO_STRING(idx) & " is not zeroes when corresponding enable is '0'" &
-                    LF & "Output value: " & TO_HSTRING(colr_o_s( ((idx+1) * depth_colr_g)-1 DOWNTO (idx * depth_colr_g) ))
+          ASSERT OR(colr_o_s) = '0'
+            REPORT "TEST FAIL: Output is not zeroes when corresponding enable is '0'" &
+                    LF & "Output value: " & TO_HSTRING(colr_o_s)
             SEVERITY WARNING;
         
         END IF;
-      
-      END LOOP;
 
     END IF;
 
-    en_i_s <= en_i_s + 1;
+    en_i_s <= NOT en_i_s;
 
   END PROCESS;
 
   TEST_MNGR : PROCESS
   BEGIN 
   
-    WAIT UNTIL (NOW > 50 NS) AND (en_i_s = 0); 
+    WAIT UNTIL (NOW > 50 NS) AND (en_i_s = '0'); 
     REPORT "Calling 'FINISH'";
     FINISH;
     

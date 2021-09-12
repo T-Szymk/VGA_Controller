@@ -1,4 +1,4 @@
-add log -r sim:/vga_tb/*
+add log -r sim:/vga_colr_mux_tb/*
 
 add wave -position insertpoint  \
 -divider " - GENERICS - " \
