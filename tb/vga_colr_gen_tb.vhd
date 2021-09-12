@@ -22,14 +22,48 @@ USE IEEE.STD_LOGIC_1164.ALL;
 
 ENTITY vga_colr_gen_tb IS 
   GENERIC (
-    frame_rate_g : INTEGER := 60
+    frame_rate_g : INTEGER := 60;
+    depth_colr_g : INTEGER := 4
   );
 END ENTITY vga_colr_gen_tb;
 
 --------------------------------------------------------------------------------
 
 ARCHITECTURE tb of vga_colr_gen_tb IS 
+
+  COMPONENT vga_colr_gen
+    GENERIC (
+      frame_rate_g : INTEGER := 60;
+      depth_colr_g : INTEGER := 4
+    );
+    PORT (
+      clk       : IN STD_LOGIC;
+      rst_n     : IN STD_LOGIC;
+      
+      r_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
+      g_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
+      b_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0)
+    );
+  END COMPONENT;
+
+  SIGNAL clk, rst_n : STD_LOGIC := '0';
+  SIGNAL r_colr_out_tb, g_colr_out_tb, b_colr_out_tb : STD_LOGIC_VECTOR(
+                                    depth_colr_g-1 DOWNTO 0) := (OTHERS => '0'); 
+
 BEGIN 
+
+  i_vga_colr_gen : vga_colr_gen
+    GENERIC MAP (
+      frame_rate_g => frame_rate_g,
+      depth_colr_g => depth_colr_g
+    )
+    PORT MAP (
+      clk        => clk,
+      rst_n      => rst_n,
+      r_colr_out => r_colr_out_tb,
+      g_colr_out => g_colr_out_tb,
+      b_colr_out => b_colr_out_tb
+    );
 
 END ARCHITECTURE tb;
 --------------------------------------------------------------------------------
