@@ -19,6 +19,7 @@
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
+USE STD.ENV.FINISH;
 
 ENTITY vga_colr_gen_tb IS 
   GENERIC (
@@ -64,6 +65,17 @@ BEGIN
       g_colr_out => g_colr_out_tb,
       b_colr_out => b_colr_out_tb
     );
+
+    -- ADD TEST LOGIC HERE!!!
+
+  TEST_MNGR : PROCESS 
+  BEGIN 
+  
+    WAIT UNTIL (NOW > 50 NS) AND (clk = '1'); 
+    REPORT "Calling 'FINISH'";
+    FINISH;
+    
+  END PROCESS;
 
 END ARCHITECTURE tb;
 --------------------------------------------------------------------------------

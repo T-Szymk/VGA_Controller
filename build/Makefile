@@ -59,3 +59,17 @@ sim_vga_controller: compile_vga_controller
 .PHONY: sim_vga_controller_gui
 sim_vga_controller_gui: compile_vga_controller
 	vsim -voptargs="+acc" -onfinish stop vga_controller_tb -do "do_vga_controller_gui.do"
+
+# COLR_GEN TESTING #############################################################
+
+.PHONY: compile_vga_colr_gen
+compile_vga_colr_gen:
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/lfsr.vhd $(RTL)/vga_colr_gen_cntr.vhd $(RTL)/vga_colr_gen.vhd  $(TB)/vga_colr_gen_tb.vhd
+
+.PHONY: sim_vga_colr_gen
+sim_vga_colr_gen: compile_vga_colr_gen
+	vsim -voptargs="+acc" -c -onfinish exit vga_colr_gen_tb -do "do_vga_colr_gen.do"
+	
+.PHONY: compile_vga_colr_gen
+sim_vga_colr_gen_gui: compile_vga_colr_gen
+	vsim -voptargs="+acc" -onfinish stop vga_colr_gen_tb -do "do_vga_colr_gen.do"
