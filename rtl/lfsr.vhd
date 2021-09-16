@@ -15,6 +15,8 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2021-09-06  1.0      TZS     Created
+-- 2021-09-16  1.1      TZS     Modified shift en to be edge sensitive rather 
+--                              than level sensitive
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -36,7 +38,8 @@ END ENTITY lfsr;
 
 ARCHITECTURE rtl OF lfsr IS 
 
-  SIGNAL lfsr_r : UNSIGNED(SIZE-1 DOWNTO 0);
+  SIGNAL lfsr_r       : UNSIGNED(SIZE-1 DOWNTO 0);
+  SIGNAL shift_en_old : STD_LOGIC;
 
 BEGIN
 
@@ -45,15 +48,18 @@ BEGIN
 
     IF rst_n = '0' THEN
 
-      lfsr_r <= ('0') & (SIZE-2 DOWNTO 0 => '1');
+      lfsr_r       <= ('0') & (SIZE-2 DOWNTO 0 => '1');
+      shift_en_old <= '0';
 
     
     ELSIF RISING_EDGE(clk) THEN
       
-      IF shift_en = '1' THEN
+      IF shift_en = '1' AND shift_en_old = '0' THEN
         lfsr_r <= lfsr_r srl 1;
         lfsr_r(SIZE-1) <= lfsr_r(0) XOR lfsr_r(1);
       END IF;
+
+      shift_en_old <= shift_en;
       
     END IF;
 

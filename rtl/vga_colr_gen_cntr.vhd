@@ -49,7 +49,7 @@ BEGIN
       en_r  <= '0';
       ctr_r <= 0;
 
-    ELSIF RISING_EDGE(clk) THEN
+    ELSIF FALLING_EDGE(clk) THEN
 
       IF ctr_r = (frame_rate_g - 1) THEN 
 

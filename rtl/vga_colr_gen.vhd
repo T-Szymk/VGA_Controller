@@ -30,6 +30,7 @@ GENERIC (
 PORT (
        clk       : IN STD_LOGIC;
        rst_n     : IN STD_LOGIC;
+       v_sync_in : IN STD_LOGIC;
 
        r_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
        g_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
@@ -90,7 +91,7 @@ BEGIN
       frame_rate_g => frame_rate_g 
     )
     PORT MAP(
-      clk    => clk,
+      clk    => v_sync_in,
       rst_n  => rst_n,
       en_out => shift_en_s
     );
