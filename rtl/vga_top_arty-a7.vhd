@@ -18,6 +18,7 @@
 -- 2021-07-04  1.0      TZS     Created
 -- 2021-09-01  1.1      TZS     Updated top level as component ports were moded
 -- 2021-09-06  1.2      TZS     Added Xilinx MMCM component
+-- 2021-09-19  1.3      TZS     Reintroduced updated colr_gen block
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -26,7 +27,7 @@ ENTITY vga_top IS
   GENERIC (
             CONF_SIM       : BIT     := '1';
             CONF_PATT_GEN  : BIT     := '1';
-            ref_clk_freq_g : INTEGER := 100_000_000; -- input oscillator on arty-a7
+            ref_clk_freq_g : INTEGER := 100_000_000; -- input osc. on arty-a7
             px_clk_freq_g  : INTEGER := 25_000_000;
             height_px_g    : INTEGER := 480;
             width_px_g     : INTEGER := 680;
@@ -51,7 +52,7 @@ END ENTITY vga_top;
 
 ARCHITECTURE structural of vga_top IS 
 
-  COMPONENT vga_clk_div -- FOR SIM *********************************************
+  COMPONENT vga_clk_div -- FOR SIM ****
     GENERIC (
               ref_clk_freq_g : INTEGER := 50_000_000;
               px_clk_freq_g  : INTEGER := 25_000_000
@@ -62,16 +63,16 @@ ARCHITECTURE structural of vga_top IS
   
               clk_px_out : OUT STD_LOGIC
     );
-  END COMPONENT; -- FOR SIM ****************************************************
+  END COMPONENT; -- FOR SIM ****
   
-  COMPONENT clk_gen -- FOR FPGA **********************************************
+  COMPONENT clk_gen -- FOR FPGA ****
     PORT (
       clk        : IN  STD_LOGIC;
       rst_n      : IN  STD_LOGIC;
 
       clk_px_out : OUT STD_LOGIC
     );
-  END COMPONENT; -- FOR FPGA *************************************************
+  END COMPONENT; -- FOR FPGA ****
   
   COMPONENT vga_rst_sync IS
     PORT (
@@ -125,23 +126,21 @@ ARCHITECTURE structural of vga_top IS
     );
   END COMPONENT;
 
-  --COMPONENT vga_colr_gen IS 
-  --  GENERIC (
-  --            r_cntr_inc_g : INTEGER := 10;
-  --            g_cntr_inc_g : INTEGER := 50;
-  --            b_cntr_inc_g : INTEGER := 15;
-	--            depth_colr_g : INTEGER := 4
-  --  );
-  --  PORT (
-  --         clk       : IN STD_LOGIC;
-  --         rst_n     : IN STD_LOGIC;
-  --         trig_in   : IN STD_LOGIC; -- take from v_sync
-  --  
-  --         r_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
-  --         g_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
-  --         b_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0)
-  --  );
-  --END COMPONENT;
+  COMPONENT vga_colr_gen IS 
+    GENERIC (
+              frame_rate_g : INTEGER := 60;
+	            depth_colr_g : INTEGER := 4
+    );
+    PORT (
+           clk       : IN STD_LOGIC;
+           rst_n     : IN STD_LOGIC;
+           v_sync_in : IN STD_LOGIC; -- take from v_sync
+    
+           r_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
+           g_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
+           b_colr_out : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0)
+    );
+  END COMPONENT;
 
   SIGNAL clk_px_out_s   : STD_LOGIC;
   SIGNAL rst_n_s        : STD_LOGIC;
@@ -151,9 +150,9 @@ ARCHITECTURE structural of vga_top IS
 
   SIGNAL colr_sw_arr_s  : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
   SIGNAL colr_gen_arr_s : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
-  SIGNAL colr_arr_s     : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
+  SIGNAL colr_mux_arr_s     : STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
 
-BEGIN ------------------------------------------------------------------
+BEGIN --------------------------------------------------------------------------
 
   i_vga_rst_sync : vga_rst_sync
   PORT MAP (
@@ -164,7 +163,7 @@ BEGIN ------------------------------------------------------------------
 
   gen_clk_src: IF CONF_SIM = '1' GENERATE
 
-    i_vga_clk_div : vga_clk_div -- Used in simulation ****************************
+    i_vga_clk_div : vga_clk_div -- Used in simulation **************************
       GENERIC MAP (
                     ref_clk_freq_g => ref_clk_freq_g, 
                     px_clk_freq_g  => px_clk_freq_g
@@ -173,14 +172,14 @@ BEGIN ------------------------------------------------------------------
                     clk        => clk,
                     rst_n      => rst_n_s,
                     clk_px_out => clk_px_out_s
-      ); -- Used in simulation ***************************************************
+      ); -- Used in simulation *************************************************
   ELSE GENERATE 
-      i_clk_gen : clk_gen -- Used in synthesis *************************************
+      i_clk_gen : clk_gen -- Used in synthesis *********************************
       	PORT MAP (
       	    	     clk        => rst_n_s,
       	    	     rst_n      => rst_n,
       	    	     clk_px_out	=> clk_px_out_s
-      	); -- Used in synthesis ****************************************************
+      	); -- Used in synthesis ************************************************
   END GENERATE gen_clk_src;
 
   gen_sync : FOR idx IN (3-1) DOWNTO 0 GENERATE
@@ -191,8 +190,10 @@ BEGIN ------------------------------------------------------------------
                  clk      => clk_px_out_s,
                  rst_n    => rst_n_s,
                  sw_in    => sw_in(idx),
-                 colr_in  => colr_gen_arr_s(((idx+1)*depth_colr_g)-1 DOWNTO (idx*depth_colr_g)-1),
-                 colr_out => colr_sw_arr_s(((idx+1)*depth_colr_g)-1 DOWNTO (idx*depth_colr_g)-1)
+                 colr_in  => colr_gen_arr_s(((idx+1)*depth_colr_g)-1 DOWNTO 
+                                                            (idx*depth_colr_g)),
+                 colr_out => colr_sw_arr_s(((idx+1)*depth_colr_g)-1 DOWNTO 
+                                                             (idx*depth_colr_g))
       );
   END GENERATE gen_sync;
 
@@ -219,37 +220,35 @@ BEGIN ------------------------------------------------------------------
     GENERIC MAP (
       depth_colr_g => depth_colr_g)
     PORT MAP (
-      colr_in  => (colr_gen_arr_s),
+      colr_in  => (colr_sw_arr_s),
       en_in    => colr_en_s,
-      colr_out => (colr_arr_s)
+      colr_out => (colr_mux_arr_s)
     );
 
   gen_patt_gen : IF CONF_PATT_GEN = '1' GENERATE
 
-   --i_vga_colr_gen : vga_colr_gen
-   --GENERIC MAP (
-    --  r_cntr_inc_g => 10,
-    --  g_cntr_inc_g => 5,
-    --  b_cntr_inc_g => 15,
-	  --  depth_colr_g => 4
-    --)
-    --PORT MAP (
-    --  clk       => clk_px_out_s,
-    --  rst_n     => rst_n_s,
-    --  trig_in   => v_sync_s,  
-    --  r_colr_out => colr_arr_s((3*depth_colr_g)-1 DOWNTO (2*depth_colr_g)),
-    --  g_colr_out => colr_arr_s((2*depth_colr_g)-1 DOWNTO (depth_colr_g)),
-    --  b_colr_out => colr_arr_s((2*depth_colr_g)-1 DOWNTO 0)
-    --);
+   i_vga_colr_gen : vga_colr_gen
+   GENERIC MAP (
+     frame_rate_g => 60,
+	   depth_colr_g => 4
+   )
+   PORT MAP (
+     clk       => clk_px_out_s,
+     rst_n     => rst_n_s,
+     v_sync_in => v_sync_s,  
+     r_colr_out => colr_gen_arr_s((3*depth_colr_g)-1 DOWNTO (2*depth_colr_g)),
+     g_colr_out => colr_gen_arr_s((2*depth_colr_g)-1 DOWNTO (depth_colr_g)),
+     b_colr_out => colr_gen_arr_s((depth_colr_g)-1 DOWNTO 0)
+   );
   END GENERATE gen_patt_gen;
 
   clk_px_out  <= clk_px_out_s;
   v_sync_out  <= v_sync_s;
   h_sync_out  <= h_sync_s;
 
-  r_colr_out <= colr_arr_s((3*depth_colr_g)-1 DOWNTO (2*depth_colr_g));
-  g_colr_out <= colr_arr_s((2*depth_colr_g)-1 DOWNTO depth_colr_g);
-  b_colr_out <= colr_arr_s(depth_colr_g-1     DOWNTO 0);
+  r_colr_out <= colr_mux_arr_s((3*depth_colr_g)-1 DOWNTO (2*depth_colr_g));
+  g_colr_out <= colr_mux_arr_s((2*depth_colr_g)-1 DOWNTO depth_colr_g);
+  b_colr_out <= colr_mux_arr_s(depth_colr_g-1     DOWNTO 0);
 
 END ARCHITECTURE structural;
 

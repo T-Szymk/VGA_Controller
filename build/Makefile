@@ -1,3 +1,4 @@
+.DEFAULT_GOAL := default
 
 RTL = ../rtl
 TB  = ../tb
@@ -20,56 +21,73 @@ TB_FILES =  $(TB)/vga_tb.vhd \
 
 # TOP LEVEL TESTING#############################################################
 
-.PHONY: all
-all: compile run
+.PHONY: default
+default: compile
 
 .PHONY: compile
 compile: 
 	vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES) &&\
 	vcom -pedanticerrors -check_synthesis -2008 $(TB_FILES)
 
+.PHONY: compile_vga_top
+compile_vga_top:
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES) $(TB)/vga_tb.vhd
+
 .PHONY: sim_vga_top
-sim_vga_top:
-	vsim -voptargs="+acc" -onfinish stop vga_tb -do "do_vga.do"
+sim_vga_top: compile_vga_top
+	vsim -voptargs="+acc" -c -onfinish exit vga_tb -do "do_vga_top.do"
+	
+.PHONY: sim_vga_top_gui
+sim_vga_top_gui: compile_vga_top
+	vsim -voptargs="+acc" -onfinish stop vga_tb -do "do_vga_top_gui.do"
 
 # COLR_MUX TESTING #############################################################
 
 .PHONY: compile_vga_colr_mux
 compile_vga_colr_mux:
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_colr_mux.vhd $(TB)/vga_colr_mux_tb.vhd
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_colr_mux.vhd \
+	$(TB)/vga_colr_mux_tb.vhd
 
 .PHONY: sim_vga_colr_mux
 sim_vga_colr_mux: compile_vga_colr_mux
-	vsim -voptargs="+acc" -c -onfinish exit vga_colr_mux_tb -do "do_vga_colr_mux.do"
+	vsim -voptargs="+acc" -c -onfinish exit vga_colr_mux_tb -do \
+	"do_vga_colr_mux.do"
 	
 .PHONY: sim_vga_colr_mux_gui
 sim_vga_colr_mux_gui: compile_vga_colr_mux
-	vsim -voptargs="+acc" -onfinish stop vga_colr_mux_tb -do "do_vga_colr_mux.do"
+	vsim -voptargs="+acc" -onfinish stop vga_colr_mux_tb -do \
+	"do_vga_colr_mux.do"
 
 # COLR_MUX TESTING #############################################################
 
 .PHONY: compile_vga_controller
 compile_vga_controller:
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_controller.vhd  $(TB)/vga_controller_tb.vhd
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_controller.vhd \
+	$(TB)/vga_controller_tb.vhd
 
 .PHONY: sim_vga_controller
 sim_vga_controller: compile_vga_controller
-	vsim -voptargs="+acc" -c -onfinish exit vga_controller_tb -do "do_vga_controller.do"
+	vsim -voptargs="+acc" -c -onfinish exit vga_controller_tb -do \
+	"do_vga_controller.do"
 	
 .PHONY: sim_vga_controller_gui
 sim_vga_controller_gui: compile_vga_controller
-	vsim -voptargs="+acc" -onfinish stop vga_controller_tb -do "do_vga_controller_gui.do"
+	vsim -voptargs="+acc" -onfinish stop vga_controller_tb -do \
+	"do_vga_controller_gui.do"
 
 # COLR_GEN TESTING #############################################################
 
 .PHONY: compile_vga_colr_gen
 compile_vga_colr_gen:
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/lfsr.vhd $(RTL)/vga_colr_gen_cntr.vhd $(RTL)/vga_colr_gen.vhd  $(TB)/vga_colr_gen_tb.vhd
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/lfsr.vhd \
+	$(RTL)/vga_colr_gen_cntr.vhd $(RTL)/vga_colr_gen.vhd  $(TB)/vga_colr_gen_tb.vhd
 
 .PHONY: sim_vga_colr_gen
 sim_vga_colr_gen: compile_vga_colr_gen
-	vsim -voptargs="+acc" -c -onfinish exit vga_colr_gen_tb -do "do_vga_colr_gen.do"
+	vsim -voptargs="+acc" -c -onfinish exit vga_colr_gen_tb -do \
+	"do_vga_colr_gen.do"
 	
-.PHONY: compile_vga_colr_gen
+.PHONY: sim_vga_colr_gen_gui
 sim_vga_colr_gen_gui: compile_vga_colr_gen
-	vsim -voptargs="+acc" -onfinish stop vga_colr_gen_tb -do "do_vga_colr_gen_gui.do"
+	vsim -voptargs="+acc" -onfinish stop vga_colr_gen_tb -do \
+	"do_vga_colr_gen_gui.do"
