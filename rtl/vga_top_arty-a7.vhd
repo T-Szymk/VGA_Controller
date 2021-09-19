@@ -41,7 +41,6 @@ ENTITY vga_top IS
          
          v_sync_out  : OUT STD_LOGIC;
          h_sync_out  : OUT STD_LOGIC;
-         clk_px_out  : OUT STD_LOGIC;
          r_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
          g_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
          b_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0)
@@ -176,8 +175,8 @@ BEGIN --------------------------------------------------------------------------
   ELSE GENERATE 
       i_clk_gen : clk_gen -- Used in synthesis *********************************
       	PORT MAP (
-      	    	     clk        => rst_n_s,
-      	    	     rst_n      => rst_n,
+      	    	     clk        => clk,
+      	    	     rst_n      => rst_n_s,
       	    	     clk_px_out	=> clk_px_out_s
       	); -- Used in synthesis ************************************************
   END GENERATE gen_clk_src;
@@ -242,7 +241,6 @@ BEGIN --------------------------------------------------------------------------
    );
   END GENERATE gen_patt_gen;
 
-  clk_px_out  <= clk_px_out_s;
   v_sync_out  <= v_sync_s;
   h_sync_out  <= h_sync_s;
 

@@ -17,7 +17,6 @@ sim:/vga_tb/rst_n \
 sim:/vga_tb/dut_sw_in \
 sim:/vga_tb/dut_v_sync_out \
 sim:/vga_tb/dut_h_sync_out \
-sim:/vga_tb/dut_clk_px_out \
 sim:/vga_tb/dut_r_colr_out \
 sim:/vga_tb/dut_g_colr_out \
 sim:/vga_tb/dut_b_colr_out

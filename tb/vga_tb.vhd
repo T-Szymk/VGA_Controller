@@ -60,7 +60,6 @@ ARCHITECTURE tb OF vga_tb IS
 
            v_sync_out  : OUT STD_LOGIC;
            h_sync_out  : OUT STD_LOGIC;
-           clk_px_out  : OUT STD_LOGIC;
            r_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
            g_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
            b_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0)
@@ -73,7 +72,6 @@ ARCHITECTURE tb OF vga_tb IS
   SIGNAL dut_sw_in       : STD_LOGIC_VECTOR(3-1 DOWNTO 0) := (OTHERS => '0');
   SIGNAL dut_v_sync_out  : STD_LOGIC;
   SIGNAL dut_h_sync_out  : STD_LOGIC;
-  SIGNAL dut_clk_px_out  : STD_LOGIC;
   SIGNAL dut_r_colr_out  : STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
   SIGNAL dut_g_colr_out  : STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
   SIGNAL dut_b_colr_out  : STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
@@ -97,7 +95,6 @@ BEGIN
 
       v_sync_out  => dut_v_sync_out,
       h_sync_out  => dut_h_sync_out,
-      clk_px_out  => dut_clk_px_out,
       r_colr_out  => dut_r_colr_out,
       g_colr_out  => dut_g_colr_out,
       b_colr_out  => dut_b_colr_out
