@@ -24,7 +24,7 @@ module ROM_model #(WIDTH = 8, DEPTH = 16) (
     input  logic [$clog2(DEPTH)-1:0] addr_in,
     input  logic rd_en_in,
 
-    output logic [WIDTH-1:0] led_out
+    output logic [WIDTH-1:0] dat_out
   );
     
   logic [WIDTH-1:0] mem [DEPTH-1:0];
@@ -33,18 +33,16 @@ module ROM_model #(WIDTH = 8, DEPTH = 16) (
   
     if (~rst_n) begin
     
-      led_out <= '0;  
+      dat_out <= '0;  
     
     end else begin
     
       if (rd_en_in) begin
 
-        led_out <= mem[addr_in];
+        dat_out <= mem[addr_in];
 
       end  
-       
     end
-  
   end
 
 endmodule
