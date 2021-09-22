@@ -23,13 +23,16 @@ USE IEEE.STD_LOGIC_1164.ALL;
 
 ENTITY vga_clk_div IS 
   GENERIC (
+            -- reference clock/primary oscillator/input frequncy
             ref_clk_freq_g : INTEGER := 50_000_000;
+            -- VGA pxl clock frequency
             px_clk_freq_g  : INTEGER := 25_000_000
           );
   PORT ( 
+         -- clock and reset
          clk   : IN STD_LOGIC;
          rst_n : IN STD_LOGIC;
-
+         -- VGA pixel clock output
          clk_px_out : OUT STD_LOGIC
        );
 END ENTITY vga_clk_div;
@@ -37,9 +40,10 @@ END ENTITY vga_clk_div;
 --------------------------------------------------------------------------------
 
 ARCHITECTURE rtl OF vga_clk_div IS
-
+  -- calculate the max counter value using frequncy
   CONSTANT px_clk_cnt_max_c : INTEGER := (ref_clk_freq_g / px_clk_freq_g) / 2;
-
+  
+  -- intermediate registers
   SIGNAL px_clk_ctr_r : INTEGER RANGE px_clk_cnt_max_c DOWNTO 0;
   SIGNAL px_clk_r     : STD_LOGIC;
 
@@ -47,19 +51,21 @@ BEGIN
   
   -- check that the frequencies are not incompatible
   ASSERT px_clk_cnt_max_c /= 0
-    REPORT "PIXEL CLOCK IS ZERO: Either reference clock is too low or requested pixel frequency is too high"
+    REPORT "PIXEL CLOCK IS ZERO: Either reference clock is too low or" & 
+    "requested pixel frequency is too high"
     SEVERITY FAILURE;
 
   sync_clk_div : PROCESS (clk, rst_n) IS 
   BEGIN 
 
-    IF rst_n = '0' THEN 
+    IF rst_n = '0' THEN -- async reset
   
       px_clk_ctr_r <=  0;
       px_clk_r     <= '0';
   
-    ELSIF RISING_EDGE(clk) THEN 
-
+    ELSIF RISING_EDGE(clk) THEN -- rising clk edge
+      
+      -- implement registered clock divider
       IF px_clk_ctr_r = px_clk_cnt_max_c-1 THEN 
 
         px_clk_ctr_r <= 0;
@@ -72,7 +78,8 @@ BEGIN
       END IF;
     END IF;
   END PROCESS sync_clk_div; 
-
+  
+  -- output assignment
   clk_px_out <= px_clk_r;
 
 END ARCHITECTURE rtl;

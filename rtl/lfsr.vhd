@@ -10,7 +10,7 @@
 -- Platform   : -
 -- Standard   : VHDL'08
 --------------------------------------------------------------------------------
--- Description: Variable size linear feedback shift register. Bit 0 and 1 XORd.
+-- Description: Variable width_g linear feedback shift register. Bit 0 and 1 XORd.
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
@@ -24,21 +24,26 @@ USE IEEE.NUMERIC_STD.ALL;
 
 ENTITY lfsr IS
   GENERIC (
-    SIZE : INTEGER := 6
+    -- width of shift register
+    width_g : INTEGER := 6
   );
   PORT (
+    -- clock and reset
   	clk      : IN STD_LOGIC;
   	rst_n    : IN STD_LOGIC;
+    -- lfsr enable
   	shift_en : IN STD_LOGIC;
-    lfsr_out : OUT STD_LOGIC_VECTOR(SIZE-1 DOWNTO 0)
+    -- lfsr output
+    lfsr_out : OUT STD_LOGIC_VECTOR(width_g-1 DOWNTO 0)
   );
 END ENTITY lfsr;
 
 --------------------------------------------------------------------------------
 
 ARCHITECTURE rtl OF lfsr IS 
-
-  SIGNAL lfsr_r       : UNSIGNED(SIZE-1 DOWNTO 0);
+  -- lfsr 
+  SIGNAL lfsr_r       : UNSIGNED(width_g-1 DOWNTO 0);
+  -- value of shift enable dealyed by 1 cycle to allow edge detection
   SIGNAL shift_en_old : STD_LOGIC;
 
 BEGIN
@@ -46,25 +51,29 @@ BEGIN
   PROCESS (clk, rst_n) IS 
   BEGIN 
 
-    IF rst_n = '0' THEN
+    IF rst_n = '0' THEN -- async reset
 
-      lfsr_r       <= ('0') & (SIZE-2 DOWNTO 0 => '1');
+      lfsr_r       <= ('0') & (width_g-2 DOWNTO 0 => '1');
       shift_en_old <= '0';
 
     
-    ELSIF RISING_EDGE(clk) THEN
+    ELSIF RISING_EDGE(clk) THEN -- rising clk
       
+      -- shift lfsr 1 place when rising edge of shift enable is detected
       IF shift_en = '1' AND shift_en_old = '0' THEN
         lfsr_r <= lfsr_r srl 1;
-        lfsr_r(SIZE-1) <= lfsr_r(0) XOR lfsr_r(1);
+      -- pseudorandom feedback of lsfr
+        lfsr_r(width_g-1) <= lfsr_r(0) XOR lfsr_r(1);
       END IF;
-
-      shift_en_old <= shift_en;
+      
+      -- registered enable to detect rising edge
+      shift_en_old <= shift_en; 
       
     END IF;
 
   END PROCESS;
 
+  -- output assignment 
   lfsr_out <= STD_LOGIC_VECTOR(lfsr_r);
 
 END ARCHITECTURE rtl;
