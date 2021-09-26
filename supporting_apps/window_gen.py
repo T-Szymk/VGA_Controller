@@ -4,9 +4,10 @@ from math import floor
 class PxlMapGenerator:
 
     def __init__(self, filename, bit_depth=3):
-
+        self.image_folder = "images"
         self.bit_depth = bit_depth
-        self.filepath = "images\\" + filename
+        self.filename = filename
+        self.filepath = self.image_folder + "\\" + self.filename
         self.divisor = (256 / (2 ** self.bit_depth))
         self.orig_colour_map = []  # array of array of 3 long tuples containing the 256b RGB values of the pixels
         self.encoded_colour_map = []
@@ -58,16 +59,22 @@ class PxlMapGenerator:
             self.hex_lines.append(str(tmp_hex_line))
 
     def write_out_COE_file(self):
+        self.encode_pxl_map()
+        self.create_bit_string()
+        self.hexify_lines()
         with open("COE_init.txt", "wt") as file:
             file.write(', '.join(self.hex_lines))
 
+    def create_encoded_image(self):
+        self.write_out_COE_file()
+        with Image.new('RGB',(self.image_size[0],self.image_size[1])) as im:
+            for line in range(0, self.image_size[1]):
+                for pxl in range(0, self.image_size[0]):
+                    im.putpixel((pxl, line),(int(self.encoded_colour_map[line][pxl][0]*self.divisor),
+                                             int(self.encoded_colour_map[line][pxl][1]*self.divisor),
+                                             int(self.encoded_colour_map[line][pxl][2]*self.divisor)))
+            im.save(self.image_folder + "\\encoded_" + self.filename)
+
 if __name__ == "__main__":
-    a = PxlMapGenerator("star.png", bit_depth=3)
-    a.encode_pxl_map()
-    a.create_bit_string()
-    a.hexify_lines()
-    a.write_out_COE_file()
-    print("done")
-
-
-
+    a = PxlMapGenerator("scouse_slip.png", bit_depth=3)
+    a.create_encoded_image()
