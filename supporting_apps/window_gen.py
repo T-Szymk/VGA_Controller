@@ -1,38 +1,73 @@
-from PIL import Image, ImageColor
+from PIL import Image
 from math import floor
 
 class PxlMapGenerator:
 
     def __init__(self, filename, bit_depth=3):
+
         self.bit_depth = bit_depth
-        self.memory_file_init = []
-        self.pxl_map = []
-        self.orig_colour_map = []
         self.filepath = "images\\" + filename
+        self.divisor = (256 / (2 ** self.bit_depth))
+        self.orig_colour_map = []  # array of array of 3 long tuples containing the 256b RGB values of the pixels
+        self.encoded_colour_map = []
+        self.binary_lines = []
+        self.hex_lines = []
+
         # read in pixel data from the selected image into list[list[(tuple,3)]] colourmap
         with Image.open(self.filepath) as im:
-            line_pxls = []
             pxl_map = im.load()
             self.image_size = im.size
             for line in range(0, self.image_size[1]):
-                line_pxls.clear()
-                for pxl in range(0, self.image_size[0]):
-                    line_pxls.append(pxl_map[pxl,line])
-                self.orig_colour_map.append(line_pxls.copy())
+                self.orig_colour_map.append([pxl_map[pxl, line] for pxl in range(0, self.image_size[0])])
 
-    def create_pxl_map(self):
-        output_map = []
-        divisor = (256 / (2**self.bit_depth))
+    def encode_pxl_map(self):
+        # Encode the RGB pixel colour values using the bit width specified i.e. 3 bits, RGB of 255 = 'd7 or 'b111
         for line in self.orig_colour_map:
-            output_map.clear()
-            for pxl in self.orig_colour_map[self.orig_colour_map.index(line)]:
-                scaled_colr_vals = [0, 0, 0]
-                for idx in range(0, len(scaled_colr_vals)):
-                   scaled_colr_vals[idx] = floor(pxl[idx]/divisor)
-                output_map.append(bin(scaled_colr_vals[0] | (scaled_colr_vals[1] << self.bit_depth) | (scaled_colr_vals[2] << (self.bit_depth*2)))[2:]) # concat colour vals into a single value
-            self.pxl_map.append(output_map.copy())
+            self.encoded_colour_map.append(list(tuple((floor(pxl[0]/self.divisor),
+                                                       floor(pxl[1]/self.divisor),
+                                                       floor(pxl[2]/self.divisor))) for pxl in self.orig_colour_map[self.orig_colour_map.index(line)]))
+
+    def create_bit_string(self):
+        '''output binary string will be structured such that for a bitdepth of 3 bit 2:0 = pixel(0,0)-red,
+                                                                                     5:3 = pixel(0,0)-green,
+                                                                                     8:6 = pixel(0,0)-blue,
+                                                                                     11:9 = pixel(0,1)-red etc...'''
+        for line in self.encoded_colour_map:
+            tmp_line_str = ''
+            for pxl in line:
+                tmp_pxl_str = ''
+                for pxl_colr in range(0, 3):
+                    tmp_bin_str = bin(pxl[pxl_colr])[2:]
+                    if len(tmp_bin_str) == 1:
+                        tmp_bin_str = '00' + tmp_bin_str
+                    elif len(tmp_bin_str) == 2:
+                        tmp_bin_str = '0' + tmp_bin_str
+                    tmp_pxl_str = tmp_bin_str + tmp_pxl_str # reverse order so it can be read in
+                tmp_line_str = tmp_pxl_str + tmp_line_str
+            self.binary_lines.append(str(tmp_line_str))
+
+    def hexify_lines(self):
+        for bin_line in self.binary_lines:
+            tmp_bin_line = bin_line
+            tmp_hex_line = ''
+            while len(tmp_bin_line) > 4:
+                tmp_hex_nibble = hex(int(tmp_bin_line[-4:], 2))[2:]
+                tmp_hex_line = tmp_hex_nibble + tmp_hex_line
+                tmp_bin_line = tmp_bin_line[:-4]
+            tmp_hex_line = hex(int(tmp_bin_line, 2))[2:] + tmp_hex_line
+            self.hex_lines.append(str(tmp_hex_line))
+
+    def write_out_COE_file(self):
+        with open("COE_init.txt", "wt") as file:
+            file.write(', '.join(self.hex_lines))
 
 if __name__ == "__main__":
-    a = PxlMapGenerator("star.png", 3)
-    a.create_pxl_map()
+    a = PxlMapGenerator("star.png", bit_depth=3)
+    a.encode_pxl_map()
+    a.create_bit_string()
+    a.hexify_lines()
+    a.write_out_COE_file()
+    print("done")
+
+
 
