@@ -16,6 +16,7 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2021-06-24  1.0      TZS     Created
+-- 2021-10-09  --       TZS     Moved to deprecated as file no longer in use.
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
