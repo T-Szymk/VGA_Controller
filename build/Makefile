@@ -6,14 +6,12 @@ RTL_FILES = $(RTL)/vga_clk_div.vhd \
             $(RTL)/vga_controller.vhd \
             $(RTL)/vga_sw_sync.vhd \
             $(RTL)/vga_colr_mux.vhd \
-            $(RTL)/vga_rst_sync.vhd \
             $(RTL)/vga_colr_gen.vhd \
-            $(RTL)/vga_colr_en.vhd \
             $(RTL)/vga_colr_gen_cntr.vhd \
             $(RTL)/lfsr.vhd \
             $(RTL)/vga_colr_gen.vhd \
             $(RTL)/xilinx_top_clk.vhd \
-            $(RTL)/vga_top_arty-a7.vhd 
+            $(RTL)/vga_top.vhd 
 TB_FILES =  $(TB)/vga_tb.vhd \
             $(TB)/vga_colr_mux_tb.vhd \
             $(TB)/vga_controller_tb.vhd \
@@ -26,6 +24,8 @@ default: compile
 
 .PHONY: compile
 compile: 
+	vlib vga_lib
+	vmap work vga_lib
 	vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES) &&\
 	vcom -pedanticerrors -check_synthesis -2008 $(TB_FILES)
 

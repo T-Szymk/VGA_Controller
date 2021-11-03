@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : VGA Controller Top - Arty-A7 Implementation
+-- Title      : VGA Controller Top
 -- Project    : VGA Controller
 --------------------------------------------------------------------------------
--- File       : vga_top_arty-a7.vhd
+-- File       : vga_top.vhd
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
 -- Created    : 2021-07-04
@@ -19,6 +19,8 @@
 -- 2021-09-01  1.1      TZS     Updated top level as component ports were moded
 -- 2021-09-06  1.2      TZS     Added Xilinx MMCM component
 -- 2021-09-19  1.3      TZS     Reintroduced updated colr_gen block
+-- 2021-11-01  1.4      TZS     Renamed to vga_top.vhd
+--                              Removed unused reset block
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -81,17 +83,6 @@ ARCHITECTURE structural of vga_top IS
       clk_px_out : OUT STD_LOGIC
     );
   END COMPONENT; -- FOR FPGA ****
-
-  -- reset signal synchroniser (not yet implemented)
-  
-  COMPONENT vga_rst_sync IS
-    PORT (
-           clk       : IN STD_LOGIC;
-           rst_n_in  : IN STD_LOGIC;
-  
-           rst_n_out : OUT STD_LOGIC
-    );
-  END COMPONENT;
   
   -- synchroniser for switch input signals
 
@@ -163,7 +154,6 @@ ARCHITECTURE structural of vga_top IS
   
   -- intermediate signals between components
   SIGNAL pxl_clk_s      : STD_LOGIC;
-  SIGNAL rst_n_s        : STD_LOGIC;
   SIGNAL v_sync_s       : STD_LOGIC;
   SIGNAL h_sync_s       : STD_LOGIC;
   SIGNAL colr_en_s      : STD_LOGIC;
@@ -174,13 +164,6 @@ ARCHITECTURE structural of vga_top IS
 
 BEGIN --------------------------------------------------------------------------
 
-  i_vga_rst_sync : vga_rst_sync
-  PORT MAP (
-             clk       => clk,
-             rst_n_in  => rst_n,
-             rst_n_out => rst_n_s
-  );
-
   gen_clk_src: IF CONF_SIM = '1' GENERATE
 
     i_vga_clk_div : vga_clk_div -- Used in simulation **************************
@@ -190,14 +173,14 @@ BEGIN --------------------------------------------------------------------------
       )
       PORT MAP    (
                     clk        => clk,
-                    rst_n      => rst_n_s,
+                    rst_n      => rst_n,
                     clk_px_out => pxl_clk_s
       ); -- Used in simulation *************************************************
   ELSE GENERATE 
       i_clk_gen : clk_gen -- Used in synthesis *********************************
       	PORT MAP (
       	    	     clk        => clk,
-      	    	     rst_n      => rst_n_s,
+      	    	     rst_n      => rst_n,
       	    	     clk_px_out	=> pxl_clk_s
       	); -- Used in synthesis ************************************************
   END GENERATE gen_clk_src;
@@ -208,7 +191,7 @@ BEGIN --------------------------------------------------------------------------
       GENERIC MAP (depth_colr_g => depth_colr_g)
       PORT MAP (
                  clk      => pxl_clk_s,
-                 rst_n    => rst_n_s,
+                 rst_n    => rst_n,
                  sw_in    => sw_in(idx),
                  colr_in  => colr_gen_arr_s(((idx+1)*depth_colr_g)-1 DOWNTO 
                                                             (idx*depth_colr_g)),
@@ -230,7 +213,7 @@ BEGIN --------------------------------------------------------------------------
     )
     PORT MAP (
       clk         => pxl_clk_s,
-      rst_n       => rst_n_s,
+      rst_n       => rst_n,
       colr_en_out => colr_en_s,
       v_sync_out  => v_sync_s,
       h_sync_out  => h_sync_s
@@ -254,7 +237,7 @@ BEGIN --------------------------------------------------------------------------
    )
    PORT MAP (
      clk       => pxl_clk_s,
-     rst_n     => rst_n_s,
+     rst_n     => rst_n,
      v_sync_in => v_sync_s,  
      r_colr_out => colr_gen_arr_s((3*depth_colr_g)-1 DOWNTO (2*depth_colr_g)),
      g_colr_out => colr_gen_arr_s((2*depth_colr_g)-1 DOWNTO (depth_colr_g)),
