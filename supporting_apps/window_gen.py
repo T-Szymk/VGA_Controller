@@ -21,6 +21,8 @@ class PxlMapGenerator:
             for line in range(0, self.image_size[1]):
                 self.orig_colour_map.append([pxl_map[pxl, line] for pxl in range(0, self.image_size[0])])
 
+    '''encode_pxl_map: Function creates a pixel map, with each pixel colour value scaled to fit within the number of
+     bits specified within bit_depth.'''
     def encode_pxl_map(self):
         # Encode the RGB pixel colour values using the bit width specified i.e. 3 bits, RGB of 255 = 'd7 or 'b111
         for line in self.orig_colour_map:
@@ -28,6 +30,8 @@ class PxlMapGenerator:
                                                        floor(pxl[1]/self.divisor),
                                                        floor(pxl[2]/self.divisor))) for pxl in self.orig_colour_map[self.orig_colour_map.index(line)]))
 
+    '''create_bit_string: Replaces each line of the encoded pixel map with a bit string containing the encoded pixel 
+    values. Note that the order is reversed as bit 0 in the vector will be on the other side.'''
     def create_bit_string(self):
         '''output binary string will be structured such that for a bitdepth of 3 bit 2:0 = pixel(0,0)-red,
                                                                                      5:3 = pixel(0,0)-green,
@@ -37,16 +41,18 @@ class PxlMapGenerator:
             tmp_line_str = ''
             for pxl in line:
                 tmp_pxl_str = ''
+                #iterate through each colour, convert to binary and fill spaces with zeros
                 for pxl_colr in range(0, 3):
                     tmp_bin_str = bin(pxl[pxl_colr])[2:]
                     if len(tmp_bin_str) == 1:
                         tmp_bin_str = '00' + tmp_bin_str
                     elif len(tmp_bin_str) == 2:
                         tmp_bin_str = '0' + tmp_bin_str
-                    tmp_pxl_str = tmp_bin_str + tmp_pxl_str # reverse order so it can be read in
+                    tmp_pxl_str = tmp_bin_str + tmp_pxl_str # reverse order so it can be read in HDL
                 tmp_line_str = tmp_pxl_str + tmp_line_str
             self.binary_lines.append(str(tmp_line_str))
 
+    '''hexify_lines: takes binary strings and transforms them into hex values'''
     def hexify_lines(self):
         for bin_line in self.binary_lines:
             tmp_bin_line = bin_line
@@ -58,15 +64,19 @@ class PxlMapGenerator:
             tmp_hex_line = hex(int(tmp_bin_line, 2))[2:] + tmp_hex_line
             self.hex_lines.append(str(tmp_hex_line))
 
-    def write_out_COE_file(self):
+    def write_out_files(self):
         self.encode_pxl_map()
         self.create_bit_string()
         self.hexify_lines()
         with open("COE_init.txt", "wt") as file:
             file.write(', '.join(self.hex_lines))
+        with open("bin_image_init.mem", "wt") as file:
+            file.write('\n'.join(self.binary_lines))
+        with open("hex_image_init.mem", "wt") as file:
+            file.write('\n'.join(self.hex_lines))
 
     def create_encoded_image(self):
-        self.write_out_COE_file()
+        self.write_out_files()
         with Image.new('RGB',(self.image_size[0],self.image_size[1])) as im:
             for line in range(0, self.image_size[1]):
                 for pxl in range(0, self.image_size[0]):
