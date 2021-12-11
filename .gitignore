@@ -1,1 +1,4 @@
 **/lib*/*
+**/modelsim.ini
+**/transcript
+**/vga_lib/*
