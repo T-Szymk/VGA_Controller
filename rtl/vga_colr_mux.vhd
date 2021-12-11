@@ -42,6 +42,6 @@ BEGIN
   WITH en_in SELECT colr_out <= colr_in WHEN '1',
                                 (OTHERS => '0') WHEN OTHERS;
   
-END ARCHITECTURE rtl; 
+END ARCHITECTURE rtl;
 
 --------------------------------------------------------------------------------

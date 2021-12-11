@@ -16,21 +16,15 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2021-08-28  1.0      TZS     Created
+-- 2021-12-11  1.1      TZS     Modified to use external counter module
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE STD.ENV.FINISH;
+USE WORK.VGA_PKG.ALL;
 
 ENTITY vga_controller_tb IS 
   GENERIC (
-    width_px_g         : INTEGER := 640;
-    height_lns_g       : INTEGER := 480;
-    h_sync_px_g        : INTEGER := 96;
-    h_b_porch_px_g     : INTEGER := 48;
-    h_f_porch_px_g     : INTEGER := 16;
-    v_sync_lns_g       : INTEGER := 2;
-    v_b_porch_lns_g    : INTEGER := 33;
-    v_f_porch_lns_g    : INTEGER := 10;
     disp_freq_g        : INTEGER := 60;
     clk_period_g       : TIME    := 40 ns; -- 25MHz
     frame_time_g       : TIME    := 16.8 ms;
@@ -43,7 +37,8 @@ ENTITY vga_controller_tb IS
     v_fp_time_g        : TIME    := 320 us;
     v_bp_time_g        : TIME    := 1.056 ms;
     disp_v_syn_time_g  : TIME    := display_time_g + h_fp_time_g + v_fp_time_g; 
-    v_syn_disp_time_g  : TIME    := v_sync_time_g  + v_bp_time_g + h_sync_time_g + h_bp_time_g  
+    v_syn_disp_time_g  : TIME    := v_sync_time_g  + v_bp_time_g + 
+                                    h_sync_time_g + h_bp_time_g  
     );
 END ENTITY vga_controller_tb;
 
@@ -53,20 +48,28 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   
   -- COMPONENTS ----------------------------------------------------------------
 
-  COMPONENT vga_controller IS -- DUT
+  COMPONENT vga_pxl_counter
     GENERIC (
-      width_px_g      : INTEGER;
-      height_lns_g    : INTEGER;
-      h_sync_px_g     : INTEGER;
-      h_b_porch_px_g  : INTEGER;
-      h_f_porch_px_g  : INTEGER;
-      v_sync_lns_g    : INTEGER;
-      v_b_porch_lns_g : INTEGER;
-      v_f_porch_lns_g : INTEGER
+      pxl_ctr_max_g    : INTEGER;
+      line_ctr_max_g   : INTEGER;
+      pxl_ctr_width_g  : INTEGER;
+      line_ctr_width_g : INTEGER
     );
     PORT (
-      clk   : IN STD_LOGIC;
-      rst_n : IN STD_LOGIC;
+      clk        : IN STD_LOGIC;
+      rst_n      : IN STD_LOGIC;
+      
+      pxl_ctr_o  : OUT STD_LOGIC_VECTOR((pxl_ctr_width_g - 1) DOWNTO 0);
+      line_ctr_o : OUT STD_LOGIC_VECTOR((line_ctr_width_g - 1) DOWNTO 0)
+    );
+  END COMPONENT;  
+
+  COMPONENT vga_controller IS -- DUT
+    PORT (
+      clk        : IN STD_LOGIC;
+      rst_n      : IN STD_LOGIC;
+      pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
+      line_ctr_i : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
 
       colr_en_out : OUT STD_LOGIC;
       v_sync_out  : OUT STD_LOGIC;
@@ -184,9 +187,12 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   SIGNAL v_sync_out_dut_old  : STD_LOGIC := '1';
   SIGNAL colr_en_out_dut_old : STD_LOGIC := '0';
 
-  SIGNAL h_sync_out_dut  : STD_LOGIC := '1';
-  SIGNAL v_sync_out_dut  : STD_LOGIC := '1'; 
-  SIGNAL colr_en_out_dut : STD_LOGIC := '0';
+  SIGNAL h_sync_out_dut      : STD_LOGIC := '1';
+  SIGNAL v_sync_out_dut      : STD_LOGIC := '1'; 
+  SIGNAL colr_en_out_dut     : STD_LOGIC := '0';
+
+  SIGNAL pxl_ctr_s  : STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
+  SIGNAL line_ctr_s : STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
 
   SIGNAL frame_tmr_start       : TIME := 0 ms;
   SIGNAL v_sync_tmr_start      : TIME := 0 us;
@@ -208,19 +214,11 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   BEGIN ------------------------------------------------------------------------
 
   i_DUT : vga_controller  
-    GENERIC MAP(
-    	width_px_g      => width_px_g,   
-      height_lns_g    => height_lns_g,    
-      h_sync_px_g     => h_sync_px_g,       
-      h_b_porch_px_g  => h_b_porch_px_g,          
-      h_f_porch_px_g  => h_f_porch_px_g,      
-      v_sync_lns_g    => v_sync_lns_g,        
-      v_b_porch_lns_g => v_b_porch_lns_g,           
-      v_f_porch_lns_g => v_f_porch_lns_g       
-    )
     PORT MAP (
       clk         => clk,
-      rst_n       => rst_n,  
+      rst_n       => rst_n,
+      pxl_ctr_i   => pxl_ctr_s,  
+      line_ctr_i  => line_ctr_s,     
       colr_en_out => colr_en_out_dut,        
       v_sync_out  => v_sync_out_dut,       
       h_sync_out  => h_sync_out_dut       
