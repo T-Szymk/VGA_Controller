@@ -2,14 +2,6 @@ add log -r sim:/vga_controller_tb/*
 
 add wave -position insertpoint  \
 -divider " - GENERICS - " \
-sim:/vga_controller_tb/width_px_g \
-sim:/vga_controller_tb/height_lns_g \
-sim:/vga_controller_tb/h_sync_px_g \
-sim:/vga_controller_tb/h_b_porch_px_g \
-sim:/vga_controller_tb/h_f_porch_px_g \
-sim:/vga_controller_tb/v_sync_lns_g \
-sim:/vga_controller_tb/v_b_porch_lns_g \
-sim:/vga_controller_tb/v_f_porch_lns_g \
 sim:/vga_controller_tb/disp_freq_g \
 sim:/vga_controller_tb/clk_period_g \
 sim:/vga_controller_tb/frame_time_g \
@@ -32,6 +24,8 @@ sim:/vga_controller_tb/clk \
 sim:/vga_controller_tb/h_sync_out_dut_old \
 sim:/vga_controller_tb/v_sync_out_dut_old \
 sim:/vga_controller_tb/colr_en_out_dut_old \
+sim:/vga_controller_tb/pxl_ctr_s \
+sim:/vga_controller_tb/line_ctr_s \
 sim:/vga_controller_tb/frame_tmr_start \
 sim:/vga_controller_tb/v_sync_tmr_start \
 sim:/vga_controller_tb/h_sync_tmr_start \

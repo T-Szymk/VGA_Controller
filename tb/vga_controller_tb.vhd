@@ -49,18 +49,12 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   -- COMPONENTS ----------------------------------------------------------------
 
   COMPONENT vga_pxl_counter
-    GENERIC (
-      pxl_ctr_max_g    : INTEGER;
-      line_ctr_max_g   : INTEGER;
-      pxl_ctr_width_g  : INTEGER;
-      line_ctr_width_g : INTEGER
-    );
     PORT (
       clk        : IN STD_LOGIC;
       rst_n      : IN STD_LOGIC;
       
-      pxl_ctr_o  : OUT STD_LOGIC_VECTOR((pxl_ctr_width_g - 1) DOWNTO 0);
-      line_ctr_o : OUT STD_LOGIC_VECTOR((line_ctr_width_g - 1) DOWNTO 0)
+      pxl_ctr_o  : OUT STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
+      line_ctr_o : OUT STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0)
     );
   END COMPONENT;  
 
@@ -74,7 +68,6 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       colr_en_out : OUT STD_LOGIC;
       v_sync_out  : OUT STD_LOGIC;
       h_sync_out  : OUT STD_LOGIC
-
     );
   END COMPONENT; 
 
@@ -213,12 +206,21 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   BEGIN ------------------------------------------------------------------------
 
+  i_vga_pxl_counter : vga_pxl_counter
+    PORT MAP (
+      clk        => clk,
+      rst_n      => rst_n,
+      pxl_ctr_o  => pxl_ctr_s,
+      line_ctr_o => line_ctr_s
+    );
+
   i_DUT : vga_controller  
     PORT MAP (
       clk         => clk,
       rst_n       => rst_n,
       pxl_ctr_i   => pxl_ctr_s,  
-      line_ctr_i  => line_ctr_s,     
+      line_ctr_i  => line_ctr_s,
+
       colr_en_out => colr_en_out_dut,        
       v_sync_out  => v_sync_out_dut,       
       h_sync_out  => h_sync_out_dut       

@@ -172,10 +172,10 @@ BEGIN
       
       -- v_sync conditions
       IF (line_ctr_r = (v_f_porch_max_lns_c - 1) AND 
-         pxl_ctr_r = pxl_ctr_t'HIGH) THEN
+        pxl_ctr_r = pxl_ctr_t'HIGH) THEN
         v_sync_r <= '0';
       ELSIF (line_ctr_r = (v_sync_max_lns_c - 1) AND 
-            pxl_ctr_r = pxl_ctr_t'HIGH) THEN
+        pxl_ctr_r = pxl_ctr_t'HIGH) THEN
         v_sync_r <= '1';
       END IF;
 
@@ -183,7 +183,7 @@ BEGIN
       IF c_state = H_B_PORCH AND pxl_ctr_r = (h_b_porch_max_px_c - 1) THEN
         colr_en_r <= '1';
       ELSIF c_state = DISPLAY AND pxl_ctr_r = (h_disp_max_px_c - 1) THEN
-       colr_en_r <= '0';
+        colr_en_r <= '0';
       END IF;
 
     END IF;

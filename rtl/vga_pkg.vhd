@@ -25,10 +25,10 @@ PACKAGE vga_pkg IS
 
   -- clk frequencies
   CONSTANT ref_clk_freq_c  : INTEGER := 100_000_000; -- input osc. on arty-a7
-  CONSTANT px_clk_freq_c   : INTEGER := 25_000_000;
+  CONSTANT px_clk_freq_c   : INTEGER := 25_000_000; -- 40ns period
   -- screen dimensions
   CONSTANT height_px_c     : INTEGER := 480;
-  CONSTANT width_px_c      : INTEGER := 680;
+  CONSTANT width_px_c      : INTEGER := 640;
   -- depth of each colour
   CONSTANT depth_colr_c    : INTEGER := 4;
   -- number of pixels in each v_sync period
