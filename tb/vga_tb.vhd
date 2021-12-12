@@ -18,9 +18,11 @@
 -- 2021-06-25  1.0      TZS     Created
 -- 2021-07-19  1.1      TZS     Updated TB to match latest design
 --                              Removed signals related to DE2 board
+-- 2021-12-12  1.2      TZS     Updated signals to use most recent interfaces
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
+USE WORK.VGA_PKG.ALL;
 USE STD.ENV.FINISH;
 
 ENTITY vga_tb IS
@@ -28,12 +30,7 @@ ENTITY vga_tb IS
             ref_clk_perd_g : TIME    := 10 ns;
             max_sim_time_g : TIME    :=  3 sec;
             CONF_SIM       : BIT     := '1';
-            CONF_PATT_GEN  : BIT     := '1';
-            ref_clk_freq_g : INTEGER := 100_000_000; -- input osc. on arty-a7
-            px_clk_freq_g  : INTEGER :=  25_000_000;
-            height_px_g    : INTEGER :=         480;
-            width_px_g     : INTEGER :=         680;
-            depth_colr_g   : INTEGER :=           4
+            CONF_TEST_PATT : BIT     := '1'
   );
 END ENTITY vga_tb;
 
@@ -44,25 +41,18 @@ ARCHITECTURE tb OF vga_tb IS
   COMPONENT vga_top IS 
     GENERIC (
               CONF_SIM       : BIT     := '1';
-              CONF_PATT_GEN  : BIT     := '1';
-              ref_clk_freq_g : INTEGER := 100_000_000;
-              px_clk_freq_g  : INTEGER := 25_000_000;
-              height_px_g    : INTEGER := 480;
-              width_px_g     : INTEGER := 680;
-              depth_colr_g   : INTEGER := 4
-
+              CONF_TEST_PATT : BIT     := '1'
             );
     
     PORT (
            clk    : IN STD_LOGIC;
-           rst_n  : IN STD_LOGIC;
-           sw_in  : IN STD_LOGIC_VECTOR(3-1 DOWNTO 0); 
+           rst_n  : IN STD_LOGIC; 
 
            v_sync_out  : OUT STD_LOGIC;
            h_sync_out  : OUT STD_LOGIC;
-           r_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
-           g_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
-           b_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0)
+           r_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
+           g_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
+           b_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0)
          );
   END COMPONENT;
 
@@ -72,26 +62,20 @@ ARCHITECTURE tb OF vga_tb IS
   SIGNAL dut_sw_in       : STD_LOGIC_VECTOR(3-1 DOWNTO 0) := (OTHERS => '0');
   SIGNAL dut_v_sync_out  : STD_LOGIC;
   SIGNAL dut_h_sync_out  : STD_LOGIC;
-  SIGNAL dut_r_colr_out  : STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
-  SIGNAL dut_g_colr_out  : STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
-  SIGNAL dut_b_colr_out  : STD_LOGIC_VECTOR(depth_colr_g-1 DOWNTO 0);
+  SIGNAL dut_r_colr_out  : STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
+  SIGNAL dut_g_colr_out  : STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
+  SIGNAL dut_b_colr_out  : STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
 
 BEGIN 
 
   i_DUT : vga_top
     GENERIC MAP (
       CONF_SIM       => CONF_SIM, 
-      CONF_PATT_GEN  => CONF_PATT_GEN,  
-      ref_clk_freq_g => ref_clk_freq_g,         
-      px_clk_freq_g  => px_clk_freq_g,      
-      height_px_g    => height_px_g,     
-      width_px_g     => width_px_g,    
-      depth_colr_g   => depth_colr_g      
+      CONF_TEST_PATT => CONF_TEST_PATT      
     )
     PORT MAP (
       clk         => clk,
       rst_n       => rst_n,
-      sw_in       => dut_sw_in,
 
       v_sync_out  => dut_v_sync_out,
       h_sync_out  => dut_h_sync_out,

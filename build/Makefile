@@ -14,7 +14,7 @@ TB_FILES =  $(TB)/vga_tb.vhd \
             $(TB)/vga_colr_mux_tb.vhd \
             $(TB)/vga_controller_tb.vhd
 
-# TOP LEVEL TESTING#############################################################
+# TOP LEVEL TESTING ############################################################
 
 .PHONY: default
 default: compile
