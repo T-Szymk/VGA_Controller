@@ -63,8 +63,8 @@ ARCHITECTURE rtl OF vga_controller IS
 
   SIGNAL c_state, n_state : state_t;
 
-  SIGNAL pxl_ctr_r  : INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
-  SIGNAL line_ctr_r : INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
+  SIGNAL pxl_ctr_r  : INTEGER RANGE (width_px_c - 1) DOWNTO 0;
+  SIGNAL line_ctr_r : INTEGER RANGE (height_px_c - 1) DOWNTO 0;
 
   SIGNAL v_sync_r  : STD_LOGIC;
   SIGNAL h_sync_r  : STD_LOGIC;
@@ -189,6 +189,14 @@ BEGIN
     END IF;
 
   END PROCESS sync_out;  -------------------------------------------------------
+
+  ASSERT (line_ctr_r <= height_px_c)
+    REPORT "FAIL@ " & TO_STRING(NOW) & ", line counter > screen height." 
+    SEVERITY WARNING;
+
+  ASSERT (pxl_ctr_r <= width_px_c)
+    REPORT "FAIL@ " & TO_STRING(NOW) & ", pixel counter > screen width." 
+    SEVERITY WARNING;
 
   h_sync_out  <= h_sync_r;
   v_sync_out  <= v_sync_r;

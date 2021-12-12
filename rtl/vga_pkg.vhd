@@ -44,20 +44,16 @@ PACKAGE vga_pkg IS
   CONSTANT v_b_porch_lns_c : INTEGER := 33;
   -- number of lines in each vert. front porch period
   CONSTANT v_f_porch_lns_c : INTEGER := 10;
-  -- counter max and associated valueswidths
-  CONSTANT pxl_ctr_max_c  : INTEGER := h_f_porch_px_c + width_px_c + 
-                                       h_b_porch_px_c + h_sync_px_c;
-  CONSTANT line_ctr_max_c : INTEGER := v_f_porch_lns_c + height_px_c + 
-                                       v_b_porch_lns_c + v_sync_lns_c;
+
   -- use max value to calculate bit width of counter
   CONSTANT pxl_ctr_width_c : INTEGER :=  INTEGER(CEIL(
-                                         LOG2(REAL(pxl_ctr_max_c - 1))));
+                                         LOG2(REAL(width_px_c - 1))));
   CONSTANT line_ctr_width_c : INTEGER := INTEGER(CEIL(
-                                         LOG2(REAL(line_ctr_max_c - 1))));
+                                         LOG2(REAL(height_px_c - 1))));
 
     -- using subtypes so attributes can be utilised
-  SUBTYPE pxl_ctr_t  IS INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
-  SUBTYPE line_ctr_t IS INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
+  SUBTYPE pxl_ctr_t  IS INTEGER RANGE (width_px_c - 1) DOWNTO 0;
+  SUBTYPE line_ctr_t IS INTEGER RANGE (height_px_c - 1) DOWNTO 0;
   
   -- array to contain colours(RGB)
   TYPE colr_arr_t IS ARRAY (2 DOWNTO 0) OF INTEGER RANGE ((2**depth_colr_c) - 1)
