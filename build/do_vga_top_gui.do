@@ -19,7 +19,7 @@ set StdArithNoWarnings 1
 run 0 ns 
 set StdArithNoWarnings 0
 
-#run 500 ms
+run 2 sec
 run -all
 wave zoom full
 config wave -signalnamewidth 1
