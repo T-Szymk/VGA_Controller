@@ -35,16 +35,16 @@ END ENTITY vga_pattern_gen;
 
 ARCHITECTURE behavioral OF vga_pattern_gen IS 
 
--- target <= 
---   <val1> when <exp1> else
---   <val2>
+  -- TODO: Calculate constants required to determine whether colours need to change.
+  --       Try to calculate values in a generic fashion
+  --       Do this in the VGA_PKG
 
   CONSTANT colr_col_width_c : INTEGER := (width_px_c / 7);
   CONSTANT grey_col_width_c : INTEGER := (width_px_c / 16);
 
   SIGNAL colr_s         : colr_arr_t;
-  SIGNAL pxl_ctr_int_s  : INTEGER RANGE (width_px_c - 1) DOWNTO 0;
-  SIGNAL line_ctr_int_s : INTEGER RANGE (height_px_c - 1) DOWNTO 0; 
+  SIGNAL pxl_ctr_int_s  : INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
+  SIGNAL line_ctr_int_s : INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0; 
 
 BEGIN 
   -- convert to integer to make assignment expressions more compact
