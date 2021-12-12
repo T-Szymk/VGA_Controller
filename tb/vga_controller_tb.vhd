@@ -271,14 +271,14 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
     IF rst_n = '0' THEN
 
-      frame_tmr_start       <= 0 SEC;
-      v_sync_tmr_start      <= 0 SEC;
-      h_sync_tmr_int_start  <= 0 SEC;
-      h_sync_tmr_start      <= 0 SEC;
-      h_sync_tmr_int_start  <= 0 SEC;
-      h_sync_tmr_start      <= 0 SEC;
-      v_syn_disp_tmr_start  <= 0 SEC;
-      v_syn_h_syn_tmr_start <= 0 SEC;
+      frame_tmr_start        <= 0 SEC;
+      v_sync_tmr_start       <= 0 SEC;
+      h_sync_tmr_int_start   <= 0 SEC;
+      h_sync_tmr_start       <= 0 SEC;
+      h_sync_tmr_int_start   <= 0 SEC;
+      h_sync_tmr_start       <= 0 SEC;
+      v_syn_disp_tmr_start   <= 0 SEC;
+      v_syn_h_syn_tmr_start  <= 0 SEC;
       
       v_sync_timer_en_s      <= '0';
       h_sync_timer_en_s      <= '0';
@@ -407,3 +407,5 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
   END PROCESS timing_check; ----------------------------------------------------
 
 END ARCHITECTURE tb;
+
+--------------------------------------------------------------------------------

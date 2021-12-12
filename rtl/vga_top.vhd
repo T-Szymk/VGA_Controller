@@ -118,6 +118,16 @@ ARCHITECTURE structural of vga_top IS
       colr_out : OUT STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0)
     );
   END COMPONENT;
+  
+  -- Component to generate the test pattern if required
+  COMPONENT vga_pattern_gen IS
+    PORT (
+      pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
+      line_ctr_i : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
+      
+      colr_out   : OUT STD_LOGIC_VECTOR(((3*depth_colr_c) - 1) DOWNTO 0)
+    ); 
+  END COMPONENT;
 
 -- VARIABLES / CONSTANTS / TYPES -----------------------------------------------
 
@@ -181,19 +191,13 @@ BEGIN --------------------------------------------------------------------------
       en_in    => colr_en_s,
       colr_out => (colr_mux_arr_s)
     );
-  
-  -- assign 1 to colours when out of reset. Note, remove this when pattern gen
-  -- is used.
-  PROCESS (rst_n) IS
-  BEGIN 
 
-    IF rst_n = '0' THEN
-      colr_arr_s <= (OTHERS => '0');
-    ELSE 
-      colr_arr_s <= (OTHERS => '1');
-    END IF;
-
-  END PROCESS;
+  i_vga_pattern_gen : vga_pattern_gen
+    PORT MAP (
+      pxl_ctr_i  => pxl_ctr_s,   
+      line_ctr_i => line_ctr_s,    
+      colr_out   => colr_arr_s  
+    );
 
    -- output assignments
   v_sync_out <= v_sync_s;

@@ -19,6 +19,7 @@
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
+USE IEEE.NUMERIC_STD.ALL;
 USE IEEE.MATH_REAL.ALL;
 
 PACKAGE vga_pkg IS
@@ -57,5 +58,9 @@ PACKAGE vga_pkg IS
     -- using subtypes so attributes can be utilised
   SUBTYPE pxl_ctr_t  IS INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
   SUBTYPE line_ctr_t IS INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
+  
+  -- array to contain colours(RGB)
+  TYPE colr_arr_t IS ARRAY (2 DOWNTO 0) OF INTEGER RANGE ((2**depth_colr_c) - 1)
+                                                         DOWNTO 0;
 
 END PACKAGE vga_pkg;

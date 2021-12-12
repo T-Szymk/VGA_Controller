@@ -8,6 +8,7 @@ RTL_FILES = $(RTL)/vga_pkg.vhd \
             $(RTL)/vga_colr_mux.vhd \
             $(RTL)/xilinx_top_clk.vhd \
             $(RTL)/vga_pxl_counter.vhd \
+            $(RTL)/vga_pattern_gen.vhd \
             $(RTL)/vga_top.vhd
 TB_FILES =  $(TB)/vga_tb.vhd \
             $(TB)/vga_colr_mux_tb.vhd \
