@@ -23,7 +23,8 @@
 -- 2021-11-01  1.4      TZS     Renamed to vga_top.vhd
 --                              Removed unused reset block
 -- 2021-12-11  1.5      TZS     Removed colour generation and switch sync blocks
---                              Added VGA timing generics/constants to top level                                
+--                              Added VGA timing generics/constants to top level
+-- 2021-12-12  1.6      TZS     Added test pattern generator                                
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -32,7 +33,8 @@ USE WORK.VGA_PKG.ALL;
 ENTITY vga_top IS
   GENERIC (
     -- 1 for simulation, 0 for synthesis
-    CONF_SIM : BIT := '1'
+    CONF_SIM : BIT := '1';
+    CONF_TEST_PATT : BIT := '1'
   );
   PORT (
     -- clock and asynch reset
@@ -120,6 +122,7 @@ ARCHITECTURE structural of vga_top IS
   END COMPONENT;
   
   -- Component to generate the test pattern if required
+
   COMPONENT vga_pattern_gen IS
     PORT (
       pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
@@ -143,9 +146,9 @@ ARCHITECTURE structural of vga_top IS
 
 BEGIN --------------------------------------------------------------------------
 
-  gen_clk_src: IF CONF_SIM = '1' GENERATE
+  gen_clk_src: IF CONF_SIM = '1' GENERATE -- Used in simulation ****************
 
-    i_vga_clk_div : vga_clk_div -- Used in simulation **************************
+    i_vga_clk_div : vga_clk_div 
       GENERIC MAP (
                     ref_clk_freq_g => ref_clk_freq_c, 
                     px_clk_freq_g  => px_clk_freq_c
@@ -154,15 +157,15 @@ BEGIN --------------------------------------------------------------------------
                     clk        => clk,
                     rst_n      => rst_n,
                     clk_px_out => pxl_clk_s
-      ); -- Used in simulation *************************************************
-  ELSE GENERATE 
-      i_clk_gen : clk_gen -- Used in synthesis *********************************
+      ); 
+  ELSE GENERATE --************************************************************** 
+      i_clk_gen : clk_gen 
       	PORT MAP (
       	    	     clk        => clk,
       	    	     rst_n      => rst_n,
       	    	     clk_px_out	=> pxl_clk_s
-      	); -- Used in synthesis ************************************************
-  END GENERATE gen_clk_src;
+      	); 
+  END GENERATE gen_clk_src; -- Used in synthesis *******************************
 
   i_vga_pxl_counter : vga_pxl_counter
     PORT MAP (
@@ -191,13 +194,17 @@ BEGIN --------------------------------------------------------------------------
       en_in    => colr_en_s,
       colr_out => (colr_mux_arr_s)
     );
+  
+  gen_test_patt : IF CONF_TEST_PATT = '1' GENERATE -- pattern gen required *****
+  
+    i_vga_pattern_gen : vga_pattern_gen
+      PORT MAP (
+        pxl_ctr_i  => pxl_ctr_s,   
+        line_ctr_i => line_ctr_s,    
+        colr_out   => colr_arr_s  
+      );
 
-  i_vga_pattern_gen : vga_pattern_gen
-    PORT MAP (
-      pxl_ctr_i  => pxl_ctr_s,   
-      line_ctr_i => line_ctr_s,    
-      colr_out   => colr_arr_s  
-    );
+  END GENERATE gen_test_patt; --************************************************
 
    -- output assignments
   v_sync_out <= v_sync_s;
