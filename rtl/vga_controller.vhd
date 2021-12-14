@@ -45,18 +45,6 @@ END ENTITY vga_controller;
 ARCHITECTURE rtl OF vga_controller IS 
 
 -- VARIABLES / CONSTANTS / TYPES -----------------------------------------------
-
-  CONSTANT v_sync_max_lns_c    : INTEGER := v_sync_lns_c;
-  CONSTANT v_b_porch_max_lns_c : INTEGER := v_sync_max_lns_c + v_b_porch_lns_c;
-  CONSTANT v_disp_max_lns_c    : INTEGER := v_b_porch_max_lns_c + height_px_c;
-  CONSTANT v_f_porch_max_lns_c : INTEGER := v_disp_max_lns_c + v_f_porch_lns_c;
-  CONSTANT h_sync_max_px_c     : INTEGER := h_sync_px_c;
-  CONSTANT h_b_porch_max_px_c  : INTEGER := h_sync_max_px_c + h_b_porch_px_c;
-  CONSTANT h_disp_max_px_c     : INTEGER := h_b_porch_max_px_c + width_px_c;
-  CONSTANT h_f_porch_max_px_c  : INTEGER := h_disp_max_px_c + h_f_porch_px_c;
-
-  SUBTYPE pxl_ctr_t  IS INTEGER RANGE (h_f_porch_max_px_c - 1) DOWNTO 0;
-  SUBTYPE line_ctr_t IS INTEGER RANGE (v_f_porch_max_lns_c - 1) DOWNTO 0;
   
   TYPE state_t IS (IDLE, H_SYNC, H_B_PORCH, H_F_PORCH, DISPLAY, 
                    V_SYNC, V_B_PORCH, V_F_PORCH);

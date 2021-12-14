@@ -45,21 +45,31 @@ PACKAGE vga_pkg IS
   -- number of lines in each vert. front porch period
   CONSTANT v_f_porch_lns_c : INTEGER := 10;
   -- counter max and associated valueswidths
-  CONSTANT pxl_ctr_max_c  : INTEGER := h_f_porch_px_c + width_px_c + 
+  CONSTANT pxl_ctr_max_c   : INTEGER := h_f_porch_px_c + width_px_c + 
                                        h_b_porch_px_c + h_sync_px_c;
-  CONSTANT line_ctr_max_c : INTEGER := v_f_porch_lns_c + height_px_c + 
+  CONSTANT line_ctr_max_c  : INTEGER := v_f_porch_lns_c + height_px_c + 
                                        v_b_porch_lns_c + v_sync_lns_c;
   -- use max value to calculate bit width of counter
-  CONSTANT pxl_ctr_width_c : INTEGER :=  INTEGER(CEIL(
+  CONSTANT pxl_ctr_width_c  : INTEGER := INTEGER(CEIL(
                                          LOG2(REAL(pxl_ctr_max_c - 1))));
   CONSTANT line_ctr_width_c : INTEGER := INTEGER(CEIL(
                                          LOG2(REAL(line_ctr_max_c - 1))));
+  -- cumulative counter values used to determine line/pxl counter at each state
+  -- within the vga controller
+  CONSTANT v_sync_max_lns_c    : INTEGER := v_sync_lns_c;
+  CONSTANT v_b_porch_max_lns_c : INTEGER := v_sync_max_lns_c + v_b_porch_lns_c;
+  CONSTANT v_disp_max_lns_c    : INTEGER := v_b_porch_max_lns_c + height_px_c;
+  CONSTANT v_f_porch_max_lns_c : INTEGER := v_disp_max_lns_c + v_f_porch_lns_c;
+  CONSTANT h_sync_max_px_c     : INTEGER := h_sync_px_c;
+  CONSTANT h_b_porch_max_px_c  : INTEGER := h_sync_max_px_c + h_b_porch_px_c;
+  CONSTANT h_disp_max_px_c     : INTEGER := h_b_porch_max_px_c + width_px_c;
+  CONSTANT h_f_porch_max_px_c  : INTEGER := h_disp_max_px_c + h_f_porch_px_c;
 
     -- using subtypes so attributes can be utilised
   SUBTYPE pxl_ctr_t  IS INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
   SUBTYPE line_ctr_t IS INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
   
-  -- array to contain colours(RGB)
+  -- array to contain colours(RGB) in integer format
   TYPE colr_arr_t IS ARRAY (2 DOWNTO 0) OF INTEGER RANGE ((2**depth_colr_c) - 1)
                                                          DOWNTO 0;
 
