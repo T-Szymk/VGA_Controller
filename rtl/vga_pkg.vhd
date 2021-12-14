@@ -64,7 +64,7 @@ PACKAGE vga_pkg IS
   CONSTANT h_b_porch_max_px_c  : INTEGER := h_sync_max_px_c + h_b_porch_px_c;
   CONSTANT h_disp_max_px_c     : INTEGER := h_b_porch_max_px_c + width_px_c;
   CONSTANT h_f_porch_max_px_c  : INTEGER := h_disp_max_px_c + h_f_porch_px_c;
-
+  
     -- using subtypes so attributes can be utilised
   SUBTYPE pxl_ctr_t  IS INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
   SUBTYPE line_ctr_t IS INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
