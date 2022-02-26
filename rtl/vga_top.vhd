@@ -190,9 +190,9 @@ BEGIN --------------------------------------------------------------------------
     GENERIC MAP (
       depth_colr_g => depth_colr_c)
     PORT MAP (
-      colr_in  => (colr_arr_s),
+      colr_in  => colr_arr_s,
       en_in    => colr_en_s,
-      colr_out => (colr_mux_arr_s)
+      colr_out => colr_mux_arr_s
     );
   
   gen_test_patt : IF CONF_TEST_PATT = '1' GENERATE -- pattern gen required *****
