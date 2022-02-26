@@ -1,3 +1,5 @@
+.EXPORT_ALL_VARIABLES:
+
 .DEFAULT_GOAL := default
 
 RTL = ../rtl
@@ -13,6 +15,8 @@ RTL_FILES = $(RTL)/vga_pkg.vhd \
 TB_FILES =  $(TB)/vga_tb.vhd \
             $(TB)/vga_colr_mux_tb.vhd \
             $(TB)/vga_controller_tb.vhd
+
+PROJECT = vga_controller
 
 # TOP LEVEL TESTING ############################################################
 
@@ -72,3 +76,12 @@ sim_vga_controller_gui: compile_vga_controller
 	vsim -voptargs="+acc" -onfinish stop vga_controller_tb -do \
 	"do_vga_controller_gui.do"
 
+# FPGA BUILD ###################################################################
+
+.PHONY: fpga
+fpga:
+	vivado -mode batch -source ./fpga_build.tcl
+
+.PHONY: clean_fpga
+clean_fpga:
+	rm -rf $(PROJECT)
