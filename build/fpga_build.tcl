@@ -19,8 +19,8 @@ set SIM_FILES "\
 "
 
 set SYNTH_GENERICS "
-  CONF_SIM=0 \
-  CONF_TEST_PATT=1
+  CONF_SIM='0' \
+  CONF_TEST_PATT='1'
 "
 
 create_project ${PROJECT} ./${PROJECT} -part xc7a100tcsg324-1 -force
