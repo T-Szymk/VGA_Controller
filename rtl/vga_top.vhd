@@ -33,8 +33,8 @@ USE WORK.VGA_PKG.ALL;
 ENTITY vga_top IS
   GENERIC (
     -- 1 for simulation, 0 for synthesis
-    CONF_SIM : BIT := '1';
-    CONF_TEST_PATT : BIT := '1'
+    CONF_SIM : INTEGER := 1;
+    CONF_TEST_PATT : INTEGER := 1
   );
   PORT (
     -- clock and asynch reset
@@ -146,7 +146,7 @@ ARCHITECTURE structural of vga_top IS
 
 BEGIN --------------------------------------------------------------------------
 
-  gen_clk_src: IF CONF_SIM = '1' GENERATE -- Used in simulation ****************
+  gen_clk_src: IF CONF_SIM = 1 GENERATE -- Used in simulation ****************
 
     i_vga_clk_div : vga_clk_div 
       GENERIC MAP (
@@ -195,7 +195,7 @@ BEGIN --------------------------------------------------------------------------
       colr_out => colr_mux_arr_s
     );
   
-  gen_test_patt : IF CONF_TEST_PATT = '1' GENERATE -- pattern gen required *****
+  gen_test_patt : IF CONF_TEST_PATT = 1 GENERATE -- pattern gen required *****
   
     i_vga_pattern_gen : vga_pattern_gen
       PORT MAP (

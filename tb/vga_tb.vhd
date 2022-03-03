@@ -29,8 +29,8 @@ ENTITY vga_tb IS
   GENERIC (
             ref_clk_perd_g : TIME    := 10 ns;
             max_sim_time_g : TIME    :=  3 sec;
-            CONF_SIM       : BIT     := '1';
-            CONF_TEST_PATT : BIT     := '1'
+            CONF_SIM       : INTEGER := 1;
+            CONF_TEST_PATT : INTEGER := 1
   );
 END ENTITY vga_tb;
 
