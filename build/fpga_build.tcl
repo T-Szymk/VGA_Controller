@@ -37,7 +37,7 @@ set_property file_type {VHDL 2008} [get_files "*.vhd"]
 
 # generate clock wizard 
 create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name clk_wiz_0
-set_property -dict [list CONFIG.PRIM_IN_FREQ {125.000} \
+set_property -dict [list CONFIG.PRIM_IN_FREQ {100.000} \
                          CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {25.000} \
                          CONFIG.USE_LOCKED {false} \
                          CONFIG.RESET_TYPE {ACTIVE_LOW} \
@@ -75,3 +75,7 @@ set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE RuntimeOptimized    [get_runs imp
 set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED true      [get_runs impl_1]
 launch_runs impl_1 -to_step write_bitstream
 wait_on_run impl_1
+
+open_run impl_1
+report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 10 -input_pins -routable_nets -name timing_1
+report_power -name {power_1}
