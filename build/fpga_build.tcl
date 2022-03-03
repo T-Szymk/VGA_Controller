@@ -2,6 +2,7 @@
 # Target platform: Digilent Arty A7-100
 
 set PROJECT $::env(PROJECT)
+set PROJECT_DIR [pwd]/${PROJECT}
 
 set SRC_FILES "\
 	../rtl/vga_pkg.vhd \
@@ -49,9 +50,10 @@ set_property -dict [list CONFIG.PRIM_IN_FREQ {125.000} \
                          CONFIG.CLKOUT1_JITTER {312.659} \
                          CONFIG.CLKOUT1_PHASE_ERROR {245.713}] \
                          [get_ips clk_wiz_0]
-generate_target {instantiation_template} [get_files /home/tzs/Coding/vhdl/VGA_Controller/build/vga_controller/vga_controller.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
+
+generate_target {instantiation_template} [get_files ${PROJECT_DIR}/${PROJECT}.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
 update_compile_order -fileset sources_1
-set_property generate_synth_checkpoint false [get_files  /home/tzs/Coding/vhdl/VGA_Controller/build/vga_controller/vga_controller.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
+set_property generate_synth_checkpoint false [get_files ${PROJECT_DIR}/${PROJECT}.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
 
 # set synthesis generics
 set_property generic ${SYNTH_GENERICS} [current_fileset]
