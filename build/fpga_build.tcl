@@ -23,11 +23,6 @@ set SYNTH_GENERICS "
   CONF_TEST_PATT=1
 "
 
-set SIM_GENERICS "
-  CONF_SIM=1 \
-  CONF_TEST_PATT=1
-"
-
 create_project ${PROJECT} ./${PROJECT} -part xc7a100tcsg324-1 -force
 
 add_files -norecurse ${SRC_FILES}
@@ -37,5 +32,13 @@ add_files -fileset constrs_1 "../constraints/Arty-A7-100-Master.xdc"
 set_property top vga_top [current_fileset]
 set_property top vga_tb [current_fileset -simset]
 
+set_property file_type {VHDL 2008} [get_files "*.vhd"]
+
 set_property generic ${SYNTH_GENERICS} [current_fileset]
-set_property generic ${SIM_GENERICS} [current_fileset -simset]
+
+# elaborate 
+# synth_design -rtl -name rtl_1
+
+# synthesis settings
+set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY none [get_runs synth_1]
+set_property STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE RuntimeOptimized [get_runs synth_1]

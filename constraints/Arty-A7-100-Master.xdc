@@ -8,18 +8,35 @@ set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports clk]
 create_clock -period 10.000 -name clk -waveform {0.000 5.000} -add [get_ports clk]
 
 # Remove async inputs from timing
-set_false_path -from [get_ports {sw_in[0]}]
-set_false_path -from [get_ports {sw_in[1]}]
-set_false_path -from [get_ports {sw_in[2]}]
 set_false_path -from [get_ports rst_n]
 
 create_generated_clock -name v_sync_clk_div -source [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0] -divide_by 2 [get_pins i_vga_controller/v_sync_r_reg/Q]
 
-## Switches
-set_property -dict {PACKAGE_PIN A8 IOSTANDARD LVCMOS33} [get_ports {sw_in[0]}]
-set_property -dict {PACKAGE_PIN C11 IOSTANDARD LVCMOS33} [get_ports {sw_in[1]}]
-set_property -dict {PACKAGE_PIN C10 IOSTANDARD LVCMOS33} [get_ports {sw_in[2]}]
 set_property -dict {PACKAGE_PIN A10 IOSTANDARD LVCMOS33} [get_ports rst_n]
+
+set_property -dict {PACKAGE_PIN E15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[0]}]
+set_property -dict {PACKAGE_PIN E16 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[1]}]
+set_property -dict {PACKAGE_PIN D15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[2]}]
+set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[3]}]
+
+set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports h_sync_out]
+set_property -dict {PACKAGE_PIN J18 IOSTANDARD LVCMOS33} [get_ports v_sync_out]
+
+set_property -dict {PACKAGE_PIN G13 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[0]}]
+set_property -dict {PACKAGE_PIN B11 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[1]}]
+set_property -dict {PACKAGE_PIN A11 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[2]}]
+set_property -dict {PACKAGE_PIN D12 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[3]}]
+
+set_property -dict {PACKAGE_PIN D13 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[0]}]
+set_property -dict {PACKAGE_PIN B18 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[1]}]
+set_property -dict {PACKAGE_PIN A18 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[2]}]
+set_property -dict {PACKAGE_PIN K16 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[3]}]
+
+## Switches
+#set_property -dict {PACKAGE_PIN A8 IOSTANDARD LVCMOS33} [get_ports {sw_in[0]}]
+#set_property -dict {PACKAGE_PIN C11 IOSTANDARD LVCMOS33} [get_ports {sw_in[1]}]
+#set_property -dict {PACKAGE_PIN C10 IOSTANDARD LVCMOS33} [get_ports {sw_in[2]}]
+#set_property -dict {PACKAGE_PIN A10 IOSTANDARD LVCMOS33} [get_ports rst_n]
 
 ## RGB LEDs
 #set_property -dict { PACKAGE_PIN E1    IOSTANDARD LVCMOS33 } [get_ports { led0_b }]; #IO_L18N_T2_35 Sch=led0_b
@@ -48,22 +65,22 @@ set_property -dict {PACKAGE_PIN A10 IOSTANDARD LVCMOS33} [get_ports rst_n]
 #set_property -dict { PACKAGE_PIN B8    IOSTANDARD LVCMOS33 } [get_ports { btn[3] }]; #IO_L12P_T1_MRCC_16 Sch=btn[3]
 
 ## Pmod Header JA
-set_property -dict {PACKAGE_PIN G13 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[0]}]
-set_property -dict {PACKAGE_PIN B11 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[1]}]
-set_property -dict {PACKAGE_PIN A11 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[2]}]
-set_property -dict {PACKAGE_PIN D12 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[3]}]
-set_property -dict {PACKAGE_PIN D13 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[0]}]
-set_property -dict {PACKAGE_PIN B18 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[1]}]
-set_property -dict {PACKAGE_PIN A18 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[2]}]
-set_property -dict {PACKAGE_PIN K16 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[3]}]
+#set_property -dict {PACKAGE_PIN G13 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[0]}]
+#set_property -dict {PACKAGE_PIN B11 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[1]}]
+#set_property -dict {PACKAGE_PIN A11 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[2]}]
+#set_property -dict {PACKAGE_PIN D12 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[3]}]
+#set_property -dict {PACKAGE_PIN D13 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[0]}]
+#set_property -dict {PACKAGE_PIN B18 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[1]}]
+#set_property -dict {PACKAGE_PIN A18 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[2]}]
+#set_property -dict {PACKAGE_PIN K16 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[3]}]
 
 ## Pmod Header JB
-set_property -dict {PACKAGE_PIN E15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[0]}]
-set_property -dict {PACKAGE_PIN E16 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[1]}]
-set_property -dict {PACKAGE_PIN D15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[2]}]
-set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[3]}]
-set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports h_sync_out]
-set_property -dict {PACKAGE_PIN J18 IOSTANDARD LVCMOS33} [get_ports v_sync_out]
+#set_property -dict {PACKAGE_PIN E15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[0]}]
+#set_property -dict {PACKAGE_PIN E16 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[1]}]
+#set_property -dict {PACKAGE_PIN D15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[2]}]
+#set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[3]}]
+#set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports h_sync_out]
+#set_property -dict {PACKAGE_PIN J18 IOSTANDARD LVCMOS33} [get_ports v_sync_out]
 #set_property -dict { PACKAGE_PIN K15   IOSTANDARD LVCMOS33 } [get_ports { jb[6] }]; #IO_L24P_T3_RS1_15 Sch=jb_p[4]
 #set_property -dict { PACKAGE_PIN J15   IOSTANDARD LVCMOS33 } [get_ports { jb[7] }]; #IO_L24N_T3_RS0_15 Sch=jb_n[4]
 
