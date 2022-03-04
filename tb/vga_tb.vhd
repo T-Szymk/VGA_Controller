@@ -19,6 +19,7 @@
 -- 2021-07-19  1.1      TZS     Updated TB to match latest design
 --                              Removed signals related to DE2 board
 -- 2021-12-12  1.2      TZS     Updated signals to use most recent interfaces
+-- 2022-03-04  1.3      TZS     Removed unused switches
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -40,8 +41,8 @@ ARCHITECTURE tb OF vga_tb IS
 
   COMPONENT vga_top IS 
     GENERIC (
-              CONF_SIM       : BIT     := '1';
-              CONF_TEST_PATT : BIT     := '1'
+              CONF_SIM       : INTEGER     := 1;
+              CONF_TEST_PATT : INTEGER     := 1
             );
     
     PORT (
@@ -59,7 +60,6 @@ ARCHITECTURE tb OF vga_tb IS
   SIGNAL clk   : STD_LOGIC := '0';
   SIGNAL rst_n : STD_LOGIC := '0';
 
-  SIGNAL dut_sw_in       : STD_LOGIC_VECTOR(3-1 DOWNTO 0) := (OTHERS => '0');
   SIGNAL dut_v_sync_out  : STD_LOGIC;
   SIGNAL dut_h_sync_out  : STD_LOGIC;
   SIGNAL dut_r_colr_out  : STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
@@ -85,8 +85,6 @@ BEGIN
     );
 
   rst_n <= '1' AFTER (4 * ref_clk_perd_g); -- de-assert reset after 4 cycles 
-  
-  dut_sw_in <= (OTHERS => '1') AFTER 1.5 sec;
 
   clk_gen : PROCESS IS 
   BEGIN
