@@ -1,0 +1,16 @@
+{signal: [
+  {name: 'clk',         wave: 'p.....................', data: []},
+  {name: 'rst_n',       wave: '0.1...................', data: []},  
+  {name: 'm_aclk_o',    wave: 'p.....................', data: []},     
+  {name: 'm_arstn_o',   wave: '0.1...................', data: []},
+  {name: ''},
+  {name: 'm_araddr_o',  wave: 'x..2.2.2..', data: ["00","01","02","03","04"]},       
+  {name: 'm_arprot_o',  wave: 'x..2..................', data: ["001"]},       
+  {name: 'm_arvalid_o', wave: '0..101010.', data: []},       
+  {name: 'm_arrdy_i',   wave: '1........', data: []},
+  {name: ''},
+  {name: 'm_rdata_i',   wave: 'x...2.2.2.2..', data: ["00","01","02","03"]},     
+  {name: 'm_rvalid_i',  wave: '0...10101010', data: []},      
+  {name: 'm_rrdy_o',    wave: '1.......', data: []},    
+  {name: 'm_rresp_i',   wave: 'x..2..................', data: ["00"]}     
+]}
