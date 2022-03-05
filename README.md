@@ -9,7 +9,9 @@ Arty A7-100T (uses Digilent VGA PMOD)
 
 #### _TO DO_:
 * Replace colour generator with memory block + controller and test.
-* Remove reset block and colour switches (deprecated).
+		+ First start using a BRAM (accessed via AXI)
+		+ Replace BRAM with DDR MIG (accessed via AXI)
+* Insert register interface to make operation speeds configurable.
 * Update build scripts to compile, run unit tests and then system tests.
-* Create synthesis scripts.
+
 
