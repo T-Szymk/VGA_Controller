@@ -24,7 +24,7 @@ USE WORK.VGA_PKG.ALL;
 entity vga_axi_mem_ctrl is 
   generic (
   	AXI_ADDR_WIDTH INTEGER := 16;
-  	AXI_DATA_WIDTH INTEGER := 32
+  	AXI_DATA_WIDTH INTEGER := 36
   );
   port (
     clk         : in std_logic;

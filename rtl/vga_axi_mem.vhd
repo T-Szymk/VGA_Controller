@@ -22,7 +22,7 @@ use IEEE.std_logic_1164.all;
 entity vga_axi_mem is 
   generic (
   	AXI_ADDR_WIDTH INTEGER := 16;
-  	AXI_DATA_WIDTH INTEGER := 32
+  	AXI_DATA_WIDTH INTEGER := 36
   );
   port (
     -- AXI clk/rst_n
