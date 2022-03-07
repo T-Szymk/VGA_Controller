@@ -56,6 +56,7 @@ architecture rtl of vga_axi_mem_ctrl is
   signal c_state, n_state : axi_state_t;
   signal m_rvalid_r, m_arrdy_r : std_logic;
   signal m_arvalid_s, m_rrdy_s : std_logic;
+  signal req_data_s : std_logic; -- set to 1 when vga requires data
 
 begin
 
@@ -98,19 +99,17 @@ begin
 
       when idle   =>                                                         ---
       
-        if m_arrdy_r = '1' and m_arvalid_s = '1' then 
+        if m_arrdy_r = '1' and req_data_s = '1' then 
           n_state <= r_addr;
         end if;
 
       when r_addr =>                                                         ---
-
-        if m_rvalid_r = '1' and m_rrdy_s = '1' then 
-          n_state <= r_data;
-        end if;
+        -- set valid high  
+        n_state <= r_data;
                                                                  
       when r_data =>                                                         ---
 
-        if m_arrdy_r = '1' and m_arvalid_s = '1' then 
+        if m_arrdy_r = '1' and req_data_s = '1' then 
           n_state <= r_addr;
         else 
           n_state <= idle;
@@ -124,8 +123,19 @@ begin
 
   end process comb_nxt_state; --------------------------------------------------
 
-  comb_fsm_out : process (all) is ----------------------------------------------
+  comb_fsm_out : process (c_state) is ----------------------------------------------
   begin
+
+    m_arvalid_s <= '0';
+
+    case c_state is
+      when reset  =>                                                         ---
+      when idle   =>                                                         ---
+      when r_addr =>                                                         ---
+        m_arvalid_s <= '1';                                          
+      when r_data =>                                                         ---
+      when others =>                                                         ---
+    end case;
   end process comb_fsm_out; ----------------------------------------------------
 
   m_aclk_o  <= clk;
