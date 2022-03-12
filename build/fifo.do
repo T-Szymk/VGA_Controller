@@ -26,22 +26,19 @@ sim:/sync_fifo_tb/i_sync_fifo/data_out_r \
 sim:/sync_fifo_tb/i_sync_fifo/wr_ptr_s \
 sim:/sync_fifo_tb/i_sync_fifo/rd_ptr_s \
 sim:/sync_fifo_tb/i_sync_fifo/data_cnt_r \
-sim:/sync_fifo_tb/i_sync_fifo/fifo_block_r
+sim:/sync_fifo_tb/i_sync_fifo/fifo_block_r \
+-divider "FIFO model" \
+sim:/sync_fifo_tb/test_data_out \
+sim:/sync_fifo_tb/fifo_model \
+sim:/sync_fifo_tb/write_ptr \
+sim:/sync_fifo_tb/read_ptr \
+sim:/sync_fifo_tb/data_count
 
 set StdArithNoWarnings 1 
 run 0 ns 
 set StdArithNoWarnings 0
 
-run 200 ns
-force -freeze sim:/sync_fifo_tb/clr_n 1'h1 0
-run 200 ns
-force -freeze sim:/sync_fifo_tb/we 1'h1 0
-run 200 ns
-force -freeze sim:/sync_fifo_tb/rd 1'h1 0
-force -freeze sim:/sync_fifo_tb/data_in 36'hAAAAAAAAA 0
-run 200 ns
-force -freeze sim:/sync_fifo_tb/we 1'h0 0
-run 200 ns
+run -all
 
 wave zoom full
 config wave -signalnamewidth 1

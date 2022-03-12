@@ -11,6 +11,8 @@
 -- Standard   : VHDL'08
 --------------------------------------------------------------------------------
 -- Description: Synchronous FIFO structure 
+--              Write takes precedence over read if both are asserted on an 
+--              empty FIFO. 
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
