@@ -19,12 +19,13 @@
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
-USE WORK.VGA_PKG.ALL;
+use IEEE.numeric_std.all;
+use WORK.vga_pkg.all;
 
 entity vga_axi_mem_ctrl is 
   generic (
-  	AXI_ADDR_WIDTH INTEGER := 16;
-  	AXI_DATA_WIDTH INTEGER := 36
+  	AXI_ADDR_WIDTH : INTEGER := 32;
+  	AXI_DATA_WIDTH : INTEGER := 64
   );
   port (
     clk         : in std_logic;
@@ -54,30 +55,20 @@ architecture rtl of vga_axi_mem_ctrl is
   type axi_state_t is (reset, idle, r_addr, r_data);
 
   signal c_state, n_state : axi_state_t;
-  signal m_rvalid_r, m_arrdy_r : std_logic;
-  signal m_arvalid_s, m_rrdy_s : std_logic;
-  signal req_data_s : std_logic; -- set to 1 when vga requires data
+  signal m_arvalid_r : std_logic;
+  signal m_rrdy_s    : std_logic;
+  signal req_data_s  : std_logic; -- set to 1 when vga requires data
+
+  signal addr_r0, addr_r : unsigned(AXI_ADDR_WIDTH-1 downto 0) := (others => '0');
+  signal data_r  : std_logic_vector(AXI_DATA_WIDTH-1 downto 0) := (others => '0');
 
 begin
-
-  sync_axi_ctrl : process (clk, rst_n) is --------------------------------------
-  begin 
-
-     if rst_n = '0' then
-       m_rvalid_r <= '0';
-       m_arrdy_r  <= '0';
-     elsif rising_edge(clk) then 
-       m_rvalid_r <= m_rvalid_i;
-       m_arrdy_r  <= m_arrdy_i;
-     end if;
-
-  end process sync_axi_ctrl; ---------------------------------------------------
 
   sync_cur_state : process (clk, rst_n) is -------------------------------------
   begin 
 
     if rst_n = '0' then
-      c_state <= reset;
+      c_state <= reset; 
     elsif rising_edge(clk) then
       c_state <= n_state; 
     end if;
@@ -99,21 +90,21 @@ begin
 
       when idle   =>                                                         ---
       
-        if m_arrdy_r = '1' and req_data_s = '1' then 
+        if m_arrdy_i = '1' and req_data_s = '1' then 
           n_state <= r_addr;
         end if;
 
       when r_addr =>                                                         ---
-        -- set valid high  
-        n_state <= r_data;
-                                                                 
-      when r_data =>                                                         ---
+        -- set valid high 
+        -- populate data line
+        n_state <= r_data; 
 
-        if m_arrdy_r = '1' and req_data_s = '1' then 
-          n_state <= r_addr;
-        else 
+      when r_data =>                                                         ---
+        -- Might be able to optimise here by returning to r_addr when there is 
+        -- new read requests...
+        if(m_rvalid_i = '1') then
           n_state <= idle;
-        end if; 
+        end if;
 
       when others =>                                                         ---
 
@@ -123,23 +114,40 @@ begin
 
   end process comb_nxt_state; --------------------------------------------------
 
-  comb_fsm_out : process (c_state) is ----------------------------------------------
-  begin
+  sync_axi_ctrl : process (clk, rst_n) is --------------------------------------
+  begin 
 
-    m_arvalid_s <= '0';
+     if rst_n = '0' then
+       m_arvalid_r <= '0';
+       addr_r     <= (others => '0');
+       addr_r0    <= (others => '0'); -- NOTE THAT THE ADDRESS SHOULD BE ASSIGNED TO SOMETHING VALID BUT UNTIL THE LOGIC IS THERE, AN INCREMENTAL VALUE WILL BE USED.    
+     elsif rising_edge(clk) then 
+       m_arvalid_r <= '0';
+       addr_r0  <= addr_r + 1; -- NOTE THAT THE ADDRESS SHOULD BE ASSIGNED TO SOMETHING VALID BUT UNTIL THE LOGIC IS THERE, AN INCREMENTAL VALUE WILL BE USED. 
 
-    case c_state is
-      when reset  =>                                                         ---
-      when idle   =>                                                         ---
-      when r_addr =>                                                         ---
-        m_arvalid_s <= '1';                                          
-      when r_data =>                                                         ---
-      when others =>                                                         ---
-    end case;
-  end process comb_fsm_out; ----------------------------------------------------
+     case n_state is 
+       when reset  =>
+       when idle   =>
+         if(c_state = r_data) then
+           data_r      <= m_rdata_i;
+         end if;
+       when r_addr =>
+         m_arvalid_r <= '1';
+         addr_r      <= addr_r0;
+       when r_data =>
+       when others =>
+     end case; 
 
-  m_aclk_o  <= clk;
-  m_arstn_o <= rst_n;
+     end if;
+
+  end process sync_axi_ctrl; ---------------------------------------------------
+
+  m_aclk_o    <= clk;
+  m_arstn_o   <= rst_n;
+  m_araddr_o  <= std_logic_vector(addr_r); 
+  m_arvalid_o <= m_arvalid_r;
+  m_arprot_o  <= "000"; -- unpriveleged, unsecure, data access
+  m_rrdy_o    <= '1';
 
 end architecture rtl; 
 

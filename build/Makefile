@@ -66,8 +66,9 @@ sim_vga_colr_mux_gui: compile_vga_colr_mux
 
 .PHONY: compile_vga_controller
 compile_vga_controller:
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_controller.vhd \
-	$(TB)/vga_controller_tb.vhd
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
+	                                            $(RTL)/vga_controller.vhd \
+	                                            $(TB)/vga_controller_tb.vhd
 
 .PHONY: sim_vga_controller
 sim_vga_controller: compile_vga_controller
@@ -94,6 +95,17 @@ sim_fifo:
 .PHONY: sim_fifo_gui
 sim_fifo_gui:
 	vsim -voptargs="+acc" -onfinish stop sync_fifo_tb -do "fifo.do"
+
+# AXI TESTING ##################################################################
+
+.PHONY: compile_axi
+compile_axi:
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
+	                                            $(RTL)/vga_axi_mem_ctrl.vhd
+
+.PHONY: sim_axi
+sim_axi:
+	vsim -voptargs="+acc" -onfinish exit vga_axi_mem_ctrl -do "do_axi_master.do"
 
 # FPGA BUILD ###################################################################
 
