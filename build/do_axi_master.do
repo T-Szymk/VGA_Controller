@@ -20,9 +20,9 @@ sim:/vga_axi_mem_ctrl/c_state \
 sim:/vga_axi_mem_ctrl/n_state \
 sim:/vga_axi_mem_ctrl/m_arvalid_r \
 sim:/vga_axi_mem_ctrl/req_data_s \
-sim:/vga_axi_mem_ctrl/addr_r0 \
-sim:/vga_axi_mem_ctrl/addr_r \
-sim:/vga_axi_mem_ctrl/data_r
+sim:/vga_axi_mem_ctrl/m_araddr_r_0 \
+sim:/vga_axi_mem_ctrl/m_araddr_r \
+sim:/vga_axi_mem_ctrl/m_rdata_r
 
 force -freeze sim:/vga_axi_mem_ctrl/m_rdata_i 64'hAAAAAAAAAAAAAAAA 0
 force -freeze sim:/vga_axi_mem_ctrl/m_arrdy_i 0 0
