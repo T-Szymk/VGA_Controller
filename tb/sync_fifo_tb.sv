@@ -40,6 +40,8 @@ module sync_fifo_tb;
 
   int write_ptr, read_ptr, data_count = 0;
 
+
+  // clock generation
   always #(CLOCK_PERIOD_NS/2) clk = ~clk;
 
   sync_fifo #(
