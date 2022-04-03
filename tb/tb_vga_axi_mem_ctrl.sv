@@ -38,6 +38,10 @@ module tb_vga_axi_mem_ctrl;
   logic                      r_rdy;
   logic [AXI_DATA_WITH-1:0]  r_data   = '0;
   logic [1:0]                r_resp   = '0;
+
+  typedef enum {RESET, IDLE, WAIT4RDY, SEND_DATA} state_t; 
+
+  state_t c_state, n_state;
   
   // clock generation
   always #(CLOCK_PERIOD_NS/2) clk = ~clk;
@@ -63,9 +67,17 @@ module tb_vga_axi_mem_ctrl;
   initial begin
     
     #(5*CLOCK_PERIOD_NS) rst_n = 1;
-    ar_rdy = 1;
-    @()
-  
+    
+  end
+
+  always_ff @(posedge clk or negedge rst_n) begin 
+
+    if (~rst_n) begin
+      c_state <= RESET;
+    end else begin
+      c_state <= n_state;
+    end 
+
   end
 
 endmodule

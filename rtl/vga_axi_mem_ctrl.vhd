@@ -62,7 +62,7 @@ architecture rtl of vga_axi_mem_ctrl is
 
 begin
 
-  sync_cur_state : process (clk, rst_n) is --------------------------------------------
+  sync_cur_state : process (clk, rst_n) is -------------------------------------
   begin 
     
     if rst_n = '0' then
@@ -114,7 +114,7 @@ begin
 
   end process comb_nxt_state; --------------------------------------------------
 
-  sync_axi_ctrl : process (clk, rst_n) is ---------------------------------------------
+  sync_axi_ctrl : process (clk, rst_n) is --------------------------------------
   begin     
      
     if rst_n = '0' then
