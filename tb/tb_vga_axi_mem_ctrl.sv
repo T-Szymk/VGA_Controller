@@ -69,14 +69,55 @@ module tb_vga_axi_mem_ctrl;
     #(5*CLOCK_PERIOD_NS) rst_n = 1;
     
   end
+  
+  /***** FSM Block 1 : Synchronous current state assignment *****/
 
-  always_ff @(posedge clk or negedge rst_n) begin 
+  always_ff @(posedge clk or negedge rst_n) begin : sync_c_state 
 
     if (~rst_n) begin
       c_state <= RESET;
     end else begin
       c_state <= n_state;
     end 
+
+  end
+
+  /***** FSM Block 2 : Combinational next state assignment *****/
+
+  always_comb begin : comb_n_state
+
+    n_state = RESET; // default assignments
+
+    case (c_state)
+      
+      RESET: 
+        n_state = IDLE;
+
+      IDLE: 
+        if(ar_rdy == 1 && ar_valid == 1)
+          n_state = WAIT4RDY;
+        else
+          n_state = IDLE;
+
+      WAIT4RDY: 
+        n_state = r_rdy ? SEND_DATA : WAIT4RDY;
+      
+      SEND_DATA: 
+        if(r_rdy == 1 && r_valid == 1)
+          n_state = IDLE;
+        else
+          n_state = SEND_DATA;
+
+      default:
+        n_state = RESET;
+    endcase
+    
+  end
+
+  /***** FSM Block 3 : Synchronous output assignment  *****/
+
+  always_ff @(posedge clk or negedge rst_n) begin : sync_output
+
 
   end
 
