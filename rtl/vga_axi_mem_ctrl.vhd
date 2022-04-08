@@ -144,7 +144,7 @@ begin
           m_araddr_r  <= m_araddr_r_0;
            
         when r_data =>
-          m_rrdy_r     <= '1';
+          m_rrdy_r    <= '1';
         when others =>
       end case; 
     end if;

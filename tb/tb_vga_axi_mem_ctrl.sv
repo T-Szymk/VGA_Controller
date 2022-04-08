@@ -5,7 +5,7 @@
  File       : tb_vga_axi_mem_ctrl.sv
  Author(s)  : Thomas Szymkowiak
  Company    : TUNI
- Created    : 2022-03-26
+ Created    : 2022-04-07
  Design     : tb_vga_axi_mem_ctrl
  Platform   : -
  Standard   : SystemVerilog
@@ -14,7 +14,7 @@
 --------------------------------------------------------------------------------
  Revisions:
  Date        Version  Author  Description
- 2022-03-26  1.0      TZS     Created
+ 2022-04-07  1.0      TZS     Created
 ------------------------------------------------------------------------------*/
 
 module tb_vga_axi_mem_ctrl;
@@ -24,22 +24,28 @@ module tb_vga_axi_mem_ctrl;
   parameter AXI_ADDR_WIDTH  = 32;
   parameter AXI_DATA_WITH   = 64;
 
+  parameter PXL_CTR_WIDTH = 10;
+  parameter LINE_CTR_WIDTH = 10;
+
   parameter CLOCK_PERIOD_NS = 10;
 
-  logic                      clk      = 0;
-  logic                      rst_n    = 0;
-  logic                      pxl_ctr  = 0;
-  logic                      line_ctr = 0;
-  logic                      ar_rdy   = 0;
-  logic                      r_valid  = 0;
+  logic                      clk       = 0;
+  logic                      rst_n     = 0;
+  logic [PXL_CTR_WIDTH-1:0]  pxl_ctr;
+  logic [LINE_CTR_WIDTH-1:0] line_ctr;
+  logic                      ar_rdy;
+  logic                      r_valid;
   logic [AXI_ADDR_WIDTH-1:0] ar_addr;
-  logic [2:0]                ar_prot;
+  logic [2:0]                ar_prot   = 3'b001;
   logic                      ar_valid;
   logic                      r_rdy;
-  logic [AXI_DATA_WITH-1:0]  r_data   = '0;
-  logic [1:0]                r_resp   = '0;
+  logic [AXI_DATA_WITH-1:0]  r_data    = '0;
+  logic [1:0]                r_resp    = '0;
 
-  typedef enum {RESET, IDLE, WAIT4RDY, SEND_DATA} state_t; 
+  logic                      ar_rdy_r  = 0;
+  logic                      r_valid_r = 0;
+
+  typedef enum {RESET, IDLE, SEND_ADDR, SEND_DATA} state_t; 
 
   state_t c_state, n_state;
   
@@ -48,7 +54,7 @@ module tb_vga_axi_mem_ctrl;
 
   vga_axi_mem_ctrl #(
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WITH(AXI_DATA_WITH)
+    .AXI_DATA_WIDTH(AXI_DATA_WITH)
   ) i_vga_axi_mem_ctrl (
     .clk(clk),
     .rst_n(rst_n),
@@ -94,19 +100,21 @@ module tb_vga_axi_mem_ctrl;
         n_state = IDLE;
 
       IDLE: 
-        if(ar_rdy == 1 && ar_valid == 1)
-          n_state = WAIT4RDY;
-        else
-          n_state = IDLE;
+        n_state = SEND_ADDR;        
 
-      WAIT4RDY: 
-        n_state = r_rdy ? SEND_DATA : WAIT4RDY;
-      
-      SEND_DATA: 
+      SEND_ADDR: begin
+        if(ar_rdy == 1 && ar_valid == 1)
+          n_state = SEND_DATA;
+        else
+          n_state = SEND_ADDR;
+      end
+
+      SEND_DATA: begin 
         if(r_rdy == 1 && r_valid == 1)
           n_state = IDLE;
         else
           n_state = SEND_DATA;
+      end
 
       default:
         n_state = RESET;
@@ -117,8 +125,47 @@ module tb_vga_axi_mem_ctrl;
   /***** FSM Block 3 : Synchronous output assignment  *****/
 
   always_ff @(posedge clk or negedge rst_n) begin : sync_output
+  
+    if(~rst_n) begin 
+      ar_rdy_r  <= 1'b0;
+      r_valid_r <= 1'b0;
+      r_data    <= '0; 
+    end else begin
+    
+      ar_rdy_r  <= 0;
+      r_valid_r <= 0;
 
+      case(n_state) 
+        
+        RESET: begin
+          r_data    <= '0;
+        end
+        
+        IDLE: begin 
+          ar_rdy_r  <= 0;
+        end
+
+        SEND_ADDR: begin
+          ar_rdy_r <= 1;
+        end
+          
+        SEND_DATA: begin
+          r_valid_r <= 1;
+          r_data++;
+        end
+
+        default: begin
+          ar_rdy_r  <= 1'b0;
+          r_valid_r <= 1'b1;
+          r_data    <= '0;
+        end
+      endcase
+
+    end
 
   end
+
+  assign r_valid = r_valid_r;
+  assign ar_rdy  = ar_rdy_r;
 
 endmodule
