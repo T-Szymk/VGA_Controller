@@ -92,7 +92,7 @@ begin
       when send_data =>
 
         if (s_rrdy_i = '1') and (s_rvalid_r = '1') then 
-          n_state <= idle;
+          n_state <= rcv_addr;
         end if;
 
       when others =>

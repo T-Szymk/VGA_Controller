@@ -103,7 +103,11 @@ begin
         -- Might be able to optimise here by returning to send_addr when there are new read requests...
         -- read data when ready and valid
         if(m_rvalid_i = '1') and (m_rrdy_r = '1') then
-          n_state <= idle;
+          if req_data_s = '1' then
+            n_state <= send_addr;
+          else
+            n_state <= idle;
+          end if;
         end if;
 
       when others =>                                                         ---
@@ -133,12 +137,9 @@ begin
       case n_state is 
         when reset =>
         when idle  =>
-           
-          if(c_state = rcv_data) then -- when rdy/vld = 1
-            m_rdata_r <= m_rdata_i;
-          end if;
-           
         when send_addr =>
+
+          m_rdata_r <= m_rdata_i; -- add new data
           
           m_arvalid_r <= '1';
           m_araddr_r  <= m_araddr_r_0;
