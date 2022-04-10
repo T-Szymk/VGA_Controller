@@ -28,8 +28,8 @@ entity vga_axi_mem_ctrl is
   	AXI_DATA_WIDTH : integer := 64
   );
   port (
-    clk         : in std_logic;
-    rst_n       : in std_logic;
+    m_aclk_i    : in std_logic;
+    m_arstn_i   : in std_logic;
     pxl_ctr_i   : in std_logic_vector((pxl_ctr_width_c-1) downto 0);
     line_ctr_i  : in std_logic_vector((line_ctr_width_c-1) downto 0); 
     -- AXI AR channel
@@ -62,12 +62,12 @@ architecture rtl of vga_axi_mem_ctrl is
 
 begin
 
-  sync_cur_state : process (clk, rst_n) is -------------------------------------
+  sync_cur_state : process (m_aclk_i, m_arstn_i) is -------------------------------------
   begin 
     
-    if rst_n = '0' then
+    if m_arstn_i = '0' then
       c_state <= reset;
-    elsif rising_edge(clk) then
+    elsif rising_edge(m_aclk_i) then
       c_state <= n_state; 
     end if;
 
@@ -82,7 +82,7 @@ begin
       
       when reset  =>                                                         ---
 
-        if rst_n = '1' then
+        if m_arstn_i = '1' then
         	n_state <= idle;
         end if;
 
@@ -114,17 +114,17 @@ begin
 
   end process comb_nxt_state; --------------------------------------------------
 
-  sync_outputs : process (clk, rst_n) is --------------------------------------
+  sync_outputs : process (m_aclk_i, m_arstn_i) is --------------------------------------
   begin     
      
-    if rst_n = '0' then
+    if m_arstn_i = '0' then
       
       m_rrdy_r     <= '0';
       m_arvalid_r  <= '0';
       m_araddr_r   <= (others => '0');
       m_araddr_r_0 <= (others => '0'); -- NOTE THAT THE ADDRESS SHOULD BE ASSIGNED TO SOMETHING VALID BUT UNTIL THE LOGIC IS THERE, AN INCREMENTAL VALUE WILL BE USED.
 
-    elsif rising_edge(clk) then 
+    elsif rising_edge(m_aclk_i) then 
       
       m_rrdy_r     <= '0';
       m_arvalid_r  <= '0';

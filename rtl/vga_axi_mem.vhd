@@ -22,8 +22,8 @@ use IEEE.numeric_std.all;
 
 entity vga_axi_mem is 
   generic (
-  	AXI_ADDR_WIDTH INTEGER := 16;
-  	AXI_DATA_WIDTH INTEGER := 36
+  	AXI_ADDR_WIDTH : integer := 16;
+  	AXI_DATA_WIDTH : integer := 36
   );
   port (
     -- AXI clk/rst_n
@@ -81,12 +81,12 @@ begin
         n_state <= idle;
       
       when idle =>
-        n_state <= send_addr;
+        n_state <= rcv_addr;
 
       when rcv_addr =>
         
         if (s_arrdy_r = '1') and (s_arvalid_i = '1') then
-          n_state <= idle;
+          n_state <= send_data;
         end if;
 
       when send_data =>
@@ -135,12 +135,12 @@ begin
           s_arrdy_r  <= '0';
           s_rvalid_r <= '1';
           s_rdata_r  <= (others => '0');
-          
+
       end case;
 
     end if;
 
-  end process comb_nxt_state; --------------------------------------------------
+  end process sync_outputs; --------------------------------------------------
 
   s_arrdy_o  <= s_arrdy_r;
   s_rvalid_o <= s_rvalid_r;

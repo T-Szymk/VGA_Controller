@@ -56,8 +56,8 @@ module tb_vga_axi_mem_ctrl;
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_DATA_WIDTH(AXI_DATA_WITH)
   ) i_vga_axi_mem_ctrl (
-    .clk(clk),
-    .rst_n(rst_n),
+    .m_aclk_i(clk),
+    .m_arstn_i(rst_n),
     .pxl_ctr_i(pxl_ctr),
     .line_ctr_i(line_ctr),
     .m_araddr_o(ar_addr),
@@ -100,13 +100,13 @@ module tb_vga_axi_mem_ctrl;
         n_state = IDLE;
 
       IDLE: 
-        n_state = SEND_ADDR;        
+        n_state = RCV_ADDR;        
 
       RCV_ADDR: begin
         if(ar_rdy == 1 && ar_valid == 1)
           n_state = SEND_DATA;
         else
-          n_state = SEND_ADDR;
+          n_state = RCV_ADDR;
       end
 
       SEND_DATA: begin 
