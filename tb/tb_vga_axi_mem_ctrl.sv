@@ -5,7 +5,7 @@
  File       : tb_vga_axi_mem_ctrl.sv
  Author(s)  : Thomas Szymkowiak
  Company    : TUNI
- Created    : 2022-04-07
+ Created    : 2022-04-10
  Design     : tb_vga_axi_mem_ctrl
  Platform   : -
  Standard   : SystemVerilog
@@ -14,7 +14,7 @@
 --------------------------------------------------------------------------------
  Revisions:
  Date        Version  Author  Description
- 2022-04-07  1.0      TZS     Created
+ 2022-04-10  1.0      TZS     Created
 ------------------------------------------------------------------------------*/
 
 module tb_vga_axi_mem_ctrl;
@@ -45,7 +45,7 @@ module tb_vga_axi_mem_ctrl;
   logic                      ar_rdy_r  = 0;
   logic                      r_valid_r = 0;
 
-  typedef enum {RESET, IDLE, SEND_ADDR, SEND_DATA} state_t; 
+  typedef enum {RESET, IDLE, RCV_ADDR, SEND_DATA} state_t; 
 
   state_t c_state, n_state;
   
@@ -102,7 +102,7 @@ module tb_vga_axi_mem_ctrl;
       IDLE: 
         n_state = SEND_ADDR;        
 
-      SEND_ADDR: begin
+      RCV_ADDR: begin
         if(ar_rdy == 1 && ar_valid == 1)
           n_state = SEND_DATA;
         else
@@ -145,7 +145,7 @@ module tb_vga_axi_mem_ctrl;
           ar_rdy_r  <= 0;
         end
 
-        SEND_ADDR: begin
+        RCV_ADDR: begin
           ar_rdy_r <= 1;
         end
           

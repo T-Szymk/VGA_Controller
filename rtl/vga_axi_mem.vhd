@@ -5,7 +5,7 @@
 -- File       : vga_axi_mem.vhd
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
--- Created    : 2022-04-07
+-- Created    : 2022-04-10
 -- Design     : vga_axi_mem
 -- Platform   : -
 -- Standard   : VHDL'08
@@ -14,10 +14,11 @@
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-04-07  1.1      TZS     Created
+-- 2022-04-10  1.1      TZS     Created
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
 
 entity vga_axi_mem is 
   generic (
@@ -49,17 +50,24 @@ architecture rtl of vga_axi_mem is
 
   signal c_state, n_state : axi_mem_state_t;
 
+  signal s_arrdy_r  : std_logic := '0';
+  signal s_rvalid_r : std_logic := '0';
+
+  signal s_rdata_r : unsigned(AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+
 begin
 
   s_rresp_o <= "00"; -- response tied to OKAY
 
   sync_cur_state : process(s_aclk_i, s_arstn_i) is -----------------------------
   begin
+
     if s_arstn_i = '0' then 
       c_state <= reset;
     elsif rising_edge(s_aclk_i) then
       c_state <= n_state; 
     end if;
+
   end process sync_cur_state; --------------------------------------------------
 
   comb_nxt_state : process (all) is -------------------------------------------- 
@@ -70,10 +78,25 @@ begin
     case c_state is
 
       when reset =>
+        n_state <= idle;
+      
       when idle =>
-      when send_addr =>
-      when rcv_data =>
+        n_state <= send_addr;
+
+      when rcv_addr =>
+        
+        if (s_arrdy_r = '1') and (s_arvalid_i = '1') then
+          n_state <= idle;
+        end if;
+
+      when send_data =>
+
+        if (s_rrdy_i = '1') and (s_rvalid_r = '1') then 
+          n_state <= idle;
+        end if;
+
       when others =>
+        n_state <= reset;
 
     end case;
 
@@ -81,7 +104,47 @@ begin
 
   sync_outputs : process (s_aclk_i, s_arstn_i) is ------------------------------ 
   begin
+  
+    if s_arstn_i = '0' then
+      
+      s_arrdy_r  <= '0';
+      s_rvalid_r <= '0';
+      s_rdata_r  <= (others => '0');
+
+    elsif rising_edge(s_aclk_i) then 
+
+      s_arrdy_r  <= '0';
+      s_rvalid_r <= '0';
+    
+      case n_state is 
+
+        when reset =>
+          s_rdata_r <= (others => '0');
+        
+        when idle =>
+          s_arrdy_r <= '0';
+        
+        when rcv_addr =>
+          s_arrdy_r <= '1';
+        
+        when send_data =>
+          s_rvalid_r <= '1';
+          s_rdata_r  <= s_rdata_r + 1;
+        
+        when others =>
+          s_arrdy_r  <= '0';
+          s_rvalid_r <= '1';
+          s_rdata_r  <= (others => '0');
+          
+      end case;
+
+    end if;
+
   end process comb_nxt_state; --------------------------------------------------
+
+  s_arrdy_o  <= s_arrdy_r;
+  s_rvalid_o <= s_rvalid_r;
+  s_rdata_o  <= std_logic_vector(s_rdata_r);
 
 end architecture rtl; 
 
