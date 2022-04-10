@@ -5,7 +5,7 @@
 -- File       : vga_axi_mem.vhd
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
--- Created    : 2022-03-05
+-- Created    : 2022-04-07
 -- Design     : vga_axi_mem
 -- Platform   : -
 -- Standard   : VHDL'08
@@ -14,7 +14,7 @@
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-03-05  1.1      TZS     Created
+-- 2022-04-07  1.1      TZS     Created
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -45,9 +45,43 @@ end entity vga_axi_mem;
 
 architecture rtl of vga_axi_mem is  
 
+  type axi_mem_state_t is (reset, idle, rcv_addr, send_data);
+
+  signal c_state, n_state : axi_mem_state_t;
+
 begin
 
-  s_rresp_o <= "00"; -- response tied to OKAY  
+  s_rresp_o <= "00"; -- response tied to OKAY
+
+  sync_cur_state : process(s_aclk_i, s_arstn_i) is -----------------------------
+  begin
+    if s_arstn_i = '0' then 
+      c_state <= reset;
+    elsif rising_edge(s_aclk_i) then
+      c_state <= n_state; 
+    end if;
+  end process sync_cur_state; --------------------------------------------------
+
+  comb_nxt_state : process (all) is -------------------------------------------- 
+  begin 
+
+    n_state <= c_state;
+
+    case c_state is
+
+      when reset =>
+      when idle =>
+      when send_addr =>
+      when rcv_data =>
+      when others =>
+
+    end case;
+
+  end process comb_nxt_state; --------------------------------------------------
+
+  sync_outputs : process (s_aclk_i, s_arstn_i) is ------------------------------ 
+  begin
+  end process comb_nxt_state; --------------------------------------------------
 
 end architecture rtl; 
 

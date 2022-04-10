@@ -49,7 +49,7 @@ end entity vga_axi_mem_ctrl;
 
 architecture rtl of vga_axi_mem_ctrl is 
 
-  type axi_state_t is (reset, idle, r_addr, r_data);
+  type axi_state_t is (reset, idle, send_addr, rcv_data);
 
   signal c_state, n_state : axi_state_t;
   signal m_arvalid_r,
@@ -89,18 +89,18 @@ begin
       when idle   =>                                                         ---
       
         if req_data_s = '1' then 
-          n_state <= r_addr;
+          n_state <= send_addr;
         end if;
 
-      when r_addr =>                                                         ---
+      when send_addr =>                                                         ---
         -- set valid high 
         -- populate data line
         if m_arvalid_r = '1' and m_arrdy_i = '1' then
-          n_state <= r_data; 
+          n_state <= rcv_data; 
         end if;
 
-      when r_data =>                                                         ---
-        -- Might be able to optimise here by returning to r_addr when there are new read requests...
+      when rcv_data =>                                                         ---
+        -- Might be able to optimise here by returning to send_addr when there are new read requests...
         -- read data when ready and valid
         if(m_rvalid_i = '1') and (m_rrdy_r = '1') then
           n_state <= idle;
@@ -114,7 +114,7 @@ begin
 
   end process comb_nxt_state; --------------------------------------------------
 
-  sync_axi_ctrl : process (clk, rst_n) is --------------------------------------
+  sync_outputs : process (clk, rst_n) is --------------------------------------
   begin     
      
     if rst_n = '0' then
@@ -134,22 +134,22 @@ begin
         when reset =>
         when idle  =>
            
-          if(c_state = r_data) then -- when rdy/vld = 1
+          if(c_state = rcv_data) then -- when rdy/vld = 1
             m_rdata_r <= m_rdata_i;
           end if;
            
-        when r_addr =>
+        when send_addr =>
           
           m_arvalid_r <= '1';
           m_araddr_r  <= m_araddr_r_0;
            
-        when r_data =>
+        when rcv_data =>
           m_rrdy_r    <= '1';
         when others =>
       end case; 
     end if;
 
-  end process sync_axi_ctrl; ---------------------------------------------------
+  end process sync_outputs; ---------------------------------------------------
 
   m_araddr_o  <= std_logic_vector(m_araddr_r); 
   m_arvalid_o <= m_arvalid_r;

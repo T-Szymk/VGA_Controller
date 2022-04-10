@@ -92,7 +92,7 @@ module tb_vga_axi_mem_ctrl;
 
   always_comb begin : comb_n_state
 
-    n_state = RESET; // default assignments
+    n_state = c_state; // default assignments
 
     case (c_state)
       
