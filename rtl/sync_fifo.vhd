@@ -13,10 +13,13 @@
 -- Description: Synchronous FIFO structure 
 --              Write takes precedence over read if both are asserted on an 
 --              empty FIFO. 
+--              If FIFO is full, a write and read can be completed in the same 
+--              cycle.
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2022-03-11  1.1      TZS     Created
+-- 2022-04-18  1.2      TZS     Added comments
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -62,7 +65,7 @@ begin
   
     if rising_edge(clk) then
       if clr_n_in = '0' then 
-
+        -- set all entries to 0 and reset pointer when clear is LOW
         for idx in 0 to FIFO_DEPTH - 1 loop
           fifo_block_r(idx) <= (others => '0');
         end loop; 
@@ -70,10 +73,14 @@ begin
         wr_ptr_s <= 0;
 
       else 
+        -- TWO conditions when data can be written in:
+        -- 1) FIFO has space
+        -- 2) FIFO is full but is being read and therefore creating space.
         if (full_s = '0' and we_in = '1') or (we_in = '1' and rd_in = '1') then
             
           fifo_block_r(wr_ptr_s) <= data_in;
-            
+          
+          -- wrap pointer at max address
           if wr_ptr_s = FIFO_DEPTH - 1 then 
             wr_ptr_s <= 0;
           else 
@@ -91,14 +98,16 @@ begin
   
     if rising_edge(clk) then
       if clr_n_in = '0' then 
-      
+        -- reset pointer when clear is LOW
         rd_ptr_s <= 0;
 
       else 
+        -- read ONLY checks empty and read_in
         if (empty_s = '0' and rd_in = '1') then
             
           data_out_r <= fifo_block_r(rd_ptr_s);
-            
+          
+          -- wrap pointer at max address
           if rd_ptr_s = FIFO_DEPTH - 1 then 
             rd_ptr_s <= 0;
           else 
@@ -121,8 +130,11 @@ begin
         data_cnt_r <= 0;
 
       else
+        -- increment counter if data is added
+        -- decrement counter if data is removed
+        -- don't touch counter if data is added & removed within the same cycle
         if we_in = '1' and data_cnt_r /= FIFO_DEPTH and rd_in = '0' then 
-            data_cnt_r <= data_cnt_r + 1; 
+          data_cnt_r <= data_cnt_r + 1; 
         elsif rd_in = '1' and data_cnt_r /= 0 and we_in = '0' then
           data_cnt_r <= data_cnt_r - 1; 
         elsif rd_in = '1' and we_in = '1' and data_cnt_r = 0 then

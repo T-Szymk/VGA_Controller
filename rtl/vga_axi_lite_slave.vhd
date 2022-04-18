@@ -1,26 +1,27 @@
 -------------------------------------------------------------------------------
--- Title      : VGA Controller - VGA AXI Memory Module
+-- Title      : VGA Controller - VGA AXI Slave Module
 -- Project    : VGA Controller
 --------------------------------------------------------------------------------
--- File       : vga_axi_mem.vhd
+-- File       : vga_axi_lite_slave.vhd
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
 -- Created    : 2022-04-10
--- Design     : vga_axi_mem
+-- Design     : vga_axi_lite_slave
 -- Platform   : -
 -- Standard   : VHDL'08
 --------------------------------------------------------------------------------
--- Description: AXI-Lite (slave) memory module
+-- Description: AXI4-Lite Slave memory module
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-04-10  1.1      TZS     Created
+-- 2022-04-10  1.0      TZS     Created
+-- 2022-04-18  1.1      TZS     Changed name to AXI slave
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
-entity vga_axi_mem is 
+entity vga_axi_lite_slave is 
   generic (
   	AXI_ADDR_WIDTH : integer := 16;
   	AXI_DATA_WIDTH : integer := 36
@@ -40,11 +41,11 @@ entity vga_axi_mem is
     s_rrdy_i    : in  std_logic; 
     s_rresp_o   : out std_logic_vector(1 downto 0)
   );
-end entity vga_axi_mem;
+end entity vga_axi_lite_slave;
 
 --------------------------------------------------------------------------------
 
-architecture rtl of vga_axi_mem is  
+architecture rtl of vga_axi_lite_slave is  
 
   type axi_mem_state_t is (reset, idle, rcv_addr, send_data);
 

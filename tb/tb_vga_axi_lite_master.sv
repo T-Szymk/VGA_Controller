@@ -1,23 +1,25 @@
 /*------------------------------------------------------------------------------
- Title      : VGA AXI Memory Controller Testbench
+ Title      : VGA AXI4-Lite Master Controller Testbench
  Project    : VGA Controller
 --------------------------------------------------------------------------------
- File       : tb_vga_axi_mem_ctrl.sv
+ File       : tb_vga_axi_lite_master.sv
  Author(s)  : Thomas Szymkowiak
  Company    : TUNI
  Created    : 2022-04-10
- Design     : tb_vga_axi_mem_ctrl
+ Design     : tb_vga_axi_lite_master
  Platform   : -
  Standard   : SystemVerilog
 --------------------------------------------------------------------------------
- Description: Testbench to exercise AXI master for VGA Controller memory bus
+ Description: Testbench to exercise AXI4-Lite master for VGA Controller memory 
+              bus
 --------------------------------------------------------------------------------
  Revisions:
  Date        Version  Author  Description
  2022-04-10  1.0      TZS     Created
+ 2022-04-18  1.1      TZS     Updated naming and signals to match AXI master.
 ------------------------------------------------------------------------------*/
 
-module tb_vga_axi_mem_ctrl;
+module tb_vga_axi_lite_master;
 
   timeunit 1ns/1ps;
 
@@ -31,12 +33,12 @@ module tb_vga_axi_mem_ctrl;
 
   logic                      clk       = 0;
   logic                      rst_n     = 0;
-  logic [PXL_CTR_WIDTH-1:0]  pxl_ctr;
-  logic [LINE_CTR_WIDTH-1:0] line_ctr;
+  logic                      req_data  = 1;
+  logic [AXI_ADDR_WIDTH-1:0] addr_r    = '0;
   logic                      ar_rdy;
   logic                      r_valid;
   logic [AXI_ADDR_WIDTH-1:0] ar_addr;
-  logic [2:0]                ar_prot   = 3'b001;
+  logic [2:0]                ar_prot;
   logic                      ar_valid;
   logic                      r_rdy;
   logic [AXI_DATA_WITH-1:0]  r_data    = '0;
@@ -52,14 +54,14 @@ module tb_vga_axi_mem_ctrl;
   // clock generation
   always #(CLOCK_PERIOD_NS/2) clk = ~clk;
 
-  vga_axi_mem_ctrl #(
+  vga_axi_lite_master #(
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_DATA_WIDTH(AXI_DATA_WITH)
-  ) i_vga_axi_mem_ctrl (
+  ) i_vga_axi_lite_master (
+    .req_data_i(req_data),
+    .addr_i(addr_r),
     .m_aclk_i(clk),
     .m_arstn_i(rst_n),
-    .pxl_ctr_i(pxl_ctr),
-    .line_ctr_i(line_ctr),
     .m_araddr_o(ar_addr),
     .m_arprot_o(ar_prot),
     .m_arvalid_o(ar_valid),
@@ -130,6 +132,7 @@ module tb_vga_axi_mem_ctrl;
       ar_rdy_r  <= 1'b0;
       r_valid_r <= 1'b0;
       r_data    <= '0; 
+      addr_r    <= '0;
     end else begin
     
       ar_rdy_r  <= 0;
@@ -147,6 +150,7 @@ module tb_vga_axi_mem_ctrl;
 
         RCV_ADDR: begin
           ar_rdy_r <= 1;
+          addr_r++;
         end
           
         SEND_DATA: begin

@@ -2,6 +2,9 @@
 
 .DEFAULT_GOAL := default
 
+#MSIM = ~/intelFPGA/20.1/modelsim_ase/bin
+MSIM = /home/tom/questa2019/questasim/linux_x86_64
+
 RTL = ../rtl
 TB  = ../tb
 RTL_FILES = $(RTL)/vga_pkg.vhd \
@@ -93,19 +96,33 @@ sim_fifo:
 	vsim -voptargs="+acc" -c -onfinish exit sync_fifo_tb -do "run -all;quit"
 
 .PHONY: sim_fifo_gui
-sim_fifo_gui:
+sim_fifo_gui: compile_fifo
 	vsim -voptargs="+acc" -onfinish stop sync_fifo_tb -do "fifo.do"
 
-# AXI TESTING ##################################################################
+# AXI MASTER TESTING ###########################################################
 
-.PHONY: compile_axi
-compile_axi:
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
-	                                            $(RTL)/vga_axi_mem_ctrl.vhd
+.PHONY: compile_axi_master
+compile_axi_master:
+	$(MSIM)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
+	                                                    $(RTL)/vga_axi_lite_master.vhd
+	$(MSIM)/vlog -sv -pedanticerrors $(TB)/tb_vga_axi_lite_master.sv
 
-.PHONY: sim_axi
-sim_axi:
-	vsim -voptargs="+acc" -onfinish exit vga_axi_mem_ctrl -do "do_axi_master.do"
+.PHONY: sim_axi_master_gui
+sim_axi_master_gui: compile_axi_master
+	$(MSIM)/vsim -voptargs="+acc" -onfinish stop tb_vga_axi_lite_master -do "do_axi_master.do"
+
+# AXI SLAVE TESTING #################################################
+
+.PHONY: compile_axi_slave
+compile_axi_slave:
+	$(MSIM)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
+																											$(RTL)/vga_axi_lite_slave.vhd \
+	                                                    $(RTL)/vga_axi_lite_master.vhd
+	$(MSIM)/vlog -sv -pedanticerrors $(TB)/tb_vga_axi_lite_slave.sv
+
+.PHONY: sim_axi_slave_gui
+sim_axi_slave_gui: compile_axi_slave
+	$(MSIM)/vsim -voptargs="+acc" -onfinish stop tb_vga_axi_lite_slave -do "do_axi_slave.do"
 
 # FPGA BUILD ###################################################################
 
