@@ -19,7 +19,11 @@
 ------------------------------------------------------------------------------*/
 `timescale 1ns / 1ps
 
-module ROM_model #(WIDTH = 8, DEPTH = 16, READ_EN = 1) (
+module ROM_model #(
+    WIDTH = 8, 
+    DEPTH = 16, 
+    READ_EN = 1 
+  ) (
     input  logic clk,
     input  logic rst_n,
     input  logic [$clog2(DEPTH)-1:0] addr_in,
