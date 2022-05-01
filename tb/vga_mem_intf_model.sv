@@ -71,19 +71,44 @@ module vga_mem_intf_model;
 
   logic [ADDR_FIFO_WIDTH-1:0] test_val = {(ADDR_FIFO_WIDTH){4'hA}}, test_val_1 = '0;
   
-  FIFOModel #(.WIDTH(DATA_FIFO_WIDTH), .DEPTH(DATA_FIFO_WIDTH)) fifo_model;
+  FIFOModel #(.WIDTH(DATA_FIFO_WIDTH), .DEPTH(DATA_FIFO_WIDTH)) fifo_data_model;
+  FIFOModel #(.WIDTH(ADDR_FIFO_WIDTH), .DEPTH(ADDR_FIFO_WIDTH)) fifo_addr_model;
   BRAMModel #(.DATA_WIDTH(48), .ADDR_WIDTH(16)) ram_model;
 
   initial begin 
 
-    fifo_model = new();
+    fifo_data_model = new();
+    fifo_addr_model = new();
     ram_model  = new();
     
     $finish;
   
   end
 
+  // continuously count through pixels and lines
+  always_ff @(posedge clk) begin : global_pxl_counter
+
+    if(pxl_ctr == PXL_CTR_MAX-1) begin
+
+        pxl_ctr = 0;
+
+        if (ln_ctr == LINE_CTR_MAX - 1) begin
+          ln_ctr = 0;
+        end else begin
+          ln_ctr++;
+        end
+
+    end else begin
+
+        pxl_ctr++;
+
+    end
+
+  end : global_pxl_counter
+
 endmodule
+
+/**********************************/
 
 /**********************************/
 
