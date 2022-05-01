@@ -14,10 +14,17 @@
 --------------------------------------------------------------------------------
  Revisions:
  Date        Version  Author  Description
- 2022-04-30  1.0      TZS     Created
+ 2022-05-01  1.0      TZS     Created
 ------------------------------------------------------------------------------*/
 
-program vga_mem_intf_model;
+// forward declarations
+typedef class FIFOModel;
+typedef class BRAMModel;
+
+// main modelling module
+module vga_mem_intf_model;
+
+  timeunit 1ns/1ps;
 
   parameter HEIGHT_PX     = 480;
   parameter WIDTH_PX      = 640;
@@ -44,54 +51,110 @@ program vga_mem_intf_model;
   parameter PXL_CTR_WIDTH  = $clog2(PXL_CTR_MAX - 1);
   parameter LN_CTR_WIDTH   = $clog2(LINE_CTR_MAX - 1);
 
-/**********************************/
+  parameter ADDR_FIFO_WIDTH = 13;
+  parameter DATA_FIFO_WIDTH = 48; 
 
-  bit clk, rst_n, clr_n, we, rd = 0;
+  parameter ADDR_FIFO_DEPTH = 10;
+  parameter DATA_FIFO_DEPTH = 10;
+
+/**********************************/
 
   bit [PXL_CTR_WIDTH-1:0] pxl_ctr = '0;
   bit [LN_CTR_WIDTH-1:0]  ln_ctr  = '0;
   bit [DEPTH_COLR-1:0]    colr    = '0;
+  bit clk = 0;
 
 /**********************************/
 
-  sync_fifo #(
-    .FIFO_WIDTH(FIFO_WIDTH),
-    .FIFO_DEPTH(FIFO_DEPTH)
-  ) i_sync_fifo (
-    .clk(clk),
-    .clr_n_in(clr_n),
-    .we_in(we),
-    .rd_in(rd),
-    .data_in(data_in),
-    .empty_out(empty),
-    .full_out(full),
-    .data_out(data_out)
+  initial
+    forever #5 clk <= ~clk;
+
+  logic [ADDR_FIFO_WIDTH-1:0] test_val = {(ADDR_FIFO_WIDTH){4'hA}}, test_val_1 = '0;
+  
+  FIFOModel #(.WIDTH(DATA_FIFO_WIDTH), .DEPTH(DATA_FIFO_WIDTH)) fifo_model;
+  BRAMModel #(.DATA_WIDTH(48), .ADDR_WIDTH(16)) ram_model;
+
+  initial begin 
+
+    fifo_model = new();
+    ram_model  = new();
+    
+    $finish;
+  
+  end
+
+endmodule
+
+/**********************************/
+
+class FIFOModel #(
+  parameter WIDTH = 10,
+  parameter DEPTH = 10
+);
+
+  function new();
+    $display("@%0t: Created FIFOModel instance with width: %0d and depth: %0d", $time, WIDTH, DEPTH);
+  endfunction
+
+  int width  = WIDTH;
+  int depth  = DEPTH;
+  bit full   = 0;
+  bit empty  = 1;
+
+  logic [WIDTH-1:0] fifo [$:DEPTH-1]; // fifo modelled using queue
+
+  // write a value and update status attribute(s)
+  function void write_val(input logic [WIDTH-1:0] val);
+    if(empty)
+        empty = 0;
+    if(fifo.size() == (depth - 1))
+        full = 1;
+    fifo.push_front(val);
+  endfunction
+
+  // read a value and update status attribute(s)
+  function logic [WIDTH-1:0] read_val();
+    if(full) 
+        full = 0;
+    if(fifo.size == 1)
+        empty = 1;
+    return fifo.pop_back();
+  endfunction
+
+endclass
+
+/**********************************/
+
+class BRAMModel #(
+  parameter DATA_WIDTH = 48,
+  parameter ADDR_WIDTH = 16
+);
+  localparam DEPTH = int'($pow(2, ADDR_WIDTH));
+  logic [DEPTH-1:0] [DATA_WIDTH-1:0] ram;
+
+  function new();
+    $display("@%0t: Created BRAMModel instance with width: %0d and depth: %0d", $time, DATA_WIDTH, DEPTH);
+    ram = '0;
+  endfunction 
+  
+  // read a value from memory synchronously
+  task read_val(ref    bit   clk,
+                input  logic [ADDR_WIDTH-1:0] addr, 
+                output logic [DATA_WIDTH-1:0] data
   );
+    @(posedge clk);
+    data = ram[addr];
+  endtask
 
-  sync_fifo #(
-    .FIFO_WIDTH(FIFO_WIDTH),
-    .FIFO_DEPTH(FIFO_DEPTH)
-  ) i_sync_fifo (
-    .clk(clk),
-    .clr_n_in(clr_n),
-    .we_in(we),
-    .rd_in(rd),
-    .data_in(data_in),
-    .empty_out(empty),
-    .full_out(full),
-    .data_out(data_out)
-  );  
-
-  ROM_model #(
-    .WIDTH(),
-    .DEPTH(),
-    .READ_EN()
-  ) i_ROM_model (
-    .clk(clk),
-    .rst_n(rst_n),
-    .addr_in(),
-    .rd_en_in(),
-    .dat_out()
+  // write a value to memory synchronously
+  task write_val(ref   bit   clk,
+                 input logic [DATA_WIDTH-1:0] data, 
+                 input logic [ADDR_WIDTH-1:0] addr
   );
+    @(posedge clk);
+    ram[addr] = data;
+  endtask
 
-endprogram
+endclass
+
+/**********************************/

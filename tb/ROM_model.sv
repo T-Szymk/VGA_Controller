@@ -20,8 +20,8 @@
 `timescale 1ns / 1ps
 
 module ROM_model #(
-    WIDTH = 8, 
-    DEPTH = 16, 
+    WIDTH   = 8, 
+    DEPTH   = 16, 
     READ_EN = 1 
   ) (
     input  logic clk,
@@ -33,30 +33,41 @@ module ROM_model #(
   );
     
   logic [WIDTH-1:0] mem [DEPTH-1:0];
+
+  generate // read_enable generation
+
+    if (READ_EN == 1) begin
     
-  always_ff@(posedge clk, negedge rst_n) begin
+      always_ff@(posedge clk, negedge rst_n) begin
+
   
-    if (~rst_n) begin
+        if (~rst_n) begin
+        
+          dat_out <= '0;  
+        
+        end else begin
     
-      dat_out <= '0;  
-    
-    end else begin
-    
-    generate // read_enable generation
+          if (rd_en_in) begin
+            dat_out <= mem[addr_in];
+          end
+        end // rst_n
+      end // always_ff
 
-      if (READ_EN == 1) begin 
+    end else begin  // treats read_en_in as if it is fixed at 1
 
-        if (rd_en_in) begin
-          dat_out <= mem[addr_in];
-        end
+      always_ff@(posedge clk, negedge rst_n) begin
 
-      end else begin // treats read_en_in as if it is fixed at 1
+        if (~rst_n) begin
       
-        dat_out <= mem[addr_in];
-  
-      end
+          dat_out <= '0;
 
-    endgenerate 
-  end
+        end else begin 
+        
+          dat_out <= mem[addr_in];
+          
+        end // rst_n
+      end // always_ff
+    end // gen_if
+  endgenerate 
 
 endmodule
