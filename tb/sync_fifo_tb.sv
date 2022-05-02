@@ -10,11 +10,14 @@
  Platform   : -
  Standard   : SystemVerilog
 --------------------------------------------------------------------------------
- Description: Testbench to exercise the synchronous FIFO
+ Description: Testbench to exercise the synchronous FIFO. Golden model only used
+              to confirm contents of FIFO; status signals are NOT modelled, but 
+              they are tested independently.
 --------------------------------------------------------------------------------
  Revisions:
  Date        Version  Author  Description
  2022-03-11  1.0      TZS     Created
+ 2022-05-02  1.1      TZS     Added tests for "almost empty/full" functionality
 ------------------------------------------------------------------------------*/
 
 module sync_fifo_tb;
@@ -25,13 +28,19 @@ module sync_fifo_tb;
   parameter FIFO_DEPTH = 10;
 
   parameter CLOCK_PERIOD_NS = 10;
+  
+  // fifo status encoded
+  enum logic [3:0] {NORM         = 4'b0000,
+                    EMPTY        = 4'b0001,
+                    FULL         = 4'b0010,
+                    ALMOST_FULL  = 4'b1000,
+                    ALMOST_EMPTY = 4'b0100 } fifo_states_e;
 
   bit clk = 0;
   bit clr_n = 0;
   bit we = 0;
   bit rd = 0;
-  bit empty;
-  bit full;
+  bit empty, full, almost_empty, almost_full;
   bit [FIFO_WIDTH-1:0] data_in;
   bit [FIFO_WIDTH-1:0] data_out;
   bit [FIFO_WIDTH-1:0] test_data_out;
@@ -55,75 +64,112 @@ module sync_fifo_tb;
     .data_in(data_in),
     .empty_out(empty),
     .full_out(full),
+    .al_empty_out(almost_empty),
+    .al_full_out(almost_full),
     .data_out(data_out)
   );  
 
 
   initial begin
-    $display("Starting test with FIFO_WIDTH = %0d bits, FIFO_DEPTH = %0d, CLOCK_PERIOD_NS = %0d ns", FIFO_WIDTH, FIFO_DEPTH, CLOCK_PERIOD_NS);
-    $display("\nClearing FIFO...");
+
+    $timeformat(-9,0,"ns"); // ns resolution
+    
+    $info("Starting test with FIFO_WIDTH = %0d bits, FIFO_DEPTH = %0d, \
+      CLOCK_PERIOD_NS = %0d ns", FIFO_WIDTH, FIFO_DEPTH, CLOCK_PERIOD_NS);
+    
+    $info("\nClearing FIFO...");
+    
     #(2 * CLOCK_PERIOD_NS) clr_n = 1;
-    check_fifo_vals(fifo_model, 1);
+    // check initial status values and contents
+    check_fifo_vals(fifo_model);
+    check_fifo_status(EMPTY);
 
-    assert (full == 0);
-    assert (empty == 1);
-
-    $display("\nFilling FIFO...");
+    $info("\nFilling FIFO...");
+    // set write enable
     we = 1;
+    // add a value every clock cycle and verify that the FIFO conents are correct
     for(int i = 0; i < FIFO_DEPTH; i++) begin 
       data_in = i;
       @(posedge(clk));
       $display("Wrote val: %0d to position %0d of FIFO model.", i, i);
       @(negedge(clk));
-      check_fifo_vals(fifo_model, 0);
-      assert (empty == 0);
+      // check internal values and reported status values
+      check_fifo_vals(fifo_model);
+      case(i)
+        0              : check_fifo_status(ALMOST_EMPTY);
+        FIFO_DEPTH - 2 : check_fifo_status(ALMOST_FULL);
+        FIFO_DEPTH - 1 : check_fifo_status(FULL);
+        default        : check_fifo_status(NORM);
+      endcase
+  
     end
     
-    assert (full == 1);
-    
-    $display("\nEmptying FIFO...");
+    $info("\nEmptying FIFO...");
+    // remove a value every clock cycle and verify that the FIFO conents are correct
     we = 0;
     rd = 1;
+    
     for(int i = FIFO_DEPTH - 1; i >= 0; i--) begin 
       test_data_out = data_out;
       @(posedge(clk));
       @(negedge(clk));
       $display("Read val: %0d from position %0d of FIFO model.", data_out, (FIFO_DEPTH-1)-i);
-      check_fifo_vals(fifo_model, 0);
-      assert(data_out == (FIFO_DEPTH-1)-i && full == 0);
+      check_fifo_vals(fifo_model);
+      assert(data_out == (FIFO_DEPTH-1-i));
+      case(i)
+        0              : check_fifo_status(EMPTY);
+        1              : check_fifo_status(ALMOST_EMPTY);
+        FIFO_DEPTH - 1 : check_fifo_status(ALMOST_FULL);
+        default        : check_fifo_status(NORM);
+      endcase
     end
     
-    assert (empty == 1) else $error("empty is not asserted when expected");
     
-    $display("\nTesting operation when we + rd are set...");
+    $info("\nRunning cases when Write Enable + Read Enable are set simultaneously:");
 
-    $display("... when empty");
+    $info("1. When FIFO is empty...");
+    // with read enable still set, add a value and verify FIFO
     we = 1;
     data_in = 'hBEEF;
+    
     @(posedge(clk));
     @(negedge(clk));
-    check_fifo_vals(fifo_model, 0);
-    assert(full == 0 && empty == 0);
+    check_fifo_vals(fifo_model);
+    check_fifo_status(ALMOST_EMPTY);
 
-    $display("... when full");
+    $info("2. When FIFO is full...");
+    // firstly fill up the FIFO and then set read_enable and verify FIFO
     rd = 0;
     for(int i = 0; i < FIFO_DEPTH-1; i++) begin 
       data_in = 10 + i;
       @(posedge(clk));
     end
     @(negedge(clk));
-    check_fifo_vals(fifo_model, 0);
+    check_fifo_vals(fifo_model);
     data_in = 'hBEEF;
     @(posedge(clk));
     @(negedge(clk));
-    check_fifo_vals(fifo_model, 0);
-    assert(full == 1 && empty == 0);
+    check_fifo_vals(fifo_model);
+    check_fifo_status(FULL);
 
+    // verify FIFO with read/write enable both set on full FIFO
+    rd = 1;
+    
+    @(posedge(clk));
+    @(negedge(clk));
+    check_fifo_vals(fifo_model);
+    check_fifo_status(FULL);
+    
+
+    $info("\n*******************************\n",
+            "* TEST FINISHED SUCCESSFULLY! *\n",
+            "*******************************\n");
     $finish;
 
   end 
 
-  /* Model of fifo */
+  /***************** Golden Model of fifo *****************/
+
   always @(posedge clk or negedge clr_n) begin 
 
 
@@ -199,14 +245,27 @@ module sync_fifo_tb;
   /* Performs comparison of vlaues contained within DUT FIFO against golden model. 
      Second argument can be used as a flag to control whether to print vals */
   function void check_fifo_vals(
-    input bit [FIFO_WIDTH-1:0] fifo_arg [FIFO_DEPTH-1:0],
-    input bit print
+    input bit [FIFO_WIDTH-1:0] fifo_arg [FIFO_DEPTH-1:0]
   );
-    if(print == 1) $display("Comparing DUT FIFO against TB Model...");
     for(int idx = 0; idx < FIFO_DEPTH; idx++) begin 
-      assert(fifo_arg[idx] == i_sync_fifo.fifo_block_r[idx]);
-      if(print == 1) $display("FIFO Model : DUT - %0d : %0d", fifo_arg[idx], i_sync_fifo.fifo_block_r[idx]);
+      assert(fifo_arg[idx] == i_sync_fifo.fifo_block_r[idx])
+      else $fatal(1, "@%0t: VALUE CHECK FAILED\n \
+        FIFO Model : DUT - %0d : %0d", 
+        $time, fifo_arg[idx], i_sync_fifo.fifo_block_r[idx]);
     end
   endfunction
+
+  function void check_fifo_status ( logic [3:0] expected_status );
+  // encoding bits {almost_full, almost_empty, full, empty}
+    assert(expected_status == {almost_full, almost_empty, full, empty})
+    else $fatal(1, "@%0t: STATUS CHECK FAILED!\n \
+      EXPECTED:  almost_full = 0x%0h, almost_empty = 0x%0h, full = 0x%0h, empty = 0x%0h \n \
+      FOUND   :  almost_full = 0x%0h, almost_empty = 0x%0h, full = 0x%0h, empty = 0x%0h", 
+      $time, expected_status[3], expected_status[2], expected_status[1], expected_status[0],
+      almost_full, almost_empty, full, empty); // WARN: GLOBAL VARIABLES USED
+
+  endfunction
+
+
 
 endmodule

@@ -92,7 +92,7 @@ compile_fifo:
 	vlog -sv -pedanticerrors $(TB)/sync_fifo_tb.sv
 
 .PHONY: sim_fifo
-sim_fifo:
+sim_fifo: compile_fifo
 	vsim -voptargs="+acc" -c -onfinish exit sync_fifo_tb -do "run -all;quit"
 
 .PHONY: sim_fifo_gui

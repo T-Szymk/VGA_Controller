@@ -20,6 +20,7 @@
 -- Date        Version  Author  Description
 -- 2022-03-11  1.1      TZS     Created
 -- 2022-04-18  1.2      TZS     Added comments
+-- 2022-04-02  1.3      TZS     Added almost empty/full
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -32,14 +33,16 @@ entity sync_fifo is
   	FIFO_DEPTH : integer := 10
   );
   port (
-  	clk       : in  std_logic;
-  	clr_n_in  : in  std_logic;
-  	we_in     : in  std_logic;
-  	rd_in     : in  std_logic;
-  	data_in   : in  std_logic_vector(FIFO_WIDTH - 1 downto 0);
-  	empty_out : out std_logic;
-  	full_out  : out std_logic;
-  	data_out  : out std_logic_vector(FIFO_WIDTH - 1 downto 0)
+  	clk          : in  std_logic;
+  	clr_n_in     : in  std_logic;
+  	we_in        : in  std_logic;
+  	rd_in        : in  std_logic;
+  	data_in      : in  std_logic_vector(FIFO_WIDTH - 1 downto 0);
+  	empty_out    : out std_logic;
+  	full_out     : out std_logic;
+    al_empty_out : out std_logic;
+    al_full_out  : out std_logic;
+  	data_out     : out std_logic_vector(FIFO_WIDTH - 1 downto 0)
 	);
 end entity sync_fifo;
 
@@ -51,6 +54,8 @@ architecture rtl of sync_fifo is
 
   signal full_s     : std_logic := '0';
   signal empty_s    : std_logic := '1';
+  signal al_empty_s : std_logic := '0';  
+  signal al_full_s  : std_logic := '0';
   signal data_out_r : std_logic_vector(FIFO_WIDTH - 1 downto 0) := (others => '0');
   signal wr_ptr_s   : integer range FIFO_DEPTH - 1 downto 0 := 0;
   signal rd_ptr_s   : integer range FIFO_DEPTH - 1 downto 0 := 0;
@@ -68,7 +73,7 @@ begin
         -- set all entries to 0 and reset pointer when clear is LOW
         for idx in 0 to FIFO_DEPTH - 1 loop
           fifo_block_r(idx) <= (others => '0');
-        end loop; 
+        end loop;
 
         wr_ptr_s <= 0;
 
@@ -135,8 +140,10 @@ begin
         -- don't touch counter if data is added & removed within the same cycle
         if we_in = '1' and data_cnt_r /= FIFO_DEPTH and rd_in = '0' then 
           data_cnt_r <= data_cnt_r + 1; 
+
         elsif rd_in = '1' and data_cnt_r /= 0 and we_in = '0' then
           data_cnt_r <= data_cnt_r - 1; 
+
         elsif rd_in = '1' and we_in = '1' and data_cnt_r = 0 then
           data_cnt_r <= 1;
         end if;
@@ -145,12 +152,23 @@ begin
 
   end process count_process; ---------------------------------------------------
 
+  -- almost empty/full comb
+  al_process : process (data_cnt_r) is -----------------------------------------
+  begin
+  
+    al_empty_s <= '1' when data_cnt_r = 1 else '0';
+    al_full_s  <= '1' when data_cnt_r = (FIFO_DEPTH - 1 ) else '0';
+
+  end process al_process; ------------------------------------------------------
+
   full_s  <= '1' when data_cnt_r = FIFO_DEPTH else '0';
   empty_s <= '1' when data_cnt_r = 0 else '0'; 
 
   data_out  <= data_out_r;
   empty_out <= empty_s;
   full_out  <= full_s;
+  al_empty_out <= al_empty_s;
+  al_full_out  <= al_full_s;
 
 end architecture rtl;
 

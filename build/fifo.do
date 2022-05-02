@@ -1,3 +1,5 @@
+add log -r sim:/sync_fifo_tb/*
+
 add wave -position insertpoint  \
 sim:/sync_fifo_tb/FIFO_WIDTH \
 sim:/sync_fifo_tb/FIFO_DEPTH \
@@ -19,7 +21,11 @@ sim:/sync_fifo_tb/i_sync_fifo/rd_in \
 sim:/sync_fifo_tb/i_sync_fifo/data_in \
 sim:/sync_fifo_tb/i_sync_fifo/empty_out \
 sim:/sync_fifo_tb/i_sync_fifo/full_out \
+sim:/sync_fifo_tb/i_sync_fifo/empty_out \
+sim:/sync_fifo_tb/i_sync_fifo/full_out \
 sim:/sync_fifo_tb/i_sync_fifo/data_out \
+sim:/sync_fifo_tb/i_sync_fifo/al_full_s \
+sim:/sync_fifo_tb/i_sync_fifo/al_empty_s \
 sim:/sync_fifo_tb/i_sync_fifo/full_s \
 sim:/sync_fifo_tb/i_sync_fifo/empty_s \
 sim:/sync_fifo_tb/i_sync_fifo/data_out_r \
