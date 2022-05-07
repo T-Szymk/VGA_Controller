@@ -5,7 +5,7 @@
  File       : vga_mem_intf_model.sv
  Author(s)  : Thomas Szymkowiak
  Company    : TUNI
- Created    : 2022-04-30
+ Created    : 2022-05-07
  Design     : vga_mem_intf_model
  Platform   : -
  Standard   : VHDL'08
@@ -14,7 +14,7 @@
 --------------------------------------------------------------------------------
  Revisions:
  Date        Version  Author  Description
- 2022-05-01  1.0      TZS     Created
+ 2022-05-07  1.0      TZS     Created
 ------------------------------------------------------------------------------*/
 
 // forward declarations
@@ -26,10 +26,17 @@ module vga_mem_intf_model;
 
   timeunit 1ns/1ps;
 
-  parameter HEIGHT_PX     = 480;
-  parameter WIDTH_PX      = 640;
+  parameter CLK_PERIOD_NS = 10;
   // depth of each colour
   parameter DEPTH_COLR    = 3;
+  // BRAM width in bits and depth in rows
+  parameter MEM_WIDTH     = 48;
+  parameter MEM_DEPTH     = 6400;
+  // count of how many pixels are in each line of memory
+  parameter PXL_PER_ROW   = MEM_WIDTH / DEPTH_COLR; 
+  // height and width of display area in pixels
+  parameter HEIGHT_PX     = 480;
+  parameter WIDTH_PX      = 640;
   // number of pixels in each v_sync period
   parameter H_SYNC_PX     = 96;
   // number of pixels in each horiz. back porch period
@@ -44,42 +51,66 @@ module vga_mem_intf_model;
   parameter V_F_PORCH_LNS = 10;
   // counter max and associated valueswidths
   parameter PXL_CTR_MAX   = H_F_PORCH_PX + WIDTH_PX + 
-                              H_B_PORCH_PX + H_SYNC_PX;
+                            H_B_PORCH_PX + H_SYNC_PX;
   parameter LINE_CTR_MAX  = V_F_PORCH_LNS + HEIGHT_PX + 
-                              V_B_PORCH_LNS + V_SYNC_LNS;
+                            V_B_PORCH_LNS + V_SYNC_LNS;
+
+  parameter V_SYNC_MAX_LNS    = V_SYNC_LNS;
+  parameter V_B_PORCH_MAX_LNS = V_SYNC_MAX_LNS + V_B_PORCH_LNS;
+  parameter V_DISP_MAX_LNS    = V_B_PORCH_MAX_LNS + HEIGHT_PX;
+  parameter V_F_PORCH_MAX_LNS = V_DISP_MAX_LNS + V_F_PORCH_LNS;
+  parameter H_SYNC_MAX_PX     = H_SYNC_PX;
+  parameter H_B_PORCH_MAX_PX  = H_SYNC_MAX_PX + H_B_PORCH_PX;
+  parameter H_DISP_MAX_PX     = H_B_PORCH_MAX_PX + WIDTH_PX;
+  parameter H_F_PORCH_MAX_PX  = H_DISP_MAX_PX + H_F_PORCH_PX;
+
+  parameter DISP_PXL_MAX      = HEIGHT_PX * WIDTH_PX;
+
   // use max value to calculate bit width of counter
   parameter PXL_CTR_WIDTH  = $clog2(PXL_CTR_MAX - 1);
   parameter LN_CTR_WIDTH   = $clog2(LINE_CTR_MAX - 1);
+  parameter DISP_PXL_WIDTH = $clog2(DISP_PXL_MAX - 1);
 
-  parameter ADDR_FIFO_WIDTH = 13;
-  parameter DATA_FIFO_WIDTH = 48; 
+  parameter MEM_DATA_CTR_WIDTH  = $clog2(PXL_PER_ROW - 1);
+  parameter MEM_ADDR_CTR_WIDTH  = $clog2(MEM_DEPTH - 1); 
+
+  parameter ADDR_FIFO_WIDTH = $clog2(MEM_DEPTH - 1);
+  parameter DATA_FIFO_WIDTH = MEM_WIDTH; 
 
   parameter ADDR_FIFO_DEPTH = 10;
   parameter DATA_FIFO_DEPTH = 10;
 
+
+
 /**********************************/
 
-  bit [PXL_CTR_WIDTH-1:0] pxl_ctr = '0;
-  bit [LN_CTR_WIDTH-1:0]  ln_ctr  = '0;
-  bit [DEPTH_COLR-1:0]    colr    = '0;
+  bit [PXL_CTR_WIDTH-1:0]  pxl_ctr  = '0;
+  bit [LN_CTR_WIDTH-1:0]   ln_ctr   = '0;
+  bit [DISP_PXL_WIDTH-1:0] disp_ctr = '0;
+  bit [DEPTH_COLR-1:0]     colr     = '0;
   bit clk = 0;
+
+  bit [MEM_DATA_CTR_WIDTH-1:0] mem_data_ctr  = '0;
+  bit [MEM_ADDR_CTR_WIDTH-1:0] mem_addr_ctr  = '0; 
 
 /**********************************/
 
   initial
-    forever #5 clk <= ~clk;
+    forever #(CLK_PERIOD_NS/2) clk <= ~clk;
 
   logic [ADDR_FIFO_WIDTH-1:0] test_val = {(ADDR_FIFO_WIDTH){4'hA}}, test_val_1 = '0;
   
   FIFOModel #(.WIDTH(DATA_FIFO_WIDTH), .DEPTH(DATA_FIFO_WIDTH)) fifo_data_model;
   FIFOModel #(.WIDTH(ADDR_FIFO_WIDTH), .DEPTH(ADDR_FIFO_WIDTH)) fifo_addr_model;
-  BRAMModel #(.DATA_WIDTH(48), .ADDR_WIDTH(16)) ram_model;
+  BRAMModel #(.DATA_WIDTH(MEM_WIDTH), .ADDR_WIDTH(MEM_DEPTH)) ram_model;
 
   initial begin 
 
     fifo_data_model = new();
     fifo_addr_model = new();
     ram_model  = new();
+
+    #1s;
     
     $finish;
   
@@ -106,6 +137,34 @@ module vga_mem_intf_model;
 
   end : global_pxl_counter
 
+  // counter for display pixels and current memory address
+  always_ff @(posedge clk) begin : display_pxl_counter
+    
+    if (ln_ctr > (V_B_PORCH_MAX_LNS - 1) && ln_ctr < V_DISP_MAX_LNS) begin 
+      if(pxl_ctr > (H_B_PORCH_MAX_PX - 1) && pxl_ctr < H_DISP_MAX_PX) begin 
+        
+        // one dimensional display pxl counters
+        if(disp_ctr == (DISP_PXL_MAX - 1)) begin 
+          disp_ctr <= '0;
+        end else begin 
+          disp_ctr++;
+        end
+
+        // counter to determine the location in the currently held memory line corresponds to the pixel being displayed
+        if(mem_data_ctr == PXL_PER_ROW - 1) begin 
+          mem_data_ctr <= '0;
+          // counter to determine which memory line corresponds to the currently displayed pixel
+          mem_addr_ctr = (mem_addr_ctr == (MEM_DEPTH - 1)) ? '0 : mem_addr_ctr + 1;
+        end else begin 
+          mem_data_ctr++;
+        end
+
+      end
+    end
+
+  end 
+
+
 endmodule
 
 /**********************************/
@@ -118,7 +177,8 @@ class FIFOModel #(
 );
 
   function new();
-    $display("@%0t: Created FIFOModel instance with width: %0d and depth: %0d", $time, WIDTH, DEPTH);
+    $display("@%0t: Created FIFOModel instance with width: %0d and depth: %0d", 
+             $time, WIDTH, DEPTH);
   endfunction
 
   int width  = WIDTH;
@@ -158,7 +218,8 @@ class BRAMModel #(
   logic [DEPTH-1:0] [DATA_WIDTH-1:0] ram;
 
   function new();
-    $display("@%0t: Created BRAMModel instance with width: %0d and depth: %0d", $time, DATA_WIDTH, DEPTH);
+    $display("@%0t: Created BRAMModel instance with width: %0d and depth: %0d", 
+             $time, DATA_WIDTH, DEPTH);
     ram = '0;
   endfunction 
   

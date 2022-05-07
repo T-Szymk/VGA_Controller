@@ -2,8 +2,8 @@
 
 .DEFAULT_GOAL := default
 
-#MSIM = ~/intelFPGA/20.1/modelsim_ase/bin
-MSIM = /home/tom/questa2019/questasim/linux_x86_64
+MSIM = ~/intelFPGA/20.1/modelsim_ase/bin
+#MSIM = /home/tom/questa2019/questasim/linux_x86_64
 
 RTL = ../rtl
 TB  = ../tb
@@ -123,6 +123,19 @@ compile_axi_slave:
 .PHONY: sim_axi_slave_gui
 sim_axi_slave_gui: compile_axi_slave
 	$(MSIM)/vsim -voptargs="+acc" -onfinish stop tb_vga_axi_lite_slave -do "do_axi_slave.do"
+
+# MEM INTF TESTING #################################################
+.PHONY: compile_mem_intf_model
+compile_mem_intf_model:
+	$(MSIM)/vlog -sv -pedanticerrors $(TB)/vga_mem_intf_model.sv
+
+.PHONY: sim_mem_intf_model
+sim_mem_intf_model: compile_mem_intf_model
+	$(MSIM)/vsim -voptargs="+acc" -c -onfinish stop vga_mem_intf_model -do "run -all"
+
+.PHONY: sim_mem_intf_model_gui
+sim_mem_intf_model_gui: compile_mem_intf_model
+	$(MSIM)/vsim -voptargs="+acc" -onfinish stop vga_mem_intf_model -do "add log -r /*; run 100ms"
 
 # FPGA BUILD ###################################################################
 
