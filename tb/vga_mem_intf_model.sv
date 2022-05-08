@@ -33,7 +33,7 @@ module vga_mem_intf_model;
   parameter DEPTH_COLR    = 3;
   // BRAM width in bits and depth in rows
   parameter MEM_WIDTH     = 48;
-  parameter MEM_DEPTH     = 6400;
+  parameter MEM_DEPTH     = 19200;
   // count of how many pixels are in each line of memory
   parameter PXL_PER_ROW   = MEM_WIDTH / DEPTH_COLR; 
   // height and width of display area in pixels
@@ -105,10 +105,16 @@ module vga_mem_intf_model;
 
 /**********************************/
 
-  InterfaceModel #(.DATA_FIFO_WIDTH(DATA_FIFO_WIDTH),.ADDR_FIFO_WIDTH(ADDR_FIFO_WIDTH),
-                   .DATA_FIFO_DEPTH(DATA_FIFO_DEPTH),.ADDR_FIFO_DEPTH(ADDR_FIFO_DEPTH),
-                   .MEM_WIDTH(MEM_WIDTH),.MEM_ADDR_WIDTH(MEM_ADDR_WIDTH),
-                   .DEPTH_COLR(DEPTH_COLR), .PXL_PER_ROW(PXL_PER_ROW)) intf_model;
+  InterfaceModel #(.DATA_FIFO_WIDTH(DATA_FIFO_WIDTH),
+                   .ADDR_FIFO_WIDTH(ADDR_FIFO_WIDTH),
+                   .DATA_FIFO_DEPTH(DATA_FIFO_DEPTH),
+                   .ADDR_FIFO_DEPTH(ADDR_FIFO_DEPTH),
+                   .MEM_WIDTH(MEM_WIDTH),
+                   .MEM_ADDR_WIDTH(MEM_ADDR_WIDTH),
+                   .DEPTH_COLR(DEPTH_COLR), 
+                   .PXL_PER_ROW(PXL_PER_ROW), 
+                   .MEM_DEPTH(MEM_DEPTH)) 
+                   intf_model;
   
   // clock generation
   initial
@@ -218,7 +224,8 @@ class InterfaceModel #(
   parameter MEM_WIDTH = 48,
   parameter MEM_ADDR_WIDTH = 13,
   parameter DEPTH_COLR = 3,
-  parameter PXL_PER_ROW
+  parameter PXL_PER_ROW = 16,
+  parameter MEM_DEPTH = 6400
 );
 
   localparam MEM_DATA_CTR_WIDTH = $clog2(MEM_WIDTH/DEPTH_COLR);
@@ -261,7 +268,11 @@ class InterfaceModel #(
             ram_model.read_val(clk, fifo_addr_counter, tmp_data);
             fifo_data_model.write_val(clk, tmp_data);
             fifo_addr_model.write_val(clk, fifo_addr_counter);
-            fifo_addr_counter++;
+            if(fifo_addr_counter == (MEM_DEPTH - 1)) begin 
+              fifo_addr_counter = '0;
+            end else begin
+              fifo_addr_counter++;
+            end
           end
         end
       end 
