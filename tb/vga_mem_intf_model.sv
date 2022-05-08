@@ -192,13 +192,13 @@ module vga_mem_intf_model;
     if(intf_model.buff_sel) begin // if buff 1 is selected
       // display data in data buffer if address in the addr buffer matches the counter
       if(mem_addr_ctr == addr_buff_1) begin 
-        display_out = display_buff_1[(mem_data_ctr*DEPTH_COLR)+:3]; // extract display pixels from array
+        display_out = display_buff_1[mem_data_ctr]; // extract display pixels from array
       end else begin
         display_out = '0;
       end
     end else begin // if buff 0 is selected
       if(mem_addr_ctr == addr_buff_0) begin 
-        display_out = display_buff_0[(mem_data_ctr*DEPTH_COLR)+:3];
+        display_out = display_buff_0[mem_data_ctr];
       end else begin
         display_out = '0;
       end
