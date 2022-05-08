@@ -47,6 +47,7 @@ sim:/vga_mem_intf_model/addr_buff_0 \
 sim:/vga_mem_intf_model/addr_buff_1 \
 sim:/vga_mem_intf_model/display_buff_0 \
 sim:/vga_mem_intf_model/display_buff_1 \
+sim:/vga_mem_intf_model/display_out \
 sim:/vga_mem_intf_model/intf_model \
 sim:/vga_mem_intf_model/intf_model.fifo_data_model.width \
 sim:/vga_mem_intf_model/intf_model.fifo_data_model.depth \
@@ -65,7 +66,7 @@ set StdArithNoWarnings 1
 run 0 ns 
 set StdArithNoWarnings 0
 
-run 100 ms
+run -all
 
 wave zoom full
 config wave -signalnamewidth 1

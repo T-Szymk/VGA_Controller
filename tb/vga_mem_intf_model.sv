@@ -28,7 +28,7 @@ module vga_mem_intf_model;
   timeunit 1ns/1ps;
 
   parameter CLK_PERIOD_NS = 10;
-  parameter SIMULATION_RUNTIME = 100ms;
+  parameter SIMULATION_RUNTIME = 1ms;
   // depth of each colour
   parameter DEPTH_COLR    = 3;
   // BRAM width in bits and depth in rows
@@ -97,8 +97,11 @@ module vga_mem_intf_model;
 
   bit [MEM_ADDR_WIDTH-1:0] addr_buff_0    = '0;
   bit [MEM_ADDR_WIDTH-1:0] addr_buff_1    = '0;
-  bit [MEM_WIDTH-1:0]      display_buff_0 = '0;
-  bit [MEM_WIDTH-1:0]      display_buff_1 = '0;                     
+
+  bit [PXL_PER_ROW-1:0] [DEPTH_COLR-1:0] display_buff_0 = '0;
+  bit [PXL_PER_ROW-1:0] [DEPTH_COLR-1:0] display_buff_1 = '0;
+
+  bit [DEPTH_COLR-1:0] display_out = '0;                     
 
 /**********************************/
 
@@ -111,6 +114,7 @@ module vga_mem_intf_model;
   initial
     forever #(CLK_PERIOD_NS/2) clk <= ~clk;
 
+  // test bench block
   initial begin 
 
     $timeformat(-9, 0, "ns");
@@ -126,7 +130,8 @@ module vga_mem_intf_model;
       end
   
       begin
-        #1ms;
+        // control simulation runtime
+        #SIMULATION_RUNTIME;
         $finish;
       end
   
@@ -180,6 +185,26 @@ module vga_mem_intf_model;
       end
     end
   end 
+
+  // process to choose what should be displayed
+  always_comb begin
+
+    if(intf_model.buff_sel) begin // if buff 1 is selected
+      // display data in data buffer if address in the addr buffer matches the counter
+      if(mem_addr_ctr == addr_buff_1) begin 
+        display_out = display_buff_1[(mem_data_ctr*DEPTH_COLR)+:3]; // extract display pixels from array
+      end else begin
+        display_out = '0;
+      end
+    end else begin // if buff 0 is selected
+      if(mem_addr_ctr == addr_buff_0) begin 
+        display_out = display_buff_0[(mem_data_ctr*DEPTH_COLR)+:3];
+      end else begin
+        display_out = '0;
+      end
+    end
+    
+  end
 
 endmodule
 
@@ -252,7 +277,7 @@ class InterfaceModel #(
              end
            end else begin
              // if reading last pixel of the memory line and FIFO is empty
-             if((mem_data_ctr == PXL_PER_ROW-1) && !fifo_data_model.empty) begin 
+             if((mem_data_ctr == PXL_PER_ROW-2) && !fifo_data_model.empty) begin 
                // if currently reading from buffer 1, read a new value into buffer 0
                if(buff_sel) begin 
                  fifo_data_model.read_val(clk, display_buff_0);
