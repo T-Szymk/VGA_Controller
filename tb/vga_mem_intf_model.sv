@@ -309,7 +309,7 @@ class InterfaceModel #(
 
   endtask;
 
-endclass;
+endclass
 
 /**********************************/
 
