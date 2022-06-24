@@ -85,6 +85,8 @@ PACKAGE vga_pkg IS
   -- width of memory address signals
   CONSTANT mem_addr_width_c : INTEGER := INTEGER(CEIL(LOG2(REAL(mem_depth_c - 1))));
   -- array to contain colours(RGB) in integer format
-  TYPE colr_arr_t IS ARRAY (2 DOWNTO 0) OF INTEGER RANGE ((2**depth_colr_c) - 1) DOWNTO 0;
+  SUBTYPE pixel_t   IS STD_LOGIC_VECTOR(pxl_width_c - 1 DOWNTO 0);
+  TYPE pixel_word_t IS ARRAY(pxl_per_row_c - 1 DOWNTO 0) OF pixel_t; 
+  TYPE colr_arr_t   IS ARRAY(2 DOWNTO 0) OF INTEGER RANGE ((2**depth_colr_c) - 1) DOWNTO 0;
 
 END PACKAGE vga_pkg;

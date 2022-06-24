@@ -27,11 +27,12 @@ entity vga_mem_addr_ctrl is
     DEBUG : boolean := TRUE
   );
   port(
-    clk_i          : in std_logic;
-    rstn_i         : in std_logic;
-    pxl_ctr_i      : in std_logic_vector(pxl_ctr_width_c - 1 downto 0);
-    line_ctr_i     : in std_logic_vector(line_ctr_width_c - 1 downto 0);
-    mem_addr_ctr_o : out std_logic_vector(mem_addr_width_c - 1 downto 0)
+    clk_i          : in  std_logic;
+    rstn_i         : in  std_logic;
+    pxl_ctr_i      : in  std_logic_vector(pxl_ctr_width_c - 1 downto 0);
+    line_ctr_i     : in  std_logic_vector(line_ctr_width_c - 1 downto 0);
+    mem_addr_ctr_o : out std_logic_vector(mem_addr_width_c - 1 downto 0);
+    mem_pxl_ctr_o  : out std_logic_vector(row_ctr_width_c - 1 downto 0)
   );
 end entity vga_mem_addr_ctrl;
 
@@ -83,6 +84,7 @@ begin
   end process mem_ctr;
 
   mem_addr_ctr_o <= std_logic_vector(mem_addr_ctr_r);
+  mem_pxl_ctr_o  <= std_logic_vector(mem_pxl_ctr_r);
 
   -- below only needed for debugging
   gen_disp_ctr : if DEBUG = TRUE generate
