@@ -4,6 +4,8 @@
 
 #MSIM = ~/intelFPGA/20.1/modelsim_ase/bin
 MSIM = /home/tom/questa2019/questasim/linux_x86_64
+GHDL = ghdl
+GHDL_OPT = --std=08 -fsynopsys -v
 
 RTL = ../rtl
 TB  = ../tb
@@ -124,7 +126,7 @@ compile_axi_slave:
 sim_axi_slave_gui: compile_axi_slave
 	$(MSIM)/vsim -voptargs="+acc" -onfinish stop tb_vga_axi_lite_slave -do "do_axi_slave.do"
 
-# MEM INTF TESTING #################################################
+# MEM INTF MODEL TESTING #################################################
 .PHONY: compile_mem_intf_model
 compile_mem_intf_model:
 	$(MSIM)/vlog -sv -pedanticerrors $(TB)/vga_mem_intf_model.sv
@@ -136,6 +138,29 @@ sim_mem_intf_model: compile_mem_intf_model
 .PHONY: sim_mem_intf_model_gui
 sim_mem_intf_model_gui: compile_mem_intf_model
 	$(MSIM)/vsim -voptargs="+acc" -onfinish stop vga_mem_intf_model -do mem_intf_model.do
+
+# MEM INTF TESTING #################################################
+.PHONY: sim_mem_addr_control
+sim_mem_addr_control: clean_mem_addr_control compile_mem_addr_control
+	cd mem_addr_control && \
+	$(GHDL) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_addr_ctrl.vhd && \
+	$(GHDL) --elab-run $(GHDL_OPT) tb_vga_mem_addr_ctrl --stop-time=50ms --wave=tb_vga_mem_addr_ctrl.ghw --disp-tree && \
+	gtkwave tb_vga_mem_addr_ctrl.ghw -c 16
+.PHONY: compile_mem_addr_control
+compile_mem_addr_control: clean_mem_addr_control
+	@mkdir -p mem_addr_control && cd mem_addr_control && \
+	$(GHDL) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
+	                       ../$(RTL)/vga_mem_addr_ctrl.vhd
+
+.PHONY: clean_mem_addr_control
+clean_mem_addr_control:
+	rm -rf ./mem_addr_control
+
+.PHONY: check_mem_addr_control
+check_mem_addr_control:
+	$(GHDL) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
+	                       $(RTL)/vga_mem_addr_ctrl.vhd \
+												 $(TB)/tb_vga_mem_addr_ctrl.vhd
 
 # FPGA BUILD ###################################################################
 

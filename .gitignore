@@ -2,3 +2,4 @@
 **/modelsim.ini
 **/transcript
 **/vga_lib/*
+**/vhdl_ls.toml
