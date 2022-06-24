@@ -35,22 +35,24 @@ architecture tb of tb_vga_mem_addr_ctrl is
       DEBUG : boolean := TRUE
     );
     port(
-      clk_i      : in std_logic;
-      rstn_i     : in std_logic;
-      pxl_ctr_i  : in std_logic_vector(pxl_ctr_width_c - 1 downto 0);
-      line_ctr_i : in std_logic_vector(line_ctr_width_c - 1 downto 0)
+      clk_i          : in std_logic;
+      rstn_i         : in std_logic;
+      pxl_ctr_i      : in std_logic_vector(pxl_ctr_width_c - 1 downto 0);
+      line_ctr_i     : in std_logic_vector(line_ctr_width_c - 1 downto 0);
+      mem_addr_ctr_o : out std_logic_vector(mem_addr_width_c - 1 downto 0)
     );
   end component;
 
-  signal clk_s, rstn_s : std_logic := '0';
-  signal pxl_ctr_s     : unsigned(pxl_ctr_width_c - 1 downto 0);
-  signal line_ctr_s    : unsigned(line_ctr_width_c - 1 downto 0);
+  signal clk_s, rstn_s  : std_logic := '0';
+  signal pxl_ctr_s      : unsigned(pxl_ctr_width_c - 1 downto 0);
+  signal line_ctr_s     : unsigned(line_ctr_width_c - 1 downto 0);
+  signal mem_addr_ctr_s : std_logic_vector(mem_addr_width_c - 1 downto 0); 
 
 begin --------------------------------------------------------------------------
 
   clk_gen : process is                                               -----------
   begin    
-    while now < 500 ms loop
+    while now < 100 ms loop
       clk_s <= '0';
       wait for CLK_PERIOD/2;
       clk_s <= '1';
@@ -91,10 +93,11 @@ begin --------------------------------------------------------------------------
       DEBUG => TRUE
     )
     port map(
-      clk_i      => clk_s,
-      rstn_i     => rstn_s,
-      pxl_ctr_i  => std_logic_vector(pxl_ctr_s),
-      line_ctr_i => std_logic_vector(line_ctr_s)
+      clk_i          => clk_s,
+      rstn_i         => rstn_s,
+      pxl_ctr_i      => std_logic_vector(pxl_ctr_s),
+      line_ctr_i     => std_logic_vector(line_ctr_s),
+      mem_addr_ctr_o => mem_addr_ctr_s        
     );
 
 end architecture tb;
