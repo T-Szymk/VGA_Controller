@@ -89,4 +89,44 @@ PACKAGE vga_pkg IS
   TYPE pixel_word_t IS ARRAY(pxl_per_row_c - 1 DOWNTO 0) OF pixel_t; 
   TYPE colr_arr_t   IS ARRAY(2 DOWNTO 0) OF INTEGER RANGE ((2**depth_colr_c) - 1) DOWNTO 0;
 
+  -- buffer management subroutines
+  PROCEDURE buff_fill ( 
+    signal mem_word_i : in  std_logic_vector(mem_row_width_c-1 downto 0);
+    signal buff_o     : out pixel_word_t
+  );
+
+  PROCEDURE buff_clr ( 
+    signal buff_o : out pixel_word_t
+  );
+
 END PACKAGE vga_pkg;
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+PACKAGE BODY vga_pkg IS
+
+  PROCEDURE buff_fill ( --------------------------------------------------------
+    signal mem_word_i : in  std_logic_vector(mem_row_width_c-1 downto 0);
+    signal buff_o     : out pixel_word_t ) IS 
+  BEGIN 
+
+    FOR i IN pxl_per_row_c-1 DOWNTO 0 LOOP 
+      buff_o(i) <= mem_word_i(((i * pxl_width_c) + pxl_width_c)-1 
+                              DOWNTO (i * pxl_width_c)); 
+    END LOOP;
+
+  END PROCEDURE buff_fill; -----------------------------------------------------
+
+
+  PROCEDURE buff_clr ( ---------------------------------------------------------
+    signal buff_o : out pixel_word_t ) IS 
+  BEGIN 
+
+    FOR i IN pxl_per_row_c-1 DOWNTO 0 LOOP 
+      buff_o(i) <= (others => '0');
+    END LOOP;
+
+  END PROCEDURE buff_clr; ------------------------------------------------------
+
+END PACKAGE BODY vga_pkg;

@@ -163,6 +163,30 @@ check_mem_addr_control:
 	                       $(RTL)/vga_mem_addr_ctrl.vhd \
 												 $(TB)/tb_vga_mem_addr_ctrl.vhd
 
+# MEM BUFF TESTING #################################################
+.PHONY: sim_mem_buff
+sim_mem_buff: clean_mem_buff compile_mem_buff
+	cd mem_buff && \
+	$(GHDL) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_buff.vhd && \
+	$(GHDL) --elab-run $(GHDL_OPT) tb_vga_mem_buff --stop-time=50ms --wave=tb_vga_mem_buff.ghw && \
+	gtkwave tb_vga_mem_buff.ghw -c 16
+
+.PHONY: compile_mem_buff
+compile_mem_buff: clean_mem_buff
+	@mkdir -p mem_buff && cd mem_buff && \
+	$(GHDL) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
+	                       ../$(RTL)/vga_mem_buff.vhd
+
+.PHONY: clean_mem_buff
+clean_mem_buff:
+	rm -rf ./mem_addr_control
+
+.PHONY: check_mem_buff
+check_mem_buff:
+	$(GHDL) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
+	                       $(RTL)/vga_mem_buff.vhd \
+												 $(TB)/tb_vga_mem_buff.vhd
+
 # FPGA BUILD ###################################################################
 
 .PHONY: fpga

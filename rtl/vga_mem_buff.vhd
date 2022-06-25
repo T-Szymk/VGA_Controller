@@ -22,102 +22,193 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use work.vga_pkg.all;
 
-ENTITY vga_mem_buff IS 
-  PORT (
+entity vga_mem_buff is 
+  port (
     clk_i           : in  std_logic;
     rstn_i          : in  std_logic;
     disp_addr_ctr_i : in  std_logic_vector(mem_addr_width_c-1 downto 0);
     disp_pxl_ctr_i  : in  std_logic_vector(row_ctr_width_c-1 downto 0);
-    mem_data_i      : in  pixel_word_t;
+    mem_data_i      : in  std_logic_vector(mem_row_width_c-1 downto 0);
     mem_addr_o      : out std_logic_vector(mem_addr_width_c-1 downto 0);
-    mem_ren_o       : out std_logic;
     disp_blank_o    : out std_logic;
     disp_pxl_o      : out pixel_t
   );
-END ENTITY vga_mem_buff;
+end entity vga_mem_buff;
 
 --------------------------------------------------------------------------------
-ARCHITECTURE rtl OF vga_mem_buff IS
+architecture rtl OF vga_mem_buff IS
 
-  type state_t is (INIT, FILL_A, FILL_A_READ_B, FILL_B_READ_A);
+  type state_t is (RESET, IDLE_RST, IDLE_RUN, INIT_A, FILL_A, FILL_B);
   
-  signal c_state, n_state : state_t := INIT;
+  -- FSM signals
+  signal c_state, n_state   : state_t := RESET;
+  signal fill_A_r, fill_B_r : std_logic := '0';
+  signal last_buff_pxl_s    : std_logic := '0';
+  signal buff_wr_sel_r      : std_logic := '0'; -- A: 0, B: 1
+  signal buff_rd_sel_r      : std_logic := '0'; -- A: 0, B: 1
+
+  -- pixel buffers
+  signal buff_A_r, buff_B_r : pixel_word_t;
+  -- buffer mgmt signals
+  signal buff_A_addr_r, buff_B_addr_r : unsigned(mem_addr_width_c-1 downto 0);
+  signal disp_pxl_ctr_s : unsigned(row_ctr_width_c-1 downto 0);
+  -- module output registers
   signal mem_addr_r   : unsigned(mem_addr_width_c-1 downto 0);
-  signal mem_ren_r    : std_logic;
-  signal disp_blank_r : std_logic;
-  signal disp_pxl_r   : pixel_t;
+  signal disp_blank_s : std_logic;
+  signal disp_pxl_s   : pixel_t;
 
 BEGIN  -------------------------------------------------------------------------
+  
+  disp_pxl_ctr_s <= unsigned(disp_pxl_ctr_i);
 
+  -- synchronous current state assignment
   sync_cstate : process (clk_i, rstn_i) is -------------------------------------
   begin 
     if rstn_i = '0' then
-      c_state <= INIT; 
+      c_state <= RESET; 
     elsif rising_edge(clk_i) then 
       c_state <= n_state;
     end if;
   end process sync_cstate; -----------------------------------------------------
-
+  
+  -- combinational next state assignment
   comb_nstate : process (all) is -----------------------------------------------
   begin 
     -- default assignment
     n_state <= c_state;
     
-    case c_state is 
-      when INIT =>
-        n_state <= FILL_A;
+    case c_state is                                                 ------------
 
-      when FILL_A =>
+      when RESET =>
+        n_state <= IDLE_RST;
+
+      when IDLE_RST =>                                                    ------     
+        n_state <= INIT_A;
+
+      when INIT_A =>                                                      ------       
         -- if first time, fill buffer A address + data, then move on to FILL_B_READ_A,
-        n_state <= FILL_B_READ_A;
+        n_state <= FILL_B;
 
-      when FILL_A_READ_B =>
-      -- wait for pxl_ctr to reach final value and move to FILL_B_READ_A
+      when IDLE_RUN =>                                                    ------     
+        -- switch buffers when last pixel in word is being displayed
+        if last_buff_pxl_s = '1' then 
+          if buff_wr_sel_r = '0' then
+            n_state <= FILL_A;
+          else 
+            n_state <= FILL_B;
+          end if;
+        else 
+          n_state <= c_state;
+        end if;
+      
+      when FILL_A =>                                                      ------              
+          n_state <= IDLE_RUN;
 
-      when FILL_B_READ_A =>
-      --  wait for pxl_ctr to reach final value and move to FILL_A_READ_B
-      when OTHERS =>
-    end case;
+      when FILL_B =>                                                      ------              
+        n_state <= IDLE_RUN;
+      
+      when OTHERS =>                                                      ------       
+        n_state <= IDLE_RST;
+    
+    end case;                                                       ------------
 
   end process comb_nstate; -----------------------------------------------------
   
+  -- synchronous output assignment
   sync_outp : process (clk_i, rstn_i) is ---------------------------------------
   begin
 
     if rstn_i = '0' then 
 
-      mem_addr_r   <= (others => '0');
-      mem_ren_r    <= '0';
-      disp_blank_r <= '0';
-      disp_pxl_r   <= (others => '0');
+      fill_A_r      <= '0';
+      fill_B_r      <= '0';
+      buff_rd_sel_r <= '0';
 
     elsif rising_edge(clk_i) then
 
-      case c_state is 
-        when INIT =>
-     
-          mem_addr_r   <= (others => '0');
-          mem_ren_r    <= '0';
-          disp_blank_r <= '0';
-          disp_pxl_r   <= (others => '0');
+      fill_A_r      <= '0';
+      fill_B_r      <= '0';
+      buff_rd_sel_r <= buff_rd_sel_r;
+
+      case n_state is                                               ------------
+
+        when RESET =>                                                     ------
+
+        when IDLE_RST =>                                                  ------  
           
-        when FILL_A =>
-        when FILL_A_READ_B =>
-        when FILL_B_READ_A =>
-        when OTHERS =>
-      end case;
+        when INIT_A =>                                                    ------    
+          fill_A_r <= '1';
+
+        when IDLE_RUN =>                                                  ------
+
+        when FILL_A =>                                                    ------           
+          fill_A_r      <= '1';
+          buff_rd_sel_r <= '1';
+        
+        when FILL_B =>                                                    ------           
+          fill_B_r      <= '1';
+          buff_rd_sel_r <= '0';
+
+        when OTHERS =>                                                    ------    
+
+
+      end case;                                                     ------------
     
     end if;
 
   end process sync_outp;  ------------------------------------------------------
+  
+  -- process used to write buffers from memory
+  sync_buff_wr : process (clk_i, rstn_i) is 
+  begin 
+    if rstn_i = '0' then 
+      
+      -- set buffers to 0 on reset
+      buff_clr(buff_A_r);
+      buff_clr(buff_B_r);
+      mem_addr_r     <= (others => '0');
+      buff_A_addr_r  <= (others => '0');
+      buff_B_addr_r  <= (others => '0');
+      buff_wr_sel_r <= '0';
 
-  ------------------------------------------------------------------------------
+    elsif rising_edge(clk_i) then 
+      -- memory data should be ready on the line, so read it into BUFF_A then
+      -- increment the address 
+      if fill_A_r = '1' then 
+        buff_A_addr_r <= mem_addr_r;
+        mem_addr_r <= mem_addr_r + 1;
+        buff_fill(mem_data_i, buff_A_r);
+        buff_wr_sel_r <= '1';
+      end if;
 
-  mem_addr_o   <= mem_addr_r;
-  mem_ren_o    <= mem_ren_r;
-  disp_blank_o <= disp_blank_r;
-  disp_pxl_o   <= disp_pxl_r;
+      -- equivalent for BUFF_B
+      if fill_B_r = '1' then 
+        buff_B_addr_r <= mem_addr_r;
+        mem_addr_r <= mem_addr_r + 1;
+        buff_fill(mem_data_i, buff_B_r);
+        buff_wr_sel_r <= '0';
+      end if;
 
-END ARCHITECTURE rtl;
+    end if;
+  end process sync_buff_wr;
+
+  -- read buffers logic
+  
+  -- MISSING ADDRESS CHECK (if expected addresses don't match, blank -> 1)
+  disp_pxl_s <= buff_A_r(to_integer(disp_pxl_ctr_s)) WHEN buff_rd_sel_r ELSE 
+                buff_B_r(to_integer(disp_pxl_ctr_s));
+
+  last_buff_pxl_s <= '1' WHEN disp_pxl_ctr_s = (pxl_per_row_c - 1) ELSE 
+                     '0';
+
+  disp_blank_s    <= '0';
+
+  -- output assignments
+
+  mem_addr_o   <= std_logic_vector(mem_addr_r);
+  disp_blank_o <= disp_blank_s;
+  disp_pxl_o   <= disp_pxl_s;
+
+end architecture rtl;
 
 --------------------------------------------------------------------------------
