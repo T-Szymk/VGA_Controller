@@ -144,7 +144,7 @@ sim_mem_intf_model_gui: compile_mem_intf_model
 sim_mem_addr_control: clean_mem_addr_control compile_mem_addr_control
 	cd mem_addr_control && \
 	$(GHDL) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_addr_ctrl.vhd && \
-	$(GHDL) --elab-run $(GHDL_OPT) tb_vga_mem_addr_ctrl --stop-time=50ms --wave=tb_vga_mem_addr_ctrl.ghw && \
+	$(GHDL) --elab-run $(GHDL_OPT) tb_vga_mem_addr_ctrl --stop-time=200ms --wave=tb_vga_mem_addr_ctrl.ghw && \
 	gtkwave tb_vga_mem_addr_ctrl.ghw -c 16
 
 .PHONY: compile_mem_addr_control

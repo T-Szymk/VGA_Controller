@@ -44,18 +44,20 @@ architecture tb of tb_vga_mem_buff is
     end component;
 
   signal clk_s, rstn_s   : std_logic := '0';
+  signal ctr_rstn_s      : std_logic := '0';
   signal disp_addr_ctr_s : unsigned(mem_addr_width_c-1 downto 0);       
   signal disp_pxl_ctr_s  : unsigned(row_ctr_width_c-1 downto 0);      
   signal mem_data_s      : unsigned(mem_row_width_c-1 downto 0);  
   signal mem_addr_s      : std_logic_vector(mem_addr_width_c-1 downto 0);  
   signal disp_blank_s    : std_logic;    
   signal disp_pxl_s      : pixel_t;
+  signal blank_test_s    : std_logic := '1';
 
 begin --------------------------------------------------------------------------
 
   clk_gen : process is                                               -----------
   begin    
-    while now < 100 ms loop
+    while now < 200 ms loop
       clk_s <= '0';
       wait for CLK_PERIOD/2;
       clk_s <= '1';
@@ -66,24 +68,47 @@ begin --------------------------------------------------------------------------
         severity ERROR; 
   end process clk_gen;                                               -----------
 
-  rstn_s <= '1' after CLK_PERIOD * 10;
+  rstn_s <= '1' after CLK_PERIOD * 10; 
+  ctr_rstn_s <= '1' after CLK_PERIOD * 100; -- simulating the porch/sync period
 
-  addr_ctr : process (clk_s, rstn_s) is 
+  addr_ctr : process (clk_s, ctr_rstn_s) is ------------------------------------
   begin 
-    if rstn_s = '0' then 
+    if ctr_rstn_s = '0' then 
       disp_addr_ctr_s <= (others => '0');
       disp_pxl_ctr_s  <= (others => '0');
       mem_data_s      <= (others => '0');
     elsif rising_edge(clk_s) then
+      
       if disp_pxl_ctr_s = (pxl_per_row_c - 1) then 
+        
         disp_pxl_ctr_s  <= (others => '0');
-        disp_addr_ctr_s <= disp_addr_ctr_s + 1;
-        mem_data_s      <= mem_data_s + 1;
+        
+        -- skip address at addr 8 to test blanking
+        if blank_test_s = '1' then 
+          if disp_addr_ctr_s = 8 then
+            disp_addr_ctr_s <= disp_addr_ctr_s + 2;
+          elsif disp_addr_ctr_s = 16 then
+            blank_test_s    <= '0';
+            disp_addr_ctr_s <= (others => '0');
+          else
+            disp_addr_ctr_s <= disp_addr_ctr_s + 1;
+          end if;
+        else 
+          disp_addr_ctr_s <= disp_addr_ctr_s + 1;
+        end if;
+
       else
         disp_pxl_ctr_s  <= disp_pxl_ctr_s + 1;
       end if;
+      -- even addresses should be loaded to buffer A, off to buffer B
+      if mem_addr_s(0) = '0' then 
+        mem_data_s(16-1 downto 0) <= x"AAAA";
+      else 
+        mem_data_s(16-1 downto 0) <= x"BBBB";
+      end if;
+
     end if;
-  end process addr_ctr;
+  end process addr_ctr; --------------------------------------------------------
 
   i_dut : vga_mem_buff
     port map (

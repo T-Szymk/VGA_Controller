@@ -80,7 +80,7 @@ PACKAGE vga_pkg IS
   -- width of counter used to count current pixel in memory row beign displayed
   CONSTANT row_ctr_width_c : INTEGER := INTEGER(CEIL(LOG2(REAL(pxl_per_row_c - 1))));
 
-  CONSTANT mem_row_width_c : INTEGER := pxl_per_row_c * pxl_ctr_width_c;
+  CONSTANT mem_row_width_c : INTEGER := pxl_per_row_c * pxl_width_c;
   CONSTANT mem_depth_c     : INTEGER := INTEGER(CEIL(REAL(disp_pxl_max_c)/REAL(pxl_per_row_c)));
   -- width of memory address signals
   CONSTANT mem_addr_width_c : INTEGER := INTEGER(CEIL(LOG2(REAL(mem_depth_c - 1))));

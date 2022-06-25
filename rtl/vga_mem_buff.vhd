@@ -58,8 +58,6 @@ architecture rtl OF vga_mem_buff IS
   signal disp_pxl_s   : pixel_t;
 
 BEGIN  -------------------------------------------------------------------------
-  
-  disp_pxl_ctr_s <= unsigned(disp_pxl_ctr_i);
 
   -- synchronous current state assignment
   sync_cstate : process (clk_i, rstn_i) is -------------------------------------
@@ -190,20 +188,31 @@ BEGIN  -------------------------------------------------------------------------
       end if;
 
     end if;
-  end process sync_buff_wr;
+  end process sync_buff_wr; ----------------------------------------------------
 
-  -- read buffers logic
   
-  -- MISSING ADDRESS CHECK (if expected addresses don't match, blank -> 1)
-  disp_pxl_s <= buff_A_r(to_integer(disp_pxl_ctr_s)) WHEN buff_rd_sel_r ELSE 
+  -- use input pixel counter if the selected buffer address matches the expected
+  -- address value from the addr_ctrl module. This is to prevent address 
+  -- misalignment from propagating through the design.
+  comb_pxl_ctr: process (all) is -----------------------------------------------
+  begin 
+    if (buff_rd_sel_r = '0' AND std_logic_vector(buff_A_addr_r) = disp_addr_ctr_i) OR 
+       (buff_rd_sel_r = '1' AND std_logic_vector(buff_B_addr_r) = disp_addr_ctr_i) then
+      disp_pxl_ctr_s <= unsigned(disp_pxl_ctr_i);
+      disp_blank_s   <= '0';
+    else 
+      disp_pxl_ctr_s <= (others => '0');
+      disp_blank_s   <= '1';
+    end if;
+  end process comb_pxl_ctr;
+
+  -- output pixel value logic
+  disp_pxl_s <= buff_A_r(to_integer(disp_pxl_ctr_s)) WHEN buff_rd_sel_r = '0' ELSE 
                 buff_B_r(to_integer(disp_pxl_ctr_s));
+  -- pulse to indicate final pixel in word, used to drive state machine
+  last_buff_pxl_s <= '1' WHEN disp_pxl_ctr_s = (pxl_per_row_c - 1) ELSE '0';
 
-  last_buff_pxl_s <= '1' WHEN disp_pxl_ctr_s = (pxl_per_row_c - 1) ELSE 
-                     '0';
-
-  disp_blank_s    <= '0';
-
-  -- output assignments
+  -- output assignments --------------------------------------------------------
 
   mem_addr_o   <= std_logic_vector(mem_addr_r);
   disp_blank_o <= disp_blank_s;
