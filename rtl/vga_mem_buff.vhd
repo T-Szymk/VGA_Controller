@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- Title      : VGA Controller - VGA Memory Interface
+-- Title      : VGA Controller - VGA Memory Buffers
 -- Project    : VGA Controller
 --------------------------------------------------------------------------------
 -- File       : vga_mem_buff.vhd

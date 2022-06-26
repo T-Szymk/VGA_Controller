@@ -16,18 +16,19 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2021-12-12  1.1      TZS     Created
+-- 2022-06-26  1.2      TZS     Updated types to use pixels
 --------------------------------------------------------------------------------
-LIBRARY IEEE;
-USE IEEE.STD_LOGIC_1164.ALL;
-USE IEEE.NUMERIC_STD.ALL;
-USE WORK.VGA_PKG.ALL;
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+use work.vga_pkg.all;
 
-ENTITY vga_pattern_gen IS 
-  PORT (
-    pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
-    line_ctr_i : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
+entity vga_pattern_gen is 
+  port (
+    pxl_ctr_i  : in std_logic_vector((pxl_ctr_width_c - 1) downto 0);
+    line_ctr_i : in std_logic_vector((line_ctr_width_c - 1) downto 0);
     -- output is aggregate RGB array
-    colr_out   : OUT STD_LOGIC_VECTOR(((3*depth_colr_c) - 1) DOWNTO 0)
+    colr_out   : out pixel_t
   );
 END ENTITY vga_pattern_gen;
 
@@ -149,9 +150,9 @@ BEGIN
     (15, 15, 15) WHEN pxl_ctr_int_s < (pattern_arr_16_c(0)) ELSE
     ( 0,  0,  0); 
 
-  colr_out <= STD_LOGIC_VECTOR(TO_UNSIGNED(colr_s(2), depth_colr_c)) & 
-              STD_LOGIC_VECTOR(TO_UNSIGNED(colr_s(1), depth_colr_c)) & 
-              STD_LOGIC_VECTOR(TO_UNSIGNED(colr_s(0), depth_colr_c)); 
+  colr_out <= (STD_LOGIC_VECTOR(TO_UNSIGNED(colr_s(2), depth_colr_c)), 
+              STD_LOGIC_VECTOR(TO_UNSIGNED(colr_s(1), depth_colr_c)), 
+              STD_LOGIC_VECTOR(TO_UNSIGNED(colr_s(0), depth_colr_c))); 
 
 END ARCHITECTURE behavioral;
 

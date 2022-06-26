@@ -21,27 +21,34 @@
 -- 2021-09-04  1.2      TZS     Set mux to change all colour signals instead of
 --                              individual colours separately.
 --------------------------------------------------------------------------------
-LIBRARY IEEE;
-USE IEEE.STD_LOGIC_1164.ALL;
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.vga_pkg.all;
 
-ENTITY vga_colr_mux IS
-  GENERIC (depth_colr_g : INTEGER := 4);
-  PORT (
-    colr_in : IN STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
-    en_in   : IN STD_LOGIC;
-  
-    colr_out : OUT STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0)
+entity vga_colr_mux is
+  port (
+    test_colr_i : in  pixel_t;
+    mem_colr_i  : in  pixel_t;
+    en_i        : in  std_logic;
+    blank_i     : in  std_logic;
+    colr_out    : out pixel_t
   );
-END ENTITY vga_colr_mux;
+end entity vga_colr_mux;
 
 --------------------------------------------------------------------------------
 
-ARCHITECTURE rtl OF vga_colr_mux IS 
-BEGIN 
+architecture rtl of vga_colr_mux is 
 
-  WITH en_in SELECT colr_out <= colr_in WHEN '1',
-                                (OTHERS => '0') WHEN OTHERS;
+  signal pxl_s : pixel_t;
+
+begin 
+
+  with en_i select pxl_s <= test_colr_i  when '0',
+                            mem_colr_i when others;
+
+  with blank_i select pxl_s <= pxl_s  when '0',
+                               (others => 0) when others;                          
   
-END ARCHITECTURE rtl;
+end architecture rtl;
 
 --------------------------------------------------------------------------------

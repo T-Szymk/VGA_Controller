@@ -34,7 +34,7 @@ ENTITY vga_controller IS
     pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
     line_ctr_i : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
 
-    colr_en_out : OUT STD_LOGIC; -- (2, 1, 0) = (b_en, g_en, r_en),
+    colr_en_out : OUT STD_LOGIC;
     v_sync_out  : OUT STD_LOGIC;
     h_sync_out  : OUT STD_LOGIC
   );

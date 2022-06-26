@@ -139,7 +139,7 @@ sim_mem_intf_model: compile_mem_intf_model
 sim_mem_intf_model_gui: compile_mem_intf_model
 	$(MSIM)/vsim -voptargs="+acc" -onfinish stop vga_mem_intf_model -do mem_intf_model.do
 
-# MEM INTF TESTING #################################################
+# MEM ADDR TESTING #################################################
 .PHONY: sim_mem_addr_control
 sim_mem_addr_control: clean_mem_addr_control compile_mem_addr_control
 	cd mem_addr_control && \

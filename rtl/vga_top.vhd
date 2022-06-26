@@ -13,6 +13,11 @@
 --------------------------------------------------------------------------------
 -- Description: Top level design for vga controller to be used with the 
 --              Xilinx Arty-A7 development board
+--              ToDo:
+--                   1. synchronise IO
+--                   2. create module to convert between hardware colour width 
+--                      and variable depth_colr_c
+--                   3. Tidy up consistent use of pixel_t instead of vectors                 
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
@@ -24,30 +29,35 @@
 --                              Removed unused reset block
 -- 2021-12-11  1.5      TZS     Removed colour generation and switch sync blocks
 --                              Added VGA timing generics/constants to top level
--- 2021-12-12  1.6      TZS     Added test pattern generator                                
+-- 2021-12-12  1.6      TZS     Added test pattern generator      
+-- 2022-06-26  1.7      TZS     Tidied up formatting in module.
+--                              Added reset synchroniser
+--                              Added switch for test pattern                          
 --------------------------------------------------------------------------------
-LIBRARY IEEE;
-USE IEEE.STD_LOGIC_1164.ALL;
-USE WORK.VGA_PKG.ALL;
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.vga_pkg.all;
 
-ENTITY vga_top IS
-  GENERIC (
+entity vga_top is
+  generic (
     -- 1 for simulation, 0 for synthesis
-    CONF_SIM : INTEGER := 1;
-    CONF_TEST_PATT : INTEGER := 1
+    CONF_SIM       : integer := 1;
+    CONF_TEST_PATT : integer := 1
   );
-  PORT (
+  port (
     -- clock and asynch reset
-    clk    : IN STD_LOGIC;
-    rst_n  : IN STD_LOGIC;
+    clk_i : in std_logic;
+    rst_n : in std_logic;
+    -- io
+    sw_0_i : in std_logic;
     -- VGA signals
-    v_sync_out  : OUT STD_LOGIC;
-    h_sync_out  : OUT STD_LOGIC;
-    r_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_c - 1 DOWNTO 0);
-    g_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_c - 1 DOWNTO 0);
-    b_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_c - 1 DOWNTO 0)
+    v_sync_out  : out std_logic;
+    h_sync_out  : out std_logic;
+    r_colr_out  : out std_logic_vector(depth_colr_c - 1 downto 0);
+    g_colr_out  : out std_logic_vector(depth_colr_c - 1 downto 0);
+    b_colr_out  : out std_logic_vector(depth_colr_c - 1 downto 0)
   );
-END ENTITY vga_top;
+end entity vga_top;
 
 --------------------------------------------------------------------------------
 
@@ -58,127 +68,147 @@ ARCHITECTURE structural of vga_top IS
   -- clock divider components to generate the pixel clock
   -- if simulating, use vga_clk_div, for synthesis use clk_gen
   
-  COMPONENT vga_clk_div -- FOR SIM ****
-    GENERIC (
-      ref_clk_freq_g : INTEGER;
-      px_clk_freq_g  : INTEGER
+  component vga_clk_div is -- FOR SIM ****
+    generic (
+      ref_clk_freq_g : integer;
+      px_clk_freq_g  : integer
     );
-    PORT ( 
-      clk        : IN STD_LOGIC;
-      rst_n      : IN STD_LOGIC;
+    port ( 
+      clk_i        : in std_logic;
+      rst_n      : in std_logic;
+      clk_px_out : out std_logic
+    );
+  end component; -- FOR SIM ****
   
-      clk_px_out : OUT STD_LOGIC
+  component clk_gen -- for fpga ****
+    port (
+      clk_i      : in  std_logic;
+      rst_n      : in  std_logic;
+      clk_px_out : out std_logic
     );
-  END COMPONENT; -- FOR SIM ****
-  
-  COMPONENT clk_gen -- FOR FPGA ****
-    PORT (
-      clk        : IN  STD_LOGIC;
-      rst_n      : IN  STD_LOGIC;
-    
-      clk_px_out : OUT STD_LOGIC
+  end component; -- for fpga ****
+
+  component rst_sync is
+    generic (
+      SYNC_STAGES : integer := 3
     );
-  END COMPONENT; -- FOR FPGA ****
+    port (
+      clk_i       : in  std_logic;
+      rstn_i      : in  std_logic;
+      sync_rstn_o : out std_logic
+    );
+    end component;
 
   -- counter to generate pixel and line counter values
 
-  COMPONENT vga_pxl_counter
-    PORT (
-      clk        : IN STD_LOGIC;
-      rst_n      : IN STD_LOGIC;
-      
-      pxl_ctr_o  : OUT STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
-      line_ctr_o : OUT STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0)
+  component vga_pxl_counter
+    port (
+      clk_i        : in std_logic;
+      rst_n      : in std_logic;
+      pxl_ctr_o  : out std_logic_vector((pxl_ctr_width_c - 1) downto 0);
+      line_ctr_o : out std_logic_vector((line_ctr_width_c - 1) downto 0)
     );
-  END COMPONENT;  
+  end component;  
 
   -- controller to generate VGA sigals
 
-  COMPONENT vga_controller IS
-    PORT(
-      clk         : IN STD_LOGIC;
-      rst_n       : IN STD_LOGIC;
-      pxl_ctr_i   : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
-      line_ctr_i  : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
-
-      colr_en_out : OUT STD_LOGIC;
-      v_sync_out  : OUT STD_LOGIC;
-      h_sync_out  : OUT STD_LOGIC
+  component vga_controller is
+    port (
+      clk_i       : in  std_logic;
+      rst_n       : in  std_logic;
+      pxl_ctr_i   : in  std_logic_vector((pxl_ctr_width_c - 1) downto 0);
+      line_ctr_i  : in  std_logic_vector((line_ctr_width_c - 1) downto 0);
+      colr_en_out : out std_logic;
+      v_sync_out  : out std_logic;
+      h_sync_out  : out std_logic
     );
-  END COMPONENT vga_controller;
+  end component vga_controller;
 
   -- colour mux use to blank colour signals
 
-  COMPONENT vga_colr_mux IS 
-    GENERIC (
-      depth_colr_g : INTEGER
+  component vga_colr_mux is 
+    port (
+      test_colr_i : in  pixel_t;
+      mem_colr_i  : in  pixel_t;
+      en_i        : in  std_logic;
+      blank_i     : in  std_logic;
+      colr_out    : out pixel_t
     );
-    PORT (
-      colr_in  : IN STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0);
-      en_in    : IN STD_LOGIC;
-    
-      colr_out : OUT STD_LOGIC_VECTOR((3*depth_colr_g)-1 DOWNTO 0)
-    );
-  END COMPONENT;
+  end component;
   
   -- Component to generate the test pattern if required
 
-  COMPONENT vga_pattern_gen IS
-    PORT (
-      pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
-      line_ctr_i : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
-      
-      colr_out   : OUT STD_LOGIC_VECTOR(((3*depth_colr_c) - 1) DOWNTO 0)
+  component vga_pattern_gen is
+    port (
+      pxl_ctr_i  : in std_logic_vector((pxl_ctr_width_c - 1) downto 0);
+      line_ctr_i : in std_logic_vector((line_ctr_width_c - 1) downto 0);
+      colr_out   : out std_logic_vector(((3*depth_colr_c) - 1) downto 0)
     ); 
-  END COMPONENT;
+  end component;
 
 -- VARIABLES / CONSTANTS / TYPES -----------------------------------------------
 
   -- intermediate signals between components
-  SIGNAL pxl_clk_s      : STD_LOGIC;
-  SIGNAL v_sync_s       : STD_LOGIC;
-  SIGNAL h_sync_s       : STD_LOGIC;
-  SIGNAL colr_en_s      : STD_LOGIC;
-  SIGNAL pxl_ctr_s      : STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
-  SIGNAL line_ctr_s     : STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
-  SIGNAL colr_arr_s     : STD_LOGIC_VECTOR((3*depth_colr_c)-1 DOWNTO 0);
-  SIGNAL colr_mux_arr_s : STD_LOGIC_VECTOR((3*depth_colr_c)-1 DOWNTO 0);
+  signal rst_sync_s     : std_logic;
+  signal pxl_clk_s      : std_logic;
+  signal v_sync_s       : std_logic;
+  signal h_sync_s       : std_logic;
+  signal colr_en_s      : std_logic;
+  signal blank_s        : std_logic;
+  signal pxl_ctr_s      : std_logic_vector((pxl_ctr_width_c - 1) downto 0);
+  signal line_ctr_s     : std_logic_vector((line_ctr_width_c - 1) downto 0);
+  signal test_pxl_s     : pixel_t;
+  signal mem_pxl_s      : pixel_t;
+  signal colr_mux_arr_s : std_logic_vector((3*depth_colr_c)-1 downto 0);
 
 BEGIN --------------------------------------------------------------------------
 
   gen_clk_src: IF CONF_SIM = 1 GENERATE -- Used in simulation ****************
 
     i_vga_clk_div : vga_clk_div 
-      GENERIC MAP (
-                    ref_clk_freq_g => ref_clk_freq_c, 
-                    px_clk_freq_g  => px_clk_freq_c
+      generic map (
+        ref_clk_freq_g => ref_clk_freq_c, 
+        px_clk_freq_g  => px_clk_freq_c
       )
-      PORT MAP    (
-                    clk        => clk,
-                    rst_n      => rst_n,
-                    clk_px_out => pxl_clk_s
+      port map (
+        clk        => clk_i,
+        rst_n      => rst_n,
+        clk_px_out => pxl_clk_s
       ); 
-  ELSE GENERATE --************************************************************** 
-      i_clk_gen : clk_gen 
-      	PORT MAP (
-      	    	     clk        => clk,
-      	    	     rst_n      => rst_n,
-      	    	     clk_px_out	=> pxl_clk_s
-      	); 
-  END GENERATE gen_clk_src; -- Used in synthesis *******************************
+
+  else generate --************************************************************** 
+      
+    i_clk_gen : clk_gen 
+      port map (
+      	clk        => clk_i,
+      	rst_n      => rst_n,
+      	clk_px_out	=> pxl_clk_s
+      );
+
+  end generate gen_clk_src; -- Used in synthesis *******************************
+
+  i_rst_sync : rst_sync
+    generic map (
+      SYNC_STAGES => 3
+    )
+    port map (
+      clk_i       => pxl_clk_s,
+      rstn_i      => rst_n,
+      sync_rstn_o => rst_sync_s
+    );
 
   i_vga_pxl_counter : vga_pxl_counter
-    PORT MAP (
+    port map (
       clk        => pxl_clk_s,
-      rst_n      => rst_n,
+      rst_n      => rst_sync_s,
       pxl_ctr_o  => pxl_ctr_s,
       line_ctr_o => line_ctr_s
     );
 
   i_vga_controller : vga_controller
-    PORT MAP (
+    port map (
       clk         => pxl_clk_s,
-      rst_n       => rst_n,
+      rst_n       => rst_sync_s,
       pxl_ctr_i   => pxl_ctr_s,
       line_ctr_i  => line_ctr_s,
       colr_en_out => colr_en_s,
@@ -187,33 +217,31 @@ BEGIN --------------------------------------------------------------------------
     );
 
   i_vga_colr_mux : vga_colr_mux
-    GENERIC MAP (
-      depth_colr_g => depth_colr_c)
-    PORT MAP (
-      colr_in  => colr_arr_s,
-      en_in    => colr_en_s,
-      colr_out => colr_mux_arr_s
+    port map (
+      test_colr_i => test_pxl_s,
+      mem_colr_i  => mem_pxl_s,
+      en_i        => sw_0_i,
+      blank_i     => blank_s,
+      colr_out    => colr_mux_arr_s
     );
   
-  gen_test_patt : IF CONF_TEST_PATT = 1 GENERATE -- pattern gen required *****
-  
-    i_vga_pattern_gen : vga_pattern_gen
-      PORT MAP (
-        pxl_ctr_i  => pxl_ctr_s,   
-        line_ctr_i => line_ctr_s,    
-        colr_out   => colr_arr_s  
-      );
+  i_vga_pattern_gen : vga_pattern_gen
+    port map (
+      pxl_ctr_i  => pxl_ctr_s,   
+      line_ctr_i => line_ctr_s,    
+      colr_out   => test_pxl_s  
+    );
 
-  END GENERATE gen_test_patt; --************************************************
+  blank_s <= NOT colr_en_s;
 
    -- output assignments
   v_sync_out <= v_sync_s;
   h_sync_out <= h_sync_s;
 
-  r_colr_out <= colr_mux_arr_s(((3*depth_colr_c) - 1) DOWNTO (2*depth_colr_c));
-  g_colr_out <= colr_mux_arr_s(((2*depth_colr_c) - 1) DOWNTO depth_colr_c);
-  b_colr_out <= colr_mux_arr_s((depth_colr_c - 1)  DOWNTO 0);
+  r_colr_out <= colr_mux_arr_s(((3*depth_colr_c) - 1) downto (2*depth_colr_c));
+  g_colr_out <= colr_mux_arr_s(((2*depth_colr_c) - 1) downto depth_colr_c);
+  b_colr_out <= colr_mux_arr_s((depth_colr_c - 1)  downto 0);
 
-END ARCHITECTURE structural;
+end architecture structural;
 
 --------------------------------------------------------------------------------
