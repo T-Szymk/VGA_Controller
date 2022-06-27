@@ -30,8 +30,8 @@ ENTITY vga_clk_div IS
           );
   PORT ( 
          -- clock and reset
-         clk   : IN STD_LOGIC;
-         rst_n : IN STD_LOGIC;
+         clk_i  : IN STD_LOGIC;
+         rstn_i : IN STD_LOGIC;
          -- VGA pixel clock output
          clk_px_out : OUT STD_LOGIC
        );
@@ -55,15 +55,15 @@ BEGIN
     "requested pixel frequency is too high"
     SEVERITY FAILURE;
 
-  sync_clk_div : PROCESS (clk, rst_n) IS 
+  sync_clk_div : PROCESS (clk_i, rstn_i) IS 
   BEGIN 
 
-    IF rst_n = '0' THEN -- async reset
+    IF rstn_i = '0' THEN -- async reset
   
       px_clk_ctr_r <=  0;
       px_clk_r     <= '0';
   
-    ELSIF RISING_EDGE(clk) THEN -- rising clk edge
+    ELSIF RISING_EDGE(clk_i) THEN -- rising clk edge
       
       -- implement registered clock divider
       IF px_clk_ctr_r = px_clk_cnt_max_c-1 THEN 

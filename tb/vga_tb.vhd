@@ -20,63 +20,64 @@
 --                              Removed signals related to DE2 board
 -- 2021-12-12  1.2      TZS     Updated signals to use most recent interfaces
 -- 2022-03-04  1.3      TZS     Removed unused switches
+-- 2022-05-27  1.4      TZS     Updated testbench to match latest top level
 --------------------------------------------------------------------------------
-LIBRARY IEEE;
-USE IEEE.STD_LOGIC_1164.ALL;
-USE WORK.VGA_PKG.ALL;
-USE STD.ENV.FINISH;
+library ieee;
+use ieee.std_logic_1164.all;
+use work.vga_pkg.all;
+use std.env.finish;
 
-ENTITY vga_tb IS
-  GENERIC (
-            ref_clk_perd_g : TIME    := 10 ns;
-            max_sim_time_g : TIME    :=  3 sec;
-            CONF_SIM       : INTEGER := 1;
-            CONF_TEST_PATT : INTEGER := 1
+entity vga_tb is
+  generic (
+            ref_clk_perd_g : time    := 10 ns;
+            max_sim_time_g : time    :=  3 sec;
+            conf_sim       : integer :=  1;
+            conf_test_patt : integer :=  1
   );
-END ENTITY vga_tb;
+end entity vga_tb;
 
 --------------------------------------------------------------------------------
 
-ARCHITECTURE tb OF vga_tb IS 
+architecture tb of vga_tb is 
 
-  COMPONENT vga_top IS 
-    GENERIC (
-              CONF_SIM       : INTEGER     := 1;
-              CONF_TEST_PATT : INTEGER     := 1
-            );
-    
-    PORT (
-           clk    : IN STD_LOGIC;
-           rst_n  : IN STD_LOGIC; 
+  component vga_top is 
+    generic (
+      CONF_SIM       : integer := 1
+    );
+    port (
+      -- clock and asynch reset
+      clk_i  : in std_logic;
+      rstn_i : in std_logic;
+      -- io
+      sw_0_i : in std_logic;
+      -- VGA signals
+      v_sync_out  : out std_logic;
+      h_sync_out  : out std_logic;
+      r_colr_out  : out std_logic_vector(depth_colr_c-1 downto 0);
+      g_colr_out  : out std_logic_vector(depth_colr_c-1 downto 0);
+      b_colr_out  : out std_logic_vector(depth_colr_c-1 downto 0)
+    );
+  end component;
 
-           v_sync_out  : OUT STD_LOGIC;
-           h_sync_out  : OUT STD_LOGIC;
-           r_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
-           g_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
-           b_colr_out  : OUT STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0)
-         );
-  END COMPONENT;
+  signal clk_s             : std_logic := '0';
+  signal rstn_s           : std_logic := '0';
+  signal sw_0_s          : std_logic := '0';
+  signal dut_v_sync_out  : std_logic;
+  signal dut_h_sync_out  : std_logic;
+  signal dut_r_colr_out  : std_logic_vector(depth_colr_c-1 downto 0);
+  signal dut_g_colr_out  : std_logic_vector(depth_colr_c-1 downto 0);
+  signal dut_b_colr_out  : std_logic_vector(depth_colr_c-1 downto 0);
 
-  SIGNAL clk   : STD_LOGIC := '0';
-  SIGNAL rst_n : STD_LOGIC := '0';
+begin 
 
-  SIGNAL dut_v_sync_out  : STD_LOGIC;
-  SIGNAL dut_h_sync_out  : STD_LOGIC;
-  SIGNAL dut_r_colr_out  : STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
-  SIGNAL dut_g_colr_out  : STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
-  SIGNAL dut_b_colr_out  : STD_LOGIC_VECTOR(depth_colr_c-1 DOWNTO 0);
-
-BEGIN 
-
-  i_DUT : vga_top
-    GENERIC MAP (
-      CONF_SIM       => CONF_SIM, 
-      CONF_TEST_PATT => CONF_TEST_PATT      
+  i_dut : vga_top
+    generic map (
+      conf_sim       => conf_sim      
     )
-    PORT MAP (
-      clk         => clk,
-      rst_n       => rst_n,
-
+    port map (
+      clk_i       => clk_s,
+      rstn_i      => rstn_s,
+      sw_0_i      => sw_0_s,
       v_sync_out  => dut_v_sync_out,
       h_sync_out  => dut_h_sync_out,
       r_colr_out  => dut_r_colr_out,
@@ -84,22 +85,24 @@ BEGIN
       b_colr_out  => dut_b_colr_out
     );
 
-  rst_n <= '1' AFTER (4 * ref_clk_perd_g); -- de-assert reset after 4 cycles 
+  rstn_s <= '1' after (10 * ref_clk_perd_g); -- de-assert reset after 4 cycles 
 
-  clk_gen : PROCESS IS 
-  BEGIN
+  clk_gen : process is 
+  begin
   
-    WHILE NOW < max_sim_time_g LOOP 
-      clk <= NOT clk;
-      WAIT FOR ref_clk_perd_g / 2;
-    END LOOP;
+    while now < max_sim_time_g loop 
+      clk_s <= '0';
+      wait for ref_clk_perd_g / 2;
+      clk_s <= '1';
+      wait for ref_clk_perd_g / 2;
+    end loop;
 
-    ASSERT now < max_sim_time_g
-      REPORT "SIMULATION COMPLETE!"
-      SEVERITY FAILURE;
+    assert now < max_sim_time_g
+      report "Simulation Complete!"
+      severity failure;
 
-    FINISH;
+    finish;
   
-  END PROCESS clk_gen;
+  end process clk_gen;
 
-END ARCHITECTURE tb;
+end architecture tb;

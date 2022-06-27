@@ -2,13 +2,15 @@
 
 .DEFAULT_GOAL := default
 
-#MSIM = ~/intelFPGA/20.1/modelsim_ase/bin
-MSIM = /home/tom/questa2019/questasim/linux_x86_64
-GHDL = ghdl
+#MSIM_CMD = ~/intelFPGA/20.1/modelsim_ase/bin
+MSIM_CMD = /home/tom/questa2019/questasim/linux_x86_64
+GHDL_CMD = ghdl
 GHDL_OPT = --std=08 -fsynopsys -v
 
-RTL = ../rtl
-TB  = ../tb
+#MODELSIM ?=
+
+RTL = ../../rtl
+TB  = ../../tb
 RTL_FILES = $(RTL)/vga_pkg.vhd \
             $(RTL)/vga_clk_div.vhd \
             $(RTL)/vga_controller.vhd \
@@ -26,21 +28,29 @@ PROJECT = vga_controller
 # TOP LEVEL TESTING ############################################################
 
 .PHONY: default
-default: compile
+default: clean compile
+
+.PHONY: clean
+clean:
+	rm -rf vga_lib
 
 .PHONY: lib
 lib:
+ifdef MODELSIM
 	vlib vga_lib
 	vmap work vga_lib
+else
+endif
 
 .PHONY: compile
-compile: lib
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES) &&\
+compile: clean lib
+ifdef MODELSIM
+	vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES)
 	vcom -pedanticerrors -check_synthesis -2008 $(TB_FILES)
-
-.PHONY: compile_vga_top
-compile_vga_top:
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES) $(TB)/vga_tb.vhd
+else
+	@mkdir -p vga_top && cd vga_top && \
+	$(GHDL_CMD) -a $(GHDL_OPT) $(RTL_FILES) $(TB_FILES)
+endif
 
 .PHONY: sim_vga_top
 sim_vga_top: compile_vga_top
@@ -105,52 +115,52 @@ sim_fifo_gui: compile_fifo
 
 .PHONY: compile_axi_master
 compile_axi_master:
-	$(MSIM)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
+	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
 	                                                    $(RTL)/vga_axi_lite_master.vhd
-	$(MSIM)/vlog -sv -pedanticerrors $(TB)/tb_vga_axi_lite_master.sv
+	$(MSIM_CMD)/vlog -sv -pedanticerrors $(TB)/tb_vga_axi_lite_master.sv
 
 .PHONY: sim_axi_master_gui
 sim_axi_master_gui: compile_axi_master
-	$(MSIM)/vsim -voptargs="+acc" -onfinish stop tb_vga_axi_lite_master -do "do_axi_master.do"
+	$(MSIM_CMD)/vsim -voptargs="+acc" -onfinish stop tb_vga_axi_lite_master -do "do_axi_master.do"
 
 # AXI SLAVE TESTING #################################################
 
 .PHONY: compile_axi_slave
 compile_axi_slave:
-	$(MSIM)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
+	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
 																											$(RTL)/vga_axi_lite_slave.vhd \
 	                                                    $(RTL)/vga_axi_lite_master.vhd
-	$(MSIM)/vlog -sv -pedanticerrors $(TB)/tb_vga_axi_lite_slave.sv
+	$(MSIM_CMD)/vlog -sv -pedanticerrors $(TB)/tb_vga_axi_lite_slave.sv
 
 .PHONY: sim_axi_slave_gui
 sim_axi_slave_gui: compile_axi_slave
-	$(MSIM)/vsim -voptargs="+acc" -onfinish stop tb_vga_axi_lite_slave -do "do_axi_slave.do"
+	$(MSIM_CMD)/vsim -voptargs="+acc" -onfinish stop tb_vga_axi_lite_slave -do "do_axi_slave.do"
 
 # MEM INTF MODEL TESTING #################################################
 .PHONY: compile_mem_intf_model
 compile_mem_intf_model:
-	$(MSIM)/vlog -sv -pedanticerrors $(TB)/vga_mem_intf_model.sv
+	$(MSIM_CMD)/vlog -sv -pedanticerrors $(TB)/vga_mem_intf_model.sv
 
 .PHONY: sim_mem_intf_model
 sim_mem_intf_model: compile_mem_intf_model
-	$(MSIM)/vsim -voptargs="+acc" -c -onfinish stop vga_mem_intf_model -do "run 100 ms; quit"
+	$(MSIM_CMD)/vsim -voptargs="+acc" -c -onfinish stop vga_mem_intf_model -do "run 100 ms; quit"
 
 .PHONY: sim_mem_intf_model_gui
 sim_mem_intf_model_gui: compile_mem_intf_model
-	$(MSIM)/vsim -voptargs="+acc" -onfinish stop vga_mem_intf_model -do mem_intf_model.do
+	$(MSIM_CMD)/vsim -voptargs="+acc" -onfinish stop vga_mem_intf_model -do mem_intf_model.do
 
 # MEM ADDR TESTING #################################################
 .PHONY: sim_mem_addr_control
 sim_mem_addr_control: clean_mem_addr_control compile_mem_addr_control
 	cd mem_addr_control && \
-	$(GHDL) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_addr_ctrl.vhd && \
-	$(GHDL) --elab-run $(GHDL_OPT) tb_vga_mem_addr_ctrl --stop-time=200ms --wave=tb_vga_mem_addr_ctrl.ghw && \
+	$(GHDL_CMD) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_addr_ctrl.vhd && \
+	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_mem_addr_ctrl --stop-time=200ms --wave=tb_vga_mem_addr_ctrl.ghw && \
 	gtkwave tb_vga_mem_addr_ctrl.ghw -c 16
 
 .PHONY: compile_mem_addr_control
 compile_mem_addr_control: clean_mem_addr_control
 	@mkdir -p mem_addr_control && cd mem_addr_control && \
-	$(GHDL) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
+	$(GHDL_CMD) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
 	                       ../$(RTL)/vga_mem_addr_ctrl.vhd
 
 .PHONY: clean_mem_addr_control
@@ -159,7 +169,7 @@ clean_mem_addr_control:
 
 .PHONY: check_mem_addr_control
 check_mem_addr_control:
-	$(GHDL) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
+	$(GHDL_CMD) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
 	                       $(RTL)/vga_mem_addr_ctrl.vhd \
 												 $(TB)/tb_vga_mem_addr_ctrl.vhd
 
@@ -167,15 +177,15 @@ check_mem_addr_control:
 .PHONY: sim_mem_buff
 sim_mem_buff: clean_mem_buff compile_mem_buff
 	cd mem_buff && \
-	$(GHDL) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_buff.vhd && \
-	$(GHDL) --elab-run $(GHDL_OPT) tb_vga_mem_buff --stop-time=50ms --wave=tb_vga_mem_buff.ghw && \
+	$(GHDL_CMD) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_buff.vhd && \
+	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_mem_buff --stop-time=50ms --wave=tb_vga_mem_buff.ghw && \
 	gtkwave tb_vga_mem_buff.ghw -c 16
 
 .PHONY: compile_mem_buff
 compile_mem_buff: clean_mem_buff
 	@mkdir -p mem_buff && cd mem_buff && \
-	$(GHDL) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
-	                       ../$(RTL)/vga_mem_buff.vhd
+	$(GHDL_CMD) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
+	                           ../$(RTL)/vga_mem_buff.vhd
 
 .PHONY: clean_mem_buff
 clean_mem_buff:
@@ -183,7 +193,7 @@ clean_mem_buff:
 
 .PHONY: check_mem_buff
 check_mem_buff:
-	$(GHDL) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
+	$(GHDL_CMD) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
 	                       $(RTL)/vga_mem_buff.vhd \
 												 $(TB)/tb_vga_mem_buff.vhd
 

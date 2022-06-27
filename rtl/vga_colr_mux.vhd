@@ -20,6 +20,7 @@
 -- 2021-07-24  1.1      TZS     Modified inputs and outputs to use single signal
 -- 2021-09-04  1.2      TZS     Set mux to change all colour signals instead of
 --                              individual colours separately.
+-- 2022-06-27  1.3      TZS     Updated types to use pixels
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -47,7 +48,7 @@ begin
                             mem_colr_i when others;
 
   with blank_i select pxl_s <= pxl_s  when '0',
-                               (others => 0) when others;                          
+                               (others => '0') when others;                          
   
 end architecture rtl;
 

@@ -29,8 +29,8 @@ USE WORK.VGA_PKG.ALL;
 
 ENTITY vga_controller IS 
   PORT (
-    clk        : IN STD_LOGIC;
-    rst_n      : IN STD_LOGIC;
+    clk_i      : IN STD_LOGIC;
+    rstn_i     : IN STD_LOGIC;
     pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
     line_ctr_i : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
 
@@ -60,12 +60,12 @@ ARCHITECTURE rtl OF vga_controller IS
 
 BEGIN 
 
-  sync_cs : PROCESS (clk, rst_n) IS -------------------------------------------
+  sync_cs : PROCESS (clk_i, rstn_i) IS -------------------------------------------
   BEGIN 
   
-    IF rst_n = '0' THEN 
+    IF rstn_i = '0' THEN 
       c_state <= IDLE;
-    ELSIF RISING_EDGE(clk) THEN
+    ELSIF RISING_EDGE(clk_i) THEN
       c_state <= n_state;
     END IF;
 
@@ -140,16 +140,16 @@ BEGIN
 
   END PROCESS comb_ns;  --------------------------------------------------------
 
-  sync_out : PROCESS (clk, rst_n) IS 
+  sync_out : PROCESS (clk_i, rstn_i) IS 
   BEGIN 
 
-    IF rst_n = '0' THEN 
+    IF rstn_i = '0' THEN 
 
       h_sync_r <= '1';
       v_sync_r <= '1';
       colr_en_r <= '0';
 
-    ELSIF RISING_EDGE(clk) THEN
+    ELSIF RISING_EDGE(clk_i) THEN
       
       -- h_sync conditions
       IF pxl_ctr_r = pxl_ctr_t'HIGH THEN

@@ -17,63 +17,63 @@
 -- Date        Version  Author  Description
 -- 2021-12-11  1.0      TZS     Created
 --------------------------------------------------------------------------------
-LIBRARY IEEE;
-USE IEEE.STD_LOGIC_1164.ALL;
-USE IEEE.NUMERIC_STD.ALL;
-USE WORK.VGA_PKG.ALL;
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+use work.vga_pkg.all;
 
-ENTITY vga_pxl_counter IS 
-	PORT (
-    clk        : IN STD_LOGIC;
-    rst_n      : IN STD_LOGIC;
+entity vga_pxl_counter is 
+	port (
+    clk_i      : in std_logic;
+    rstn_i     : in std_logic;
     
-    pxl_ctr_o  : OUT STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
-    line_ctr_o : OUT STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0)
+    pxl_ctr_o  : out std_logic_vector((pxl_ctr_width_c - 1) downto 0);
+    line_ctr_o : out std_logic_vector((line_ctr_width_c - 1) downto 0)
 	);
-END ENTITY vga_pxl_counter;
+end entity vga_pxl_counter;
 
 --------------------------------------------------------------------------------
 
-ARCHITECTURE rtl OF vga_pxl_counter IS 
+architecture rtl of vga_pxl_counter is 
 
 -- VARIABLES / CONSTANTS / TYPES -----------------------------------------------
 
-  SIGNAL pxl_ctr_r  : pxl_ctr_t;
-  SIGNAL line_ctr_r : line_ctr_t;
+  signal pxl_ctr_r  : pxl_ctr_t;
+  signal line_ctr_r : line_ctr_t;
 
-BEGIN
+begin
 
-  sync_cntrs : PROCESS (clk, rst_n) IS -- line/pxl counters --------------------
-  BEGIN 
+  sync_cntrs : process (clk_i, rstn_i) is -- line/pxl counters --------------------
+  begin 
 
-    IF rst_n = '0' THEN 
+    if rstn_i = '0' then 
 
-      pxl_ctr_r  <= pxl_ctr_t'HIGH;
-      line_ctr_r <= line_ctr_t'HIGH;
+      pxl_ctr_r  <= pxl_ctr_t'high;
+      line_ctr_r <= line_ctr_t'high;
 
-    ELSIF RISING_EDGE(clk) THEN 
+    elsif rising_edge(clk_i) then 
 
-      IF pxl_ctr_r = pxl_ctr_t'HIGH THEN
+      if pxl_ctr_r = pxl_ctr_t'high then
 
-        IF line_ctr_r = line_ctr_t'HIGH THEN -- end of frame
+        if line_ctr_r = line_ctr_t'high then -- end of frame
           line_ctr_r <=  0; 
-        ELSE -- end of line but not frame
+        else -- end of line but not frame
           line_ctr_r <= line_ctr_r + 1; 
-        END IF;
+        end if;
 
         pxl_ctr_r <=  0; -- reset px_counter at end of the line
 
-      ELSE 
+      else 
 
         pxl_ctr_r <= pxl_ctr_r + 1;
 
-      END IF;
-    END IF;
-  END PROCESS sync_cntrs; ------------------------------------------------------
+      end if;
+    end if;
+  end process sync_cntrs; ------------------------------------------------------
 
-  pxl_ctr_o  <= STD_LOGIC_VECTOR(TO_UNSIGNED(pxl_ctr_r, pxl_ctr_width_c));
-  line_ctr_o <= STD_LOGIC_VECTOR(TO_UNSIGNED(line_ctr_r, line_ctr_width_c));
+  pxl_ctr_o  <= std_logic_vector(to_unsigned(pxl_ctr_r, pxl_ctr_width_c));
+  line_ctr_o <= std_logic_vector(to_unsigned(line_ctr_r, line_ctr_width_c));
 
-END ARCHITECTURE;
+end architecture;
 
 --------------------------------------------------------------------------------

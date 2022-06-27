@@ -17,44 +17,44 @@
 -- Date        Version  Author  Description
 -- 2021-09-06  1.0      TZS     Created
 --------------------------------------------------------------------------------
-LIBRARY IEEE;
-USE IEEE.STD_LOGIC_1164.ALL;
+library IEEE;
+use IEEE.std_logic_1164.all;
 
-ENTITY clk_gen IS 
-  PORT (
-    clk        : IN  STD_LOGIC;
-    rst_n      : IN  STD_LOGIC;
+entity clk_gen is 
+  port (
+    clk_i        : in  std_logic;
+    rstn_i       : in  std_logic;
 
-    clk_px_out : OUT STD_LOGIC
+    clk_px_out : out std_logic
   );
-END ENTITY clk_gen;
+end entity clk_gen;
 
 --------------------------------------------------------------------------------
 
-ARCHITECTURE structural OF clk_gen IS
+architecture structural of clk_gen is
 
-COMPONENT clk_wiz_0
-PORT
+component clk_wiz_0
+port
  (
-  clk_out1 : OUT STD_LOGIC;
-  -- Status and control signals
-  resetn   : IN  STD_LOGIC;
-  clk_in1  : IN  STD_LOGIC
+  clk_out1 : out std_logic;
+  -- status and control signals
+  resetn   : in  std_logic;
+  clk_in1  : in  std_logic
  );
-END COMPONENT;
+end component;
 
-BEGIN --------------------------------------------------------------------------
+begin --------------------------------------------------------------------------
 
 i_clk_wiz_0 : clk_wiz_0
    port map ( 
-  -- Clock out ports  
+  -- clock out ports  
    clk_out1 => clk_px_out,
-  -- Status and control signals                
-   resetn => rst_n,
-   -- Clock in ports
-   clk_in1 => clk
+  -- status and control signals                
+   resetn => rstn_i,
+   -- clock in ports
+   clk_in1 => clk_i
  );
 
-END ARCHITECTURE structural;
+end architecture structural;
 
 --------------------------------------------------------------------------------
