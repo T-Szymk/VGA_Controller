@@ -20,7 +20,6 @@
 library IEEE;
 use IEEE.std_logic_1164.ALL;
 use work.vga_pkg.all;
-use work.ram_pkg.all;
 
 entity vga_memory_intf is 
   port (
@@ -48,7 +47,7 @@ architecture rtl of vga_memory_intf is
       mem_addr_ctr_o : out std_logic_vector(mem_addr_width_c - 1 downto 0);
       mem_pxl_ctr_o  : out std_logic_vector(row_ctr_width_c - 1 downto 0)
     );
-    end component;
+  end component;
 
   component vga_mem_buff is 
     port (
@@ -61,28 +60,28 @@ architecture rtl of vga_memory_intf is
       disp_blank_o    : out std_logic;
       disp_pxl_o      : out pixel_t
     );
-    end component;
+  end component;
 
-    component xilinx_dp_BRAM is
-      generic (
-        RAM_WIDTH       : integer := 18;           -- Specify RAM data width
-        RAM_DEPTH       : integer := 1024;         -- Specify RAM depth (number of entries)
-        INIT_FILE       : string := "RAM_INIT.dat" -- Specify name/location of RAM initialization file if using one (leave blank if not)
-      );
-      port (
-        addra  : in  std_logic_vector((clogb2(RAM_DEPTH)-1) downto 0); -- Port A Address bus, width determined from RAM_DEPTH
-        addrb  : in  std_logic_vector((clogb2(RAM_DEPTH)-1) downto 0); -- Port B Address bus, width determined from RAM_DEPTH
-        dina   : in  std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port A RAM input data
-        dinb   : in  std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port B RAM input data
-        clka   : in  std_logic;                                        -- Clock
-        wea    : in  std_logic;                                        -- Port A Write enable
-        web    : in  std_logic;                                        -- Port B Write enable
-        ena    : in  std_logic;                                        -- Port A RAM Enable, for additional power savings, disable port when not in use
-        enb    : in  std_logic;                                        -- Port B RAM Enable, for additional power savings, disable port when not in use
-        douta  : out std_logic_vector(RAM_WIDTH-1 downto 0);           --  Port A RAM output data
-        doutb  : out std_logic_vector(RAM_WIDTH-1 downto 0)            --  Port B RAM output data
-      );
-        end component;
+  component xilinx_dp_BRAM is
+    generic (
+      RAM_WIDTH       : integer := 18;           -- Specify RAM data width
+      RAM_DEPTH       : integer := 1024;         -- Specify RAM depth (number of entries)
+      INIT_FILE       : string := "RAM_INIT.dat" -- Specify name/location of RAM initialization file if using one (leave blank if not)
+    );
+    port (
+      addra  : in  std_logic_vector(mem_addr_width_c-1 downto 0); -- Port A Address bus, width determined from RAM_DEPTH
+      addrb  : in  std_logic_vector(mem_addr_width_c-1 downto 0); -- Port B Address bus, width determined from RAM_DEPTH
+      dina   : in  std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port A RAM input data
+      dinb   : in  std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port B RAM input data
+      clka   : in  std_logic;                                        -- Clock
+      wea    : in  std_logic;                                        -- Port A Write enable
+      web    : in  std_logic;                                        -- Port B Write enable
+      ena    : in  std_logic;                                        -- Port A RAM Enable, for additional power savings, disable port when not in use
+      enb    : in  std_logic;                                        -- Port B RAM Enable, for additional power savings, disable port when not in use
+      douta  : out std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port A RAM output data
+      doutb  : out std_logic_vector(RAM_WIDTH-1 downto 0)            -- Port B RAM output data
+    );
+  end component;
     
   signal mem_pxl_ctr_s  : std_logic_vector(row_ctr_width_c-1 downto 0);
   signal mem_addr_ctr_s : std_logic_vector(mem_addr_width_c-1 downto 0);

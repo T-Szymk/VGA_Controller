@@ -5,20 +5,26 @@
 #MSIM_CMD = ~/intelFPGA/20.1/modelsim_ase/bin
 MSIM_CMD = /home/tom/questa2019/questasim/linux_x86_64
 GHDL_CMD = ghdl
-GHDL_OPT = --std=08 -fsynopsys -v
+GHDL_OPT = --std=08 -fsynopsys -frelaxed -v
 
 #MODELSIM ?=
 
 RTL = ../../rtl
 TB  = ../../tb
 RTL_FILES = $(RTL)/vga_pkg.vhd \
+            $(RTL)/ram_pkg.vhd \
             $(RTL)/vga_clk_div.vhd \
             $(RTL)/vga_controller.vhd \
             $(RTL)/vga_colr_mux.vhd \
             $(RTL)/xilinx_top_clk.vhd \
             $(RTL)/vga_pxl_counter.vhd \
             $(RTL)/vga_pattern_gen.vhd \
-            $(RTL)/vga_top.vhd
+						$(RTL)/vga_memory_intf.vhd \
+						$(RTL)/vga_mem_addr_ctrl.vhd \
+						$(RTL)/vga_mem_buff.vhd \
+            $(RTL)/vga_top.vhd \
+						$(RTL)/xilinx_dp_BRAM.vhd \
+						$(RTL)/rst_sync.vhd
 TB_FILES =  $(TB)/vga_tb.vhd \
             $(TB)/vga_colr_mux_tb.vhd \
             $(TB)/vga_controller_tb.vhd
@@ -33,13 +39,13 @@ default: clean compile
 .PHONY: clean
 clean:
 	rm -rf vga_lib
+	rm -rf vga_top
 
 .PHONY: lib
 lib:
 ifdef MODELSIM
 	vlib vga_lib
 	vmap work vga_lib
-else
 endif
 
 .PHONY: compile
@@ -53,12 +59,18 @@ else
 endif
 
 .PHONY: sim_vga_top
-sim_vga_top: compile_vga_top
+sim_vga_top: compile
 	vsim -voptargs="+acc" -c -onfinish exit vga_tb -do "do_vga_top.do"
 	
 .PHONY: sim_vga_top_gui
-sim_vga_top_gui: compile_vga_top
+sim_vga_top_gui: compile
+ifdef MODELSIM
 	vsim -voptargs="+acc" -onfinish stop vga_tb -do "do_vga_top_gui.do"
+else 
+	cd vga_top && \
+	$(GHDL_CMD) --elab-run $(GHDL_OPT) vga_tb --stop-time=50ms --wave=vga_tb.ghw && \
+	gtkwave vga_tb.ghw -c 16
+endif
 
 # COLR_MUX TESTING #############################################################
 

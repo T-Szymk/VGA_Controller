@@ -16,37 +16,13 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2022-06-26  1.0      TZS     Created
---------------------------------------------------------------------------------
-library IEEE;
-use IEEE.std_logic_1164.all;
-
-package ram_pkg is -------------------------------------------------------------
-    function clogb2 (depth: in natural) return integer;
-end ram_pkg; -------------------------------------------------------------------
-
-package body ram_pkg is --------------------------------------------------------
-
-  function clogb2( depth : natural) return integer is
-    variable temp    : integer := depth;
-    variable ret_val : integer := 0;
-  begin
-
-    while temp > 1 loop
-      ret_val := ret_val + 1;
-      temp    := temp / 2;
-    end loop;
-    
-    return ret_val;
-  end function;
-
-end package body ram_pkg; ------------------------------------------------------
-
+-- 2022-06-28  1.1      TZS     Moved ram_pkg to separate design unit.
 --------------------------------------------------------------------------------
 library ieee;
 library work;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.ram_pkg.all;
+use work.vga_pkg.all;
 use std.textio.all;
 
 entity xilinx_dp_BRAM is
@@ -56,8 +32,8 @@ entity xilinx_dp_BRAM is
     INIT_FILE       : string := "RAM_INIT.dat" -- Specify name/location of RAM initialization file if using one (leave blank if not)
   );
   port (
-    addra  : in  std_logic_vector((clogb2(RAM_DEPTH)-1) downto 0); -- Port A Address bus, width determined from RAM_DEPTH
-    addrb  : in  std_logic_vector((clogb2(RAM_DEPTH)-1) downto 0); -- Port B Address bus, width determined from RAM_DEPTH
+    addra  : in  std_logic_vector(mem_addr_width_c-1 downto 0); -- Port A Address bus, width determined from RAM_DEPTH
+    addrb  : in  std_logic_vector(mem_addr_width_c-1 downto 0); -- Port B Address bus, width determined from RAM_DEPTH
     dina   : in  std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port A RAM input data
     dinb   : in  std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port B RAM input data
     clka   : in  std_logic;                                        -- Clock
@@ -108,7 +84,7 @@ architecture rtl of xilinx_dp_BRAM is
   function init_from_file_or_zeroes(ramfile : string) return ram_type is -------
   begin
     if ramfile = "RAM_INIT.dat" then
-      return InitRamFromFile("RAM_INIT.dat") ;
+      return InitRamFromFile("RAM_INIT.dat");
     else
       return (others => (others => '0'));
     end if;
