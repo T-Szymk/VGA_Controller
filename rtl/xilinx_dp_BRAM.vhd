@@ -64,7 +64,7 @@ architecture rtl of xilinx_dp_BRAM is
   
   -- The folowing code either initializes the memory values to a specified file or to all zeros to match hardware
   
-  function initramfromfile (ramfilename : in string) return ram_type is --------
+  impure function initramfromfile (ramfilename : in string) return ram_type is
     file     ramfile     : text open read_mode is ramfilename;
     variable ramfileline : line;
     variable ram_name    : ram_type;
@@ -81,7 +81,7 @@ architecture rtl of xilinx_dp_BRAM is
 
   end function; ----------------------------------------------------------------
 
-  function init_from_file_or_zeroes(ramfile : string) return ram_type is -------
+  impure function init_from_file_or_zeroes(ramfile : in string) return ram_type is -------
   begin
     if ramfile = "RAM_INIT.dat" then
       return InitRamFromFile("RAM_INIT.dat");
@@ -91,7 +91,7 @@ architecture rtl of xilinx_dp_BRAM is
   end function;
   -- Following code defines RAM
 
-  shared variable ram_name : ram_type := init_from_file_or_zeroes(C_INIT_FILE);
+  signal ram_name : ram_type := init_from_file_or_zeroes(C_INIT_FILE);
 
 begin --------------------------------------------------------------------------
 
@@ -101,7 +101,7 @@ begin --------------------------------------------------------------------------
       if(ena = '1') then
         ram_data_a <= ram_name(to_integer(unsigned(addra)));
         if(wea = '1') then
-          ram_name(to_integer(unsigned(addra))) := dina;
+          ram_name(to_integer(unsigned(addra))) <= dina;
         end if;
       end if;
     end if;
@@ -113,7 +113,7 @@ begin --------------------------------------------------------------------------
       if(enb = '1') then
         ram_data_b <= ram_name(to_integer(unsigned(addrb)));
         if(web = '1') then
-          ram_name(to_integer(unsigned(addrb))) := dinb;
+          ram_name(to_integer(unsigned(addrb))) <= dinb;
         end if;
       end if;
     end if;

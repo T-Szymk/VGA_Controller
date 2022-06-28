@@ -173,16 +173,30 @@ BEGIN  -------------------------------------------------------------------------
       -- memory data should be ready on the line, so read it into BUFF_A then
       -- increment the address 
       if fill_A_r = '1' then 
+        
         buff_A_addr_r <= mem_addr_r;
-        mem_addr_r <= mem_addr_r + 1;
+
+        if mem_addr_r = (mem_depth_c - 1) then 
+          mem_addr_r <= (others => '0');
+        else
+          mem_addr_r <= mem_addr_r + 1;
+        end if;
+
         buff_fill(mem_data_i, buff_A_r);
         buff_wr_sel_r <= '1';
       end if;
 
       -- equivalent for BUFF_B
       if fill_B_r = '1' then 
+
         buff_B_addr_r <= mem_addr_r;
-        mem_addr_r <= mem_addr_r + 1;
+
+        if mem_addr_r = (mem_depth_c - 1) then 
+          mem_addr_r <= (others => '0');
+        else
+          mem_addr_r <= mem_addr_r + 1;
+        end if;
+
         buff_fill(mem_data_i, buff_B_r);
         buff_wr_sel_r <= '0';
       end if;

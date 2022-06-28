@@ -66,7 +66,7 @@ architecture rtl of vga_memory_intf is
     generic (
       RAM_WIDTH       : integer := 18;           -- Specify RAM data width
       RAM_DEPTH       : integer := 1024;         -- Specify RAM depth (number of entries)
-      INIT_FILE       : string := "RAM_INIT.dat" -- Specify name/location of RAM initialization file if using one (leave blank if not)
+      INIT_FILE       : string := ""             -- Specify name/location of RAM initialization file if using one (leave blank if not)
     );
     port (
       addra  : in  std_logic_vector(mem_addr_width_c-1 downto 0); -- Port A Address bus, width determined from RAM_DEPTH
@@ -121,7 +121,7 @@ begin --------------------------------------------------------------------------
       generic map (
         RAM_WIDTH => mem_row_width_c, -- Specify RAM data width
         RAM_DEPTH => mem_depth_c,     -- Specify RAM depth (number of entries)
-        INIT_FILE => "RAM_INIT.dat"   -- Specify name/location of RAM initialization file if using one (leave blank if not)
+        INIT_FILE => ""   -- Specify name/location of RAM initialization file if using one (leave blank if not)
       )
       port map (
         addra  => mem_addr_s,

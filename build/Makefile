@@ -5,7 +5,7 @@
 #MSIM_CMD = ~/intelFPGA/20.1/modelsim_ase/bin
 MSIM_CMD = /home/tom/questa2019/questasim/linux_x86_64
 GHDL_CMD = ghdl
-GHDL_OPT = --std=08 -fsynopsys -frelaxed -v
+GHDL_OPT = --std=08 -fsynopsys -v
 
 #MODELSIM ?=
 
@@ -161,20 +161,29 @@ sim_mem_intf_model: compile_mem_intf_model
 sim_mem_intf_model_gui: compile_mem_intf_model
 	$(MSIM_CMD)/vsim -voptargs="+acc" -onfinish stop vga_mem_intf_model -do mem_intf_model.do
 
+# MEM INTF TESTING #################################################
+.PHONY: clean_mem_intf
+clean_mem_intf:
+	rm -rf mem_intf
+
+.PHONY: compile_mem_intf
+compile_mem_intf: clean_mem_intf
+	mkdir mem_intf && cd mem_intf && \
+	$(GHDL_CMD) -a $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
+	                           $(RTL)/vga_mem_addr_ctrl.vhd \
+														 $(RTL)/vga_mem_buff.vhd \
+														 $(RTL)/xilinx_dp_BRAM.vhd \
+														 $(RTL)/vga_memory_intf.vhd \
+												     $(TB)/tb_vga_memory_intf.vhd
+
+.PHONY: sim_mem_intf
+sim_mem_intf: compile_mem_intf
+	cd mem_intf && \
+	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_memory_intf --stop-time=20ms --wave=tb_vga_memory_intf.ghw && \
+	gtkwave tb_vga_memory_intf.ghw -c 16
+
+
 # MEM ADDR TESTING #################################################
-.PHONY: sim_mem_addr_control
-sim_mem_addr_control: clean_mem_addr_control compile_mem_addr_control
-	cd mem_addr_control && \
-	$(GHDL_CMD) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_addr_ctrl.vhd && \
-	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_mem_addr_ctrl --stop-time=200ms --wave=tb_vga_mem_addr_ctrl.ghw && \
-	gtkwave tb_vga_mem_addr_ctrl.ghw -c 16
-
-.PHONY: compile_mem_addr_control
-compile_mem_addr_control: clean_mem_addr_control
-	@mkdir -p mem_addr_control && cd mem_addr_control && \
-	$(GHDL_CMD) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
-	                       ../$(RTL)/vga_mem_addr_ctrl.vhd
-
 .PHONY: clean_mem_addr_control
 clean_mem_addr_control:
 	rm -rf ./mem_addr_control
@@ -184,6 +193,19 @@ check_mem_addr_control:
 	$(GHDL_CMD) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
 	                       $(RTL)/vga_mem_addr_ctrl.vhd \
 												 $(TB)/tb_vga_mem_addr_ctrl.vhd
+
+.PHONY: compile_mem_addr_control
+compile_mem_addr_control: clean_mem_addr_control
+	@mkdir -p mem_addr_control && cd mem_addr_control && \
+	$(GHDL_CMD) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
+	                       ../$(RTL)/vga_mem_addr_ctrl.vhd
+
+.PHONY: sim_mem_addr_control
+sim_mem_addr_control: clean_mem_addr_control compile_mem_addr_control
+	cd mem_addr_control && \
+	$(GHDL_CMD) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_addr_ctrl.vhd && \
+	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_mem_addr_ctrl --stop-time=200ms --wave=tb_vga_mem_addr_ctrl.ghw && \
+	gtkwave tb_vga_mem_addr_ctrl.ghw -c 16
 
 # MEM BUFF TESTING #################################################
 .PHONY: sim_mem_buff
