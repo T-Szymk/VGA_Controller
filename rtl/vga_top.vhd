@@ -52,9 +52,9 @@ entity vga_top is
     -- VGA signals
     v_sync_out  : out std_logic;
     h_sync_out  : out std_logic;
-    r_colr_out  : out std_logic_vector(depth_colr_c - 1 downto 0);
-    g_colr_out  : out std_logic_vector(depth_colr_c - 1 downto 0);
-    b_colr_out  : out std_logic_vector(depth_colr_c - 1 downto 0)
+    r_colr_out  : out std_logic_vector(4-1 downto 0);
+    g_colr_out  : out std_logic_vector(4-1 downto 0);
+    b_colr_out  : out std_logic_vector(4-1 downto 0)
   );
 end entity vga_top;
 
