@@ -21,6 +21,7 @@
 -- 2021-08-28  1.2      TZS     Refactored to use a state machine
 -- 2021-09-01  1.3      TZS     Simplified state machine
 -- 2021-12-11  1.4      TZS     Moved counter into top level
+-- 2022-07-01  1.5      TZS     Reversed polarity of colr_en signal
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -169,9 +170,9 @@ BEGIN
 
       -- colr_en conditions
       IF c_state = H_B_PORCH AND pxl_ctr_r = (h_b_porch_max_px_c - 1) THEN
-        colr_en_r <= '1';
-      ELSIF c_state = DISPLAY AND pxl_ctr_r = (h_disp_max_px_c - 1) THEN
         colr_en_r <= '0';
+      ELSIF c_state = DISPLAY AND pxl_ctr_r = (h_disp_max_px_c - 1) THEN
+        colr_en_r <= '1';
       END IF;
 
     END IF;

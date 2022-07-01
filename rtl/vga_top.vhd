@@ -251,7 +251,7 @@ BEGIN --------------------------------------------------------------------------
       colr_out    => disp_pxl_s
     );
 
-  blank_s <= (NOT colr_en_s) or mem_blank_s;
+  blank_s <= colr_en_s or mem_blank_s;
 
    -- output assignments
   v_sync_out <= v_sync_s;
