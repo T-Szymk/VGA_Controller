@@ -22,7 +22,7 @@ USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.NUMERIC_STD.ALL;
 USE IEEE.MATH_REAL.ALL;
 
-PACKAGE vga_pkg IS
+PACKAGE vga_pkg IS    
 
   -- VGA COUNTER CONSTANTS/TYPES ###############################################
 
@@ -72,11 +72,17 @@ PACKAGE vga_pkg IS
   SUBTYPE line_ctr_t IS INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
   
   -- VIDEO MEMORY CONSTANTS/TYPES ##############################################
-  
+
+  TYPE pxl_width_arr_t IS ARRAY(1 DOWNTO 0) OF INTEGER;
+  CONSTANT pxl_width_arr_c : pxl_width_arr_t := (1, 3); 
+  --!!!
+  -- set monochrome_en to 1 and depth_colr_c to 1 to show monochrome, else set monochrome_en_c to 0 and set depth_colr_c as needed 
+  CONSTANT monochrome_en_c : integer := 1;
   -- depth of each pxl colour
   CONSTANT depth_colr_c    : INTEGER := 1;
-  -- CONSTANT pxl_width_c     : INTEGER := depth_colr_c * 3; -- RGB format
-  CONSTANT pxl_width_c     : INTEGER := depth_colr_c * 1; -- Monochrome format
+  CONSTANT pxl_width_c     : INTEGER := depth_colr_c * pxl_width_arr_c(monochrome_en_c); -- Monochrome format
+
+
   CONSTANT pxl_per_row_c   : INTEGER := 8;
   -- width of counter used to count current pixel in memory row beign displayed
   CONSTANT row_ctr_width_c : INTEGER := INTEGER(CEIL(LOG2(REAL(pxl_per_row_c - 1))));
