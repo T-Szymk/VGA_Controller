@@ -14,7 +14,7 @@
 --------------------------------------------------------------------------------
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-06-26  1.0      TZS     Created
+-- 2022-07-02  1.0      TZS     Created
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -53,10 +53,10 @@ begin --------------------------------------------------------------------------
       rst_sync_r <= rst_sync_r(SYNC_STAGES-2 downto 0) & '1';
     end if;
 
-    sync_rstn_o <= rst_sync_r(SYNC_STAGES-1);
-
   end process;                           
-  
+ 
+  sync_rstn_o <= rst_sync_r(SYNC_STAGES-1);
+
 end architecture rtl;
 
 --------------------------------------------------------------------------------

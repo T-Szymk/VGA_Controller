@@ -149,20 +149,26 @@ sim_axi_slave_gui: compile_axi_slave
 	$(MSIM_CMD)/vsim -voptargs="+acc" -onfinish stop tb_vga_axi_lite_slave -do "do_axi_slave.do"
 
 # MEM INTF MODEL TESTING #################################################
+.PHONY: clean_mem_intf_model
+clean_mem_intf_model:
+	rm -rf mem_intf_model
 
 .PHONY: compile_mem_intf_model
-compile_mem_intf_model: clean lib
+compile_mem_intf_model: clean_mem_intf_model
 	mkdir mem_intf_model && cd mem_intf_model && \
+	vlib vga_lib && vmap work vga_lib && \
 	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES) && \
-	$(MSIM_CMD)/vlog -sv -pedanticerrors $(TB)/vga_mem_intf_model.sv
+	$(MSIM_CMD)/vlog -sv -pedanticerrors $(TB)/models/vga_mem_intf_model.sv
 
 .PHONY: sim_mem_intf_model
 sim_mem_intf_model: compile_mem_intf_model
-	echo "nothing"
+	cd mem_intf_model && \
+	vsim -voptargs="+acc" -c -onfinish stop vga_model
 
 .PHONY: sim_mem_intf_model_gui
-sim_mem_intf_model_gui:
-	echo "nothing"
+sim_mem_intf_model_gui: compile_mem_intf_model
+	cd mem_intf_model && \
+	vsim -voptargs="+acc" -onfinish stop vga_model
 
 # MEM INTF TESTING #################################################
 .PHONY: clean_mem_intf

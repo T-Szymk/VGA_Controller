@@ -19,7 +19,7 @@
 
 module vga_model;
 
-`define MONO 1 // define for monochrome display, comment out for colour 
+//`define MONO 1 // define for monochrome display, comment out for colour 
 
 timeunit 1ns/1ps;
 
@@ -96,33 +96,18 @@ timeunit 1ns/1ps;
   
   typedef logic[PXL_WIDTH-1:0] pixel_t;
 
-  logic                     clk_s, clk_px_s        = '0;
-  logic                     rstn_s, rst_sync_s     = '0;
-  logic [PXL_CTR_WIDTH-1:0] pxl_ctr_s              = '0;
-  logic [LN_CTR_WIDTH-1:0]  line_ctr_s             = '0;
-  logic                     colr_en_s              = '0;
-  logic                     v_sync_s, h_sync_s     = '0;
-  logic                     test_switch_s, blank_s = '0;
+  logic                     clk_s, clk_px_s;
+  logic                     rstn_s, rst_sync_s;
+  logic [PXL_CTR_WIDTH-1:0] pxl_ctr_s;
+  logic [LN_CTR_WIDTH-1:0]  line_ctr_s;
+  logic                     colr_en_s;
+  logic                     v_sync_s, h_sync_s;
+  logic                     test_switch_s, blank_s;
   
-  pixel_t test_pxl_s, mem_pxl_s, disp_pxl_s = '0;
+  pixel_t test_pxl_s, mem_pxl_s, disp_pxl_s;
 
-/******************************************************************************/
-/* CLOCK AND RESET GENERATION                                                 */
-/******************************************************************************/
-
-  always #(TOP_CLK_PERIOD_NS/2) clk_s = ~clk_s;
-  // release reset 10 cycles after start of simulation
-  assign #(10 * TOP_CLK_PERIOD_NS) rstn_s = 1; 
-
-/******************************************************************************/
-/* SIMULATION DRIVING LOGIC                                                   */                                                                             
-/******************************************************************************/
-
-  initial begin 
-    // control simulation runtime
-    #SIMULATION_RUNTIME;
-    $finish;
-  end
+  logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_s;
+  logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_s;
 
 /******************************************************************************/
 /* MODULE INSTANCES                                                           */
@@ -177,27 +162,63 @@ timeunit 1ns/1ps;
   );
 
 /******************************************************************************/
+/* CLOCK AND RESET GENERATION                                                 */
+/******************************************************************************/
+
+  always #(TOP_CLK_PERIOD_NS/2) clk_s = ~clk_s;
+  // release reset 10 cycles after start of simulation
+  assign #(10 * TOP_CLK_PERIOD_NS) rstn_s = 1; 
+
+/******************************************************************************/
+/* SIMULATION DRIVING LOGIC                                                   */                                                                             
+/******************************************************************************/
+
+  initial begin 
+    
+    fork
+      /*********/
+      begin 
+        forever begin 
+          run_mem_addr_ctrl_model(rst_sync_s, pxl_ctr_s, line_ctr_s, 
+                                  mem_addr_ctr_s, mem_pxl_ctr_s);
+        end
+      end 
+       /*********/
+      begin
+        
+        forever begin
+           run_mem_buff_model(rst_sync_s, mem_addr_ctr_s, mem_pxl_ctr_s, 
+                              blank_s, mem_pxl_s);
+        end
+      end
+       /*********/
+      begin
+        
+        // control simulation runtime
+        #SIMULATION_RUNTIME;
+        $info("[%0tns] Simulation Complete!", $time);
+        $finish;
+
+      end
+       /*********/
+    join
+
+  end
+
+/******************************************************************************/
 /* MEMORY INTERFACE MODELS                                                    */
 /******************************************************************************/
   // read before write BRAM memory model
   task static run_memory_model (
     input  bit [MEM_ADDR_WIDTH-1:0 ] addra,
-    input  bit [MEM_ADDR_WIDTH-1:0 ] addrb,
-    input  bit [MEM_WIDTH-1:0]       dina,
-    input  bit [MEM_WIDTH-1:0]       dinb,
-    input  bit                       clka,
-    input  bit                       wea,
-    input  bit                       web,
+    input  bit [MEM_WIDTH-1:0]       dina = '0,
+    input  bit                       wea = 0,
     input  bit                       ena,
-    input  bit                       enb,
-    output bit [MEM_WIDTH-1:0]       douta,
-    output bit [MEM_WIDTH-1:0]       doutb
+    output bit [MEM_WIDTH-1:0]       douta
   );
     begin 
 
       static bit [MEM_DEPTH-1:0][MEM_WIDTH-1:0] mem_arr_model = '0;
-      
-      @(posedge clka);
 
       if(ena) begin
         douta = mem_arr_model[addra];
@@ -205,18 +226,13 @@ timeunit 1ns/1ps;
             mem_arr_model[addra] = dina; 
       end
       
-      if(enb) begin
-        doutb = mem_arr_model[addrb];
-        if(web) 
-          mem_arr_model[addrb] = dinb; 
-      end
-
     end
   endtask
 
+/******************************************************************************/
+
   // memory address controller model
   task static run_mem_addr_ctrl_model (
-    input  bit                      clk_i,
     input  bit                      rstn_i,
     input  bit [PXL_CTR_WIDTH-1:0]  pxl_ctr_i,
     input  bit [LN_CTR_WIDTH-1:0]   line_ctr_i,
@@ -229,10 +245,11 @@ timeunit 1ns/1ps;
         
         mem_addr_ctr_o = '0; 
         mem_pxl_ctr_o  = '0;
+        #1;
 
       end else begin
 
-        @(posedge clk_i); 
+        @(posedge vga_model.clk_px_s); 
       
         if((line_ctr_i > (V_B_PORCH_MAX_LNS)) && 
            (line_ctr_i < V_DISP_MAX_LNS) &&
@@ -260,17 +277,92 @@ timeunit 1ns/1ps;
     end
   endtask
 
+/******************************************************************************/
+
   // memory buffer model
   task static run_mem_buff_model (
-    input  bit     clk_i,
     input  bit     rstn_i,
     input  bit     [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_i,
     input  bit     [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_i,
     output bit     disp_blank_o,
     output pixel_t disp_pxl_o
   );
-  endtask
+    
+    static bit init = 0;
+    static bit buff_sel = 0; // 0: A, 1: B
+    static bit [MEM_WIDTH-1:0]      buff_A_data, buff_B_data = '0;
+    static bit [MEM_ADDR_WIDTH-1:0] buff_A_addr, buff_B_addr = '0;
+    static bit [MEM_ADDR_WIDTH-1:0] internal_mem_ctr = '0;
 
+    if(!rstn_i) begin 
+      init         = 0;
+      buff_sel     = 0;
+      disp_blank_o = '0;
+      disp_pxl_o   = '0;
+      #1;
+    end else begin
+
+      @(posedge vga_model.clk_px_s); 
+
+      // Fill A and then B on first pass
+      if(!init) begin 
+        
+        run_memory_model(internal_mem_ctr, , 0, 1, buff_A_data);
+        buff_A_addr = internal_mem_ctr;
+        internal_mem_ctr++;
+        run_memory_model(internal_mem_ctr, , 0, 1, buff_B_data);
+        buff_B_addr = internal_mem_ctr;
+        internal_mem_ctr++;
+
+        init = 1;
+      
+      end else begin
+        
+        if(!buff_sel) begin
+          if(buff_A_addr == mem_addr_ctr_i) begin
+            disp_pxl_o   = buff_A_data[(mem_pxl_ctr_i*PXL_WIDTH)+:3];
+            disp_blank_o = 0;
+            
+            // once A has been read, fill A and move to read B
+            if(mem_addr_ctr_i == DISP_PXL_MAX - 1) begin               
+              run_memory_model(internal_mem_ctr, , 0, 1, buff_A_data);
+              buff_A_addr = internal_mem_ctr;
+              internal_mem_ctr++;
+              buff_sel = ~buff_sel;
+            end
+
+          end else begin 
+            $warning("[%0tns] run_mem_buff_model(): Display Address does not match Buffer A Address.\n",
+                      "mem_addr_ctr_i = 0x%0h, buff_A_addr = 0x%0h", $time, mem_addr_ctr_i, buff_A_addr);
+            disp_pxl_o   = '0;
+            disp_blank_o = 1;
+          end
+
+        end else begin 
+          if(buff_B_addr == mem_addr_ctr_i) begin
+            disp_pxl_o   = buff_B_data[(mem_pxl_ctr_i*PXL_WIDTH)+:3];
+            disp_blank_o = 0;
+            
+            //once B has been read, fill B and move to read A
+            if(mem_addr_ctr_i == DISP_PXL_MAX - 1) begin               
+              run_memory_model(internal_mem_ctr, , 0, 1, buff_B_data);
+              buff_B_addr = internal_mem_ctr;
+              internal_mem_ctr++;
+              buff_sel = ~buff_sel;
+            end
+
+          end else begin 
+            $warning("[%0tns] run_mem_buff_model(): Display Address does not match Buffer B Address.\n",
+                      "mem_addr_ctr_i = 0x%0h, buff_B_addr = 0x%0h", $time, mem_addr_ctr_i, buff_B_addr);
+            disp_pxl_o   = '0;
+            disp_blank_o = 1;
+          end
+        end
+      
+      end
+    end
+
+  endtask
 
 /******************************************************************************/
 /* MEMORY INTERFACE MODULES                                                   */
