@@ -75,7 +75,8 @@ PACKAGE vga_pkg IS
   
   -- depth of each pxl colour
   CONSTANT depth_colr_c    : INTEGER := 1;
-  CONSTANT pxl_width_c     : INTEGER := depth_colr_c * 3; -- RGB format
+  -- CONSTANT pxl_width_c     : INTEGER := depth_colr_c * 3; -- RGB format
+  CONSTANT pxl_width_c     : INTEGER := depth_colr_c * 1; -- Monochrome format
   CONSTANT pxl_per_row_c   : INTEGER := 8;
   -- width of counter used to count current pixel in memory row beign displayed
   CONSTANT row_ctr_width_c : INTEGER := INTEGER(CEIL(LOG2(REAL(pxl_per_row_c - 1))));

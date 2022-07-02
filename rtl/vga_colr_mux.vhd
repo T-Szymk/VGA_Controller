@@ -41,14 +41,15 @@ end entity vga_colr_mux;
 
 architecture rtl of vga_colr_mux is 
 
-  signal pxl_s : pixel_t;
+  signal pxl_s     : pixel_t;
+  signal int_pxl_s : pixel_t;
 
 begin 
 
-  with en_i select pxl_s <= test_colr_i  when '0',
-                            mem_colr_i when others;
+  with en_i select int_pxl_s <= test_colr_i  when '0',
+                                mem_colr_i   when others;
 
-  with blank_i select pxl_s <= pxl_s  when '0',
+  with blank_i select pxl_s <= int_pxl_s       when '0',
                                (others => '0') when others;
                                
   colr_out <= pxl_s;

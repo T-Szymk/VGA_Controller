@@ -19,7 +19,9 @@
 
 module vga_model;
 
-//`define MONO 1 // define for monochrome display, comment out for colour 
+/* define for monochrome display, comment out for colour and make sure 
+pxl_width_c matches in vga_pkg.vhd */
+`define MONO 1
 
 timeunit 1ns/1ps;
 
@@ -102,12 +104,15 @@ timeunit 1ns/1ps;
   logic [LN_CTR_WIDTH-1:0]  line_ctr_s;
   logic                     colr_en_s;
   logic                     v_sync_s, h_sync_s;
-  logic                     test_switch_s, blank_s;
+  logic                     test_switch_s; 
+  logic                     blank_s;
   
   pixel_t test_pxl_s, mem_pxl_s, disp_pxl_s;
 
   logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_s;
   logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_s;
+
+  event mem_ctrl_done;
 
 /******************************************************************************/
 /* MODULE INSTANCES                                                           */
@@ -162,12 +167,18 @@ timeunit 1ns/1ps;
   );
 
 /******************************************************************************/
-/* CLOCK AND RESET GENERATION                                                 */
+/* CLOCK/RESET AND IO GENERATION                                              */
 /******************************************************************************/
+  initial begin 
+    clk_s  = 0;
+    rstn_s = 0;
+
+    test_switch_s = 1; // use memory colour output
+    // release reset 10 cycles after start of simulation
+    #(10 * TOP_CLK_PERIOD_NS) rstn_s = 1; 
+  end
 
   always #(TOP_CLK_PERIOD_NS/2) clk_s = ~clk_s;
-  // release reset 10 cycles after start of simulation
-  assign #(10 * TOP_CLK_PERIOD_NS) rstn_s = 1; 
 
 /******************************************************************************/
 /* SIMULATION DRIVING LOGIC                                                   */                                                                             
@@ -187,13 +198,14 @@ timeunit 1ns/1ps;
       begin
         
         forever begin
+           // only run mem_buff once mem_addr_ctrl has run
+           @(mem_ctrl_done);
            run_mem_buff_model(rst_sync_s, mem_addr_ctr_s, mem_pxl_ctr_s, 
                               blank_s, mem_pxl_s);
         end
       end
        /*********/
       begin
-        
         // control simulation runtime
         #SIMULATION_RUNTIME;
         $info("[%0tns] Simulation Complete!", $time);
@@ -251,9 +263,9 @@ timeunit 1ns/1ps;
 
         @(posedge vga_model.clk_px_s); 
       
-        if((line_ctr_i > (V_B_PORCH_MAX_LNS)) && 
+        if((line_ctr_i >= (V_B_PORCH_MAX_LNS)) && 
            (line_ctr_i < V_DISP_MAX_LNS) &&
-           (pxl_ctr_i > (H_B_PORCH_MAX_PX-1)) &&
+           (pxl_ctr_i >= (H_B_PORCH_MAX_PX)) &&
            (pxl_ctr_i < H_DISP_MAX_PX)) begin
 
           if(mem_pxl_ctr_o == (PXL_PER_ROW-1)) begin
@@ -275,6 +287,8 @@ timeunit 1ns/1ps;
         end
       end
     end
+    // event to synchronise execution of mem_buff task
+    -> mem_ctrl_done;
   endtask
 
 /******************************************************************************/
@@ -295,14 +309,13 @@ timeunit 1ns/1ps;
     static bit [MEM_ADDR_WIDTH-1:0] internal_mem_ctr = '0;
 
     if(!rstn_i) begin 
+      
       init         = 0;
       buff_sel     = 0;
       disp_blank_o = '0;
       disp_pxl_o   = '0;
-      #1;
-    end else begin
 
-      @(posedge vga_model.clk_px_s); 
+    end else begin
 
       // Fill A and then B on first pass
       if(!init) begin 
@@ -319,41 +332,44 @@ timeunit 1ns/1ps;
       end else begin
         
         if(!buff_sel) begin
+          // if the memory address counter matches the buffer address, display the pixel
           if(buff_A_addr == mem_addr_ctr_i) begin
             disp_pxl_o   = buff_A_data[(mem_pxl_ctr_i*PXL_WIDTH)+:3];
             disp_blank_o = 0;
             
             // once A has been read, fill A and move to read B
-            if(mem_addr_ctr_i == DISP_PXL_MAX - 1) begin               
+            if(mem_pxl_ctr_i == PXL_PER_ROW - 1) begin               
               run_memory_model(internal_mem_ctr, , 0, 1, buff_A_data);
               buff_A_addr = internal_mem_ctr;
-              internal_mem_ctr++;
+              internal_mem_ctr = (internal_mem_ctr == (MEM_DEPTH-1)) ? '0 : internal_mem_ctr + 1;
               buff_sel = ~buff_sel;
             end
-
+          // if the memory address counter does not match the buffer address, blank the pixel
           end else begin 
-            $warning("[%0tns] run_mem_buff_model(): Display Address does not match Buffer A Address.\n",
-                      "mem_addr_ctr_i = 0x%0h, buff_A_addr = 0x%0h", $time, mem_addr_ctr_i, buff_A_addr);
+            $warning("[%0tns] run_mem_buff_model(): Display Address does not match Buffer A Address.\n", $time,
+                      "mem_addr_ctr_i = 0x%0h, buff_A_addr = 0x%0h", mem_addr_ctr_i, buff_A_addr);
             disp_pxl_o   = '0;
             disp_blank_o = 1;
           end
 
         end else begin 
+          // if the memory address counter matches the buffer address, display the pixel
           if(buff_B_addr == mem_addr_ctr_i) begin
             disp_pxl_o   = buff_B_data[(mem_pxl_ctr_i*PXL_WIDTH)+:3];
+
             disp_blank_o = 0;
             
             //once B has been read, fill B and move to read A
-            if(mem_addr_ctr_i == DISP_PXL_MAX - 1) begin               
+            if(mem_pxl_ctr_i == PXL_PER_ROW - 1) begin               
               run_memory_model(internal_mem_ctr, , 0, 1, buff_B_data);
               buff_B_addr = internal_mem_ctr;
-              internal_mem_ctr++;
+              internal_mem_ctr = (internal_mem_ctr == (MEM_DEPTH-1)) ? '0 : internal_mem_ctr + 1;
               buff_sel = ~buff_sel;
             end
-
+          // if the memory address counter does not match the buffer address, blank the pixel
           end else begin 
-            $warning("[%0tns] run_mem_buff_model(): Display Address does not match Buffer B Address.\n",
-                      "mem_addr_ctr_i = 0x%0h, buff_B_addr = 0x%0h", $time, mem_addr_ctr_i, buff_B_addr);
+            $warning("[%0tns] run_mem_buff_model(): Display Address does not match Buffer B Address.\n", $time,
+                      "mem_addr_ctr_i = 0x%0h, buff_B_addr = 0x%0h", mem_addr_ctr_i, buff_B_addr);
             disp_pxl_o   = '0;
             disp_blank_o = 1;
           end

@@ -22,9 +22,9 @@ RTL_FILES = $(RTL)/vga_pkg.vhd \
 						$(RTL)/vga_memory_intf.vhd \
 						$(RTL)/vga_mem_addr_ctrl.vhd \
 						$(RTL)/vga_mem_buff.vhd \
-            $(RTL)/vga_top.vhd \
 						$(RTL)/xilinx_dp_BRAM.vhd \
-						$(RTL)/rst_sync.vhd
+						$(RTL)/rst_sync.vhd \
+            $(RTL)/vga_top.vhd 
 TB_FILES =  $(TB)/vga_tb.vhd \
             $(TB)/vga_colr_mux_tb.vhd \
             $(TB)/vga_controller_tb.vhd
@@ -157,7 +157,19 @@ clean_mem_intf_model:
 compile_mem_intf_model: clean_mem_intf_model
 	mkdir mem_intf_model && cd mem_intf_model && \
 	vlib vga_lib && vmap work vga_lib && \
-	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES) && \
+	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
+                                                          $(RTL)/ram_pkg.vhd \
+                                                          $(RTL)/vga_clk_div.vhd \
+                                                          $(RTL)/vga_controller.vhd \
+                                                          $(RTL)/vga_colr_mux.vhd \
+                                                          $(RTL)/xilinx_top_clk.vhd \
+                                                          $(RTL)/vga_pxl_counter.vhd \
+                                                          $(RTL)/vga_pattern_gen.vhd \
+						                                              $(RTL)/vga_memory_intf.vhd \
+						                                              $(RTL)/vga_mem_addr_ctrl.vhd \
+						                                              $(RTL)/vga_mem_buff.vhd \
+						                                              $(RTL)/xilinx_dp_BRAM.vhd \
+						                                              $(RTL)/rst_sync.vhd && \
 	$(MSIM_CMD)/vlog -sv -pedanticerrors $(TB)/models/vga_mem_intf_model.sv
 
 .PHONY: sim_mem_intf_model
@@ -168,7 +180,7 @@ sim_mem_intf_model: compile_mem_intf_model
 .PHONY: sim_mem_intf_model_gui
 sim_mem_intf_model_gui: compile_mem_intf_model
 	cd mem_intf_model && \
-	vsim -voptargs="+acc" -onfinish stop vga_model
+	vsim -voptargs="+acc" -onfinish stop vga_model -do ../../build/mem_intf_model.do
 
 # MEM INTF TESTING #################################################
 .PHONY: clean_mem_intf

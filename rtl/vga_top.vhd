@@ -258,6 +258,7 @@ BEGIN --------------------------------------------------------------------------
   h_sync_out <= h_sync_s;
 
   -- Note that this needs to be modified if the colour depth changes
+  -- TODO: this needs to be refactored to become statically configurable
   r_colr_out <= (others => '1') when disp_pxl_s(2) = '1' else (others => '0');
   g_colr_out <= (others => '1') when disp_pxl_s(1) = '1' else (others => '0');
   b_colr_out <= (others => '1') when disp_pxl_s(0) = '1' else (others => '0');
