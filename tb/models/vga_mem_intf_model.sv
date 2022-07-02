@@ -92,6 +92,12 @@ timeunit 1ns/1ps;
   parameter ROW_CTR_WIDTH  = $clog2(PXL_PER_ROW - 1);
   parameter DISP_CTR_WIDTH = $clog2(DISP_PXL_MAX - 1);
 
+  `ifdef MONO
+    parameter INIT_FILE = "../../build/RAM_INIT_monochrome.mem";
+  `else  
+    parameter INIT_FILE = "../../build/RAM_INIT_rgb.mem";
+  `endif
+
 /******************************************************************************/
 /* VARIABLES AND TYPE DEFINITIONS                                             */
 /******************************************************************************/
@@ -113,6 +119,8 @@ timeunit 1ns/1ps;
   logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_s;
 
   event mem_ctrl_done;
+
+  bit [MEM_WIDTH-1:0] mem_arr_model [MEM_DEPTH-1:0];
 
 /******************************************************************************/
 /* MODULE INSTANCES                                                           */
@@ -165,6 +173,22 @@ timeunit 1ns/1ps;
     .blank_i     (colr_en_s),
     .colr_out    (disp_pxl_s)
   );
+
+/******************************************************************************/
+/* MEMORY INITIALISATION                                                      */
+/******************************************************************************/
+  
+  generate
+    if (INIT_FILE != "") begin: use_init_file
+      initial
+        $readmemh(INIT_FILE, mem_arr_model, 0, MEM_DEPTH-1);
+    end else begin: init_bram_to_zero
+      integer ram_index;
+      initial
+        for (ram_index = 0; ram_index < MEM_DEPTH; ram_index = ram_index + 1)
+          mem_arr_model[ram_index] = {MEM_WIDTH{1'b0}};
+    end
+  endgenerate
 
 /******************************************************************************/
 /* CLOCK/RESET AND IO GENERATION                                              */
@@ -230,12 +254,10 @@ timeunit 1ns/1ps;
   );
     begin 
 
-      static bit [MEM_DEPTH-1:0][MEM_WIDTH-1:0] mem_arr_model = '0;
-
       if(ena) begin
-        douta = mem_arr_model[addra];
+        douta = vga_model.mem_arr_model[addra];
         if(wea) 
-            mem_arr_model[addra] = dina; 
+            vga_model.mem_arr_model[addra] = dina; 
       end
       
     end
