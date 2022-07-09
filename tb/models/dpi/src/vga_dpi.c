@@ -81,3 +81,14 @@ int add_pxl_to_client_buff_mono(const int r, const int g, const int b, const int
 
   return EXIT_SUCCESS;
 }
+
+int add_pxl_to_client_buff(const int r, const int g, const int b, const int pos) {
+  // Assign values to 3 bytes and copy 3 bytes into the buff
+  uint32_t tmp = (r) ? 255 : 0;
+  tmp |= (g) ? (255 << 8) : 0;
+  tmp |= (b) ? (255 << 16) : 0;
+
+  memcpy((buff + (3 * pos)), &tmp, 3);
+
+  return EXIT_SUCCESS;
+}

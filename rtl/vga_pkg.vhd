@@ -77,7 +77,7 @@ PACKAGE vga_pkg IS
   CONSTANT pxl_width_arr_c : pxl_width_arr_t := (1, 3); 
   --!!!
   -- set monochrome_en to 1 and depth_colr_c to 1 to show monochrome, else set monochrome_en_c to 0 and set depth_colr_c as needed 
-  CONSTANT monochrome_en_c : integer := 1;
+  CONSTANT monochrome_en_c : integer := 0;
   -- depth of each pxl colour
   CONSTANT depth_colr_c    : INTEGER := 1;
   CONSTANT pxl_width_c     : INTEGER := depth_colr_c * pxl_width_arr_c(monochrome_en_c); -- Monochrome format

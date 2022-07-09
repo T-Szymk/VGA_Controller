@@ -21,7 +21,7 @@ module vga_model;
 
 /* define for monochrome display, comment out for colour and make sure 
 pxl_width_c matches in vga_pkg.vhd */
-`define MONO 1
+//`define MONO 1
 
   timeunit 1ns/1ps; 
 
@@ -29,6 +29,7 @@ pxl_width_c matches in vga_pkg.vhd */
   import "DPI-C" pure function int client_send();
   import "DPI-C" pure function int client_close();
   import "DPI-C" pure function int add_pxl_to_client_buff_mono(int r, int g, int b, int pos);
+  import "DPI-C" pure function int add_pxl_to_client_buff(int r, int g, int b, int pos);
 
 /******************************************************************************/
 /* PARAMETERS                                                                 */
@@ -211,7 +212,7 @@ pxl_width_c matches in vga_pkg.vhd */
     clk_s  = 0;
     rstn_s = 0;
 
-    test_switch_s = 1; // use memory colour output
+    test_switch_s = 0; // 1 = use memory, 0 = use pattern generator
     // release reset 10 cycles after start of simulation
     #(10 * TOP_CLK_PERIOD_NS) rstn_s = 1; 
   end
@@ -490,15 +491,18 @@ pxl_width_c matches in vga_pkg.vhd */
           r_val = int'(vga_model.disp_pxl_s);
           g_val = int'(vga_model.disp_pxl_s);
           b_val = int'(vga_model.disp_pxl_s);
-
-          //$display("[%0t] DEBUG: calling add_pxl_to_client_buff(r=%d, g=%d, b=%d, pos=%d)", $time, r_val, g_val, b_val, position);
+          // use the line below for debugging
+          //$display("[%0t] DEBUG: calling add_pxl_to_client_buff_mono(r=%d, g=%d, b=%d, pos=%d)", $time, r_val, g_val, b_val, position);
           add_pxl_result = add_pxl_to_client_buff_mono(r_val, g_val, b_val, position);
         
         `else
         
-          r_val = int'(vga_model.disp_pxl_s[ (0*DEPTH_COLR) +: (DEPTH_COLR-1) ]);
-          g_val = int'(vga_model.disp_pxl_s[ (1*DEPTH_COLR) +: (DEPTH_COLR-1) ]);
-          b_val = int'(vga_model.disp_pxl_s[ (2*DEPTH_COLR) +: (DEPTH_COLR-1) ]);
+          r_val = int'(vga_model.disp_pxl_s[0]);
+          g_val = int'(vga_model.disp_pxl_s[1]);
+          b_val = int'(vga_model.disp_pxl_s[2]);
+          // use the line below for debugging
+          //$display("[%0t] DEBUG: calling add_pxl_to_client_buff(r=%d, g=%d, b=%d, pos=%d)", $time, r_val, g_val, b_val, position);
+          add_pxl_result = add_pxl_to_client_buff(r_val, g_val, b_val, position);
         
         `endif
 

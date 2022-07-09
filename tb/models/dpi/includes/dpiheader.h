@@ -25,6 +25,14 @@
 
 DPI_LINK_DECL DPI_DLLESPEC
 int
+add_pxl_to_client_buff(
+    int r,
+    int g,
+    int b,
+    int pos);
+
+DPI_LINK_DECL DPI_DLLESPEC
+int
 add_pxl_to_client_buff_mono(
     int r,
     int g,
