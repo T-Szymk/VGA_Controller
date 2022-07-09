@@ -32,7 +32,7 @@ PACKAGE vga_pkg IS
   -- screen dimensions
   CONSTANT height_px_c     : INTEGER := 480;
   CONSTANT width_px_c      : INTEGER := 640;
-  -- number of pixels in each v_sync period
+  -- number of pixels in each h_sync period
   CONSTANT h_sync_px_c     : INTEGER := 96;
   -- number of pixels in each horiz. back porch period
   CONSTANT h_b_porch_px_c  : INTEGER := 48;

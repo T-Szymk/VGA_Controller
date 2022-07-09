@@ -23,7 +23,12 @@ module vga_model;
 pxl_width_c matches in vga_pkg.vhd */
 `define MONO 1
 
-timeunit 1ns/1ps;
+  timeunit 1ns/1ps; 
+
+  import "DPI-C" pure function int client_connect();
+  import "DPI-C" pure function int client_send();
+  import "DPI-C" pure function int client_close();
+  import "DPI-C" pure function int add_pxl_to_client_buff_mono(int r, int g, int b, int pos);
 
 /******************************************************************************/
 /* PARAMETERS                                                                 */
@@ -38,7 +43,7 @@ timeunit 1ns/1ps;
   // height and width of display area in pixels
   parameter HEIGHT_PX     = 480;
   parameter WIDTH_PX      = 640;
-  // number of pixels in each v_sync period
+  // number of pixels in each h_sync period
   parameter H_SYNC_PX     = 96;
   // number of pixels in each horiz. back porch period
   parameter H_B_PORCH_PX  = 48;
@@ -121,6 +126,15 @@ timeunit 1ns/1ps;
   event mem_ctrl_done;
 
   bit [MEM_WIDTH-1:0] mem_arr_model [MEM_DEPTH-1:0];
+
+  int position = 0;
+  int r_val    = 0;
+  int g_val    = 0;
+  int b_val    = 0;
+  int connect_result = -1;
+  int add_pxl_result = -1;
+  int send_result    = -1; 
+  int close_result   = -1; 
 
 /******************************************************************************/
 /* MODULE INSTANCES                                                           */
@@ -233,6 +247,7 @@ timeunit 1ns/1ps;
         // control simulation runtime
         #SIMULATION_RUNTIME;
         $info("[%0tns] Simulation Complete!", $time);
+        close_result = client_close();
         $finish;
 
       end
@@ -292,17 +307,17 @@ timeunit 1ns/1ps;
 
           if(mem_pxl_ctr_o == (PXL_PER_ROW-1)) begin
 
-            mem_pxl_ctr_o = '0;
+            mem_pxl_ctr_o <= '0;
 
             if(mem_addr_ctr_o == (MEM_DEPTH-1)) begin 
-              mem_addr_ctr_o = '0;
+              mem_addr_ctr_o <= '0;
             end else begin 
-              mem_addr_ctr_o++;
+              mem_addr_ctr_o <= mem_addr_ctr_o + 1;
             end
 
           end else begin
 
-            mem_pxl_ctr_o++;
+            mem_pxl_ctr_o <= mem_pxl_ctr_o + 1;
 
           end
 
@@ -446,5 +461,57 @@ timeunit 1ns/1ps;
   //  .douta (),      
   //  .doutb ()  
   //);
+
+/******************************************************************************/
+/* DPI Function Management                                                    */
+/******************************************************************************/
+
+  initial begin 
+
+    connect_result = client_connect();
+    $info("client_connect() = %d", connect_result);
+    if (connect_result != 0) begin 
+      $error("client_connect() result = %d", connect_result);
+      close_result = client_close();
+      $finish;
+    end
+
+    forever begin 
+
+      @(posedge vga_model.clk_px_s);
+      
+      if ( (vga_model.line_ctr_s >= V_B_PORCH_MAX_LNS) && (vga_model.line_ctr_s < V_DISP_MAX_LNS) && 
+           (vga_model.pxl_ctr_s  >= H_B_PORCH_MAX_PX)  && (vga_model.pxl_ctr_s  < H_DISP_MAX_PX) ) begin 
+        
+        position = vga_model.pxl_ctr_s - H_B_PORCH_MAX_PX;
+
+        `ifdef MONO
+          // only 1 bit value used when mono display is desired
+          r_val = int'(vga_model.disp_pxl_s);
+          g_val = int'(vga_model.disp_pxl_s);
+          b_val = int'(vga_model.disp_pxl_s);
+
+          //$display("[%0t] DEBUG: calling add_pxl_to_client_buff(r=%d, g=%d, b=%d, pos=%d)", $time, r_val, g_val, b_val, position);
+          add_pxl_result = add_pxl_to_client_buff_mono(r_val, g_val, b_val, position);
+        
+        `else
+        
+          r_val = int'(vga_model.disp_pxl_s[ (0*DEPTH_COLR) +: (DEPTH_COLR-1) ]);
+          g_val = int'(vga_model.disp_pxl_s[ (1*DEPTH_COLR) +: (DEPTH_COLR-1) ]);
+          b_val = int'(vga_model.disp_pxl_s[ (2*DEPTH_COLR) +: (DEPTH_COLR-1) ]);
+        
+        `endif
+
+      end 
+      
+      else if ((vga_model.line_ctr_s >= V_B_PORCH_MAX_LNS) && (vga_model.line_ctr_s < V_DISP_MAX_LNS) && 
+               (vga_model.pxl_ctr_s == H_DISP_MAX_PX)) begin 
+        //$info("Calling client_send()");
+        send_result = client_send();
+      end
+
+    end
+
+  end
 
 endmodule
