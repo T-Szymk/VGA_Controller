@@ -62,12 +62,16 @@ int client_close(void) {
 int client_send(const int colr_val) {
 
   if ((status = send(client_fd, buff, BUFF_SIZE, 0)) < 0) {
-      perror("Send Error!");
+      perror("Send Error! ");
       close(client_fd);
       return EXIT_FAILURE;
     } else {
       printf("Client sent %d bytes...\n", status);
     }
+
+  // clear buff
+  memset(buff, 0, BUFF_SIZE);
+
   return EXIT_SUCCESS;
 }
 

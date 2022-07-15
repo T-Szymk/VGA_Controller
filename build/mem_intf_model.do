@@ -36,7 +36,9 @@ sim:/vga_model/run_mem_addr_ctrl_model/rstn_i \
 sim:/vga_model/run_mem_addr_ctrl_model/pxl_ctr_i \
 sim:/vga_model/run_mem_addr_ctrl_model/line_ctr_i \
 sim:/vga_model/run_mem_addr_ctrl_model/mem_addr_ctr_o \
-sim:/vga_model/run_mem_addr_ctrl_model/mem_pxl_ctr_o
+sim:/vga_model/run_mem_addr_ctrl_model/mem_pxl_ctr_o \
+-divider " - kill simulation - " \
+sim:/vga_model/kill_simulation_s
 
 set StdArithNoWarnings 1 
 run 0 ns 

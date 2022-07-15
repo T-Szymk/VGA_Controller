@@ -176,7 +176,7 @@ compile_mem_intf_model: clean_mem_intf_model
 .PHONY: sim_mem_intf_model
 sim_mem_intf_model: compile_mem_intf_model
 	cd mem_intf_model && \
-	vsim -voptargs="+acc" -c -onfinish stop vga_model
+	vsim -voptargs="+acc" -c -onfinish stop vga_model -do "run 16 ms"
 
 .PHONY: sim_mem_intf_model_gui
 sim_mem_intf_model_gui: compile_mem_intf_model

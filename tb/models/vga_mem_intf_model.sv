@@ -14,7 +14,7 @@
 --------------------------------------------------------------------------------
  Revisions:
  Date        Version  Author  Description
- 2022-07-01  1.0      TZS     Created
+ 2022-07-16  1.0      TZS     Created
 ------------------------------------------------------------------------------*/
 
 module vga_model;
@@ -22,6 +22,7 @@ module vga_model;
 /* define for monochrome display, comment out for colour and make sure 
 pxl_width_c matches in vga_pkg.vhd */
 //`define MONO 1
+`define USE_SIMULATOR 1
 
   timeunit 1ns/1ps; 
 
@@ -118,6 +119,7 @@ pxl_width_c matches in vga_pkg.vhd */
   logic                     v_sync_s, h_sync_s;
   logic                     test_switch_s; 
   logic                     blank_s;
+  logic                     kill_simulation_s = 0;
   
   pixel_t test_pxl_s, mem_pxl_s, disp_pxl_s;
 
@@ -248,7 +250,9 @@ pxl_width_c matches in vga_pkg.vhd */
         // control simulation runtime
         #SIMULATION_RUNTIME;
         $info("[%0tns] Simulation Complete!", $time);
-        close_result = client_close();
+        `ifdef USE_SIMULATOR
+          close_result = client_close();
+        `endif
         $finish;
 
       end
@@ -468,54 +472,90 @@ pxl_width_c matches in vga_pkg.vhd */
 /******************************************************************************/
 
   initial begin 
-
-    connect_result = client_connect();
-    $info("client_connect() = %d", connect_result);
-    if (connect_result != 0) begin 
-      $error("client_connect() result = %d", connect_result);
-      close_result = client_close();
-      $finish;
-    end
+    
+    `ifdef USE_SIMULATOR
+      connect_result = client_connect();
+      $info("client_connect() = %d", connect_result);
+      if (connect_result != 0) begin 
+        $error("client_connect() result = %d", connect_result);
+        close_result = client_close();
+        $finish;
+      end
+    `endif
 
     forever begin 
 
       @(posedge vga_model.clk_px_s);
+
+      `ifdef USE_SIMULATOR
+        // to stop simulator early, force kill_simulation to 1
+        if (kill_simulation_s == 1) begin
+          $warning("Kill switch engaged...");
+          close_result = client_close();
+          $finish;
+        end
+
+      `endif
       
       if ( (vga_model.line_ctr_s >= V_B_PORCH_MAX_LNS) && (vga_model.line_ctr_s < V_DISP_MAX_LNS) && 
            (vga_model.pxl_ctr_s  >= H_B_PORCH_MAX_PX)  && (vga_model.pxl_ctr_s  < H_DISP_MAX_PX) ) begin 
         
         position = vga_model.pxl_ctr_s - H_B_PORCH_MAX_PX;
 
-        `ifdef MONO
-          // only 1 bit value used when mono display is desired
-          r_val = int'(vga_model.disp_pxl_s);
-          g_val = int'(vga_model.disp_pxl_s);
-          b_val = int'(vga_model.disp_pxl_s);
-          // use the line below for debugging
-          //$display("[%0t] DEBUG: calling add_pxl_to_client_buff_mono(r=%d, g=%d, b=%d, pos=%d)", $time, r_val, g_val, b_val, position);
-          add_pxl_result = add_pxl_to_client_buff_mono(r_val, g_val, b_val, position);
-        
-        `else
-        
-          r_val = int'(vga_model.disp_pxl_s[0]);
-          g_val = int'(vga_model.disp_pxl_s[1]);
-          b_val = int'(vga_model.disp_pxl_s[2]);
-          // use the line below for debugging
-          //$display("[%0t] DEBUG: calling add_pxl_to_client_buff(r=%d, g=%d, b=%d, pos=%d)", $time, r_val, g_val, b_val, position);
-          add_pxl_result = add_pxl_to_client_buff(r_val, g_val, b_val, position);
-        
-        `endif
+        `ifdef USE_SIMULATOR
+
+          `ifdef MONO
+            // only 1 bit value used when mono display is desired
+            r_val = int'(vga_model.disp_pxl_s);
+            g_val = int'(vga_model.disp_pxl_s);
+            b_val = int'(vga_model.disp_pxl_s);
+            // use the line below for debugging
+            //$display("[%0t] DEBUG: calling add_pxl_to_client_buff_mono(r=%d, g=%d, b=%d, pos=%d)", $time, r_val, g_val, b_val, position);
+            add_pxl_result = add_pxl_to_client_buff_mono(r_val, g_val, b_val, position);
+            
+            if (add_pxl_result != 0) begin 
+              $error("add_pxl_to_client_buff_mono() result = %d", add_pxl_result);
+              close_result = client_close();
+              $finish;
+            end
+          
+          `else // MONO
+          
+            r_val = int'(vga_model.disp_pxl_s[0]);
+            g_val = int'(vga_model.disp_pxl_s[1]);
+            b_val = int'(vga_model.disp_pxl_s[2]);
+            // use the line below for debugging
+            //$display("[%0t] DEBUG: calling add_pxl_to_client_buff(r=%d, g=%d, b=%d, pos=%d)", $time, r_val, g_val, b_val, position);
+            add_pxl_result = add_pxl_to_client_buff(r_val, g_val, b_val, position);
+  
+            if (add_pxl_result != 0) begin 
+              $error("add_pxl_to_client_buff() result = %d", add_pxl_result);
+              close_result = client_close();
+              $finish;
+            end
+          
+          `endif // MONO
+        `endif // USE_SIMULATOR
 
       end 
       
-      else if ((vga_model.line_ctr_s >= V_B_PORCH_MAX_LNS) && (vga_model.line_ctr_s < V_DISP_MAX_LNS) && 
-               (vga_model.pxl_ctr_s == H_DISP_MAX_PX)) begin 
-        //$info("Calling client_send()");
-        send_result = client_send();
-      end
+      `ifdef USE_SIMULATOR
+      
+        else if ((vga_model.line_ctr_s >= V_B_PORCH_MAX_LNS) && (vga_model.line_ctr_s < V_DISP_MAX_LNS) && 
+                 (vga_model.pxl_ctr_s == H_DISP_MAX_PX)) begin 
+          
+          //$info("Calling client_send()");
+          send_result = client_send();
+          if (send_result != 0) begin 
+            $warning("client_send() result = %d", send_result);
+            close_result = client_close();
+            $finish;
+          end
+        end
+      
+      `endif
 
     end
-
   end
 
 endmodule
