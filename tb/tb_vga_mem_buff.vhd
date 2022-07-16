@@ -31,13 +31,6 @@ end entity tb_vga_mem_buff;
 architecture tb of tb_vga_mem_buff is
 
   component vga_mem_buff is 
-    generic (
-      ROW_CTR_WIDTH  : integer := 3;
-      MEM_DATA_WIDTH : integer := 24;
-      MEM_ADDR_WIDTH : integer := 16;
-      PXL_WIDTH      : integer := 9;
-      MAX_PXL_CNT    : integer := 7
-    );
     port (
       clk_i           : in  std_logic;
       rstn_i          : in  std_logic;
@@ -135,13 +128,6 @@ begin --------------------------------------------------------------------------
   end process addr_ctr; --------------------------------------------------------
 
   i_dut : vga_mem_buff
-    generic map (
-      ROW_CTR_WIDTH  => row_ctr_width_c,      
-      MEM_DATA_WIDTH => mem_row_width_c,       
-      MEM_ADDR_WIDTH => mem_addr_width_c,       
-      PXL_WIDTH      => pxl_width_c,  
-      MAX_PXL_CNT    => pxl_per_row_c-1   
-    )
     port map (
       clk_i           => clk_s,   
       rstn_i          => rstn_s,    
