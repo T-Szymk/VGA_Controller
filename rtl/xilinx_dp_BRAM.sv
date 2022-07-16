@@ -31,10 +31,6 @@ module xilinx_true_dual_port_read_first_1_clock_ram #(
   input web,                            // Port B write enable
   input ena,                            // Port A RAM Enable, for additional power savings, disable port when not in use
   input enb,                            // Port B RAM Enable, for additional power savings, disable port when not in use
-  input rsta,                           // Port A output reset (does not affect memory contents)
-  input rstb,                           // Port B output reset (does not affect memory contents)
-  input regcea,                         // Port A output register enable
-  input regceb,                         // Port B output register enable
   output [RAM_WIDTH-1:0] douta,         // Port A RAM output data
   output [RAM_WIDTH-1:0] doutb          // Port B RAM output data
 );
@@ -47,7 +43,7 @@ module xilinx_true_dual_port_read_first_1_clock_ram #(
   generate
     if (INIT_FILE != "") begin: use_init_file
       initial
-        $readmemh(INIT_FILE, BRAM, 0, RAM_DEPTH-1);
+        $readmemb(INIT_FILE, BRAM, 0, RAM_DEPTH-1);
     end else begin: init_bram_to_zero
       integer ram_index;
       initial

@@ -31,6 +31,13 @@ end entity tb_vga_mem_buff;
 architecture tb of tb_vga_mem_buff is
 
   component vga_mem_buff is 
+    generic (
+      ROW_CTR_WIDTH  : integer := 3;
+      MEM_DATA_WIDTH : integer := 24;
+      MEM_ADDR_WIDTH : integer := 16;
+      PXL_WIDTH      : integer := 9;
+      MAX_PXL_CNT    : integer := 7
+    );
     port (
       clk_i           : in  std_logic;
       rstn_i          : in  std_logic;
@@ -38,8 +45,30 @@ architecture tb of tb_vga_mem_buff is
       disp_pxl_ctr_i  : in  std_logic_vector(row_ctr_width_c-1 downto 0);
       mem_data_i      : in  std_logic_vector(mem_row_width_c-1 downto 0);
       mem_addr_o      : out std_logic_vector(mem_addr_width_c-1 downto 0);
+      mem_ren_o       : out std_logic;
       disp_blank_o    : out std_logic;
       disp_pxl_o      : out pixel_t
+    );
+    end component;
+
+  component xilinx_true_dual_port_read_first_1_clock_ram is 
+    generic (
+      RAM_WIDTH       : integer := 18;           -- Specify RAM data width
+      RAM_DEPTH       : integer := 1024;         -- Specify RAM depth (number of entries)
+      INIT_FILE       : string := "RAM_INIT.dat" -- Specify name/location of RAM initialization file if using one (leave blank if not)
+    );
+    port (
+      addra  : in  std_logic_vector(mem_addr_width_c-1 downto 0); 
+      addrb  : in  std_logic_vector(mem_addr_width_c-1 downto 0); 
+      dina   : in  std_logic_vector(RAM_WIDTH-1 downto 0);        
+      dinb   : in  std_logic_vector(RAM_WIDTH-1 downto 0);        
+      clka   : in  std_logic;                                     
+      wea    : in  std_logic;                                     
+      web    : in  std_logic;                                     
+      ena    : in  std_logic;                                     
+      enb    : in  std_logic;                                     
+      douta  : out std_logic_vector(RAM_WIDTH-1 downto 0);        
+      doutb  : out std_logic_vector(RAM_WIDTH-1 downto 0)         
     );
     end component;
 
@@ -47,10 +76,11 @@ architecture tb of tb_vga_mem_buff is
   signal ctr_rstn_s      : std_logic := '0';
   signal disp_addr_ctr_s : unsigned(mem_addr_width_c-1 downto 0);       
   signal disp_pxl_ctr_s  : unsigned(row_ctr_width_c-1 downto 0);      
-  signal mem_data_s      : unsigned(mem_row_width_c-1 downto 0);  
+  signal mem_data_s      : std_logic_vector(mem_row_width_c-1 downto 0);  
   signal mem_addr_s      : std_logic_vector(mem_addr_width_c-1 downto 0);  
   signal disp_blank_s    : std_logic;    
   signal disp_pxl_s      : pixel_t;
+  signal mem_ren_s       : std_logic;
   signal blank_test_s    : std_logic := '1';
 
 begin --------------------------------------------------------------------------
@@ -76,7 +106,7 @@ begin --------------------------------------------------------------------------
     if ctr_rstn_s = '0' then 
       disp_addr_ctr_s <= (others => '0');
       disp_pxl_ctr_s  <= (others => '0');
-      mem_data_s      <= (others => '0');
+
     elsif rising_edge(clk_s) then
       
       if disp_pxl_ctr_s = (pxl_per_row_c - 1) then 
@@ -100,27 +130,50 @@ begin --------------------------------------------------------------------------
       else
         disp_pxl_ctr_s  <= disp_pxl_ctr_s + 1;
       end if;
-      -- even addresses should be loaded to buffer A, off to buffer B
-      if mem_addr_s(0) = '0' then 
-        mem_data_s(16-1 downto 0) <= x"AAAA";
-      else 
-        mem_data_s(16-1 downto 0) <= x"BBBB";
-      end if;
 
     end if;
   end process addr_ctr; --------------------------------------------------------
 
   i_dut : vga_mem_buff
+    generic map (
+      ROW_CTR_WIDTH  => row_ctr_width_c,      
+      MEM_DATA_WIDTH => mem_row_width_c,       
+      MEM_ADDR_WIDTH => mem_addr_width_c,       
+      PXL_WIDTH      => pxl_width_c,  
+      MAX_PXL_CNT    => pxl_per_row_c-1   
+    )
     port map (
       clk_i           => clk_s,   
       rstn_i          => rstn_s,    
       disp_addr_ctr_i => std_logic_vector(disp_addr_ctr_s),             
       disp_pxl_ctr_i  => std_logic_vector(disp_pxl_ctr_s),            
-      mem_data_i      => std_logic_vector(mem_data_s),        
-      mem_addr_o      => mem_addr_s,              
+      mem_data_i      => mem_data_s,        
+      mem_addr_o      => mem_addr_s,
+      mem_ren_o       => mem_ren_s,              
       disp_blank_o    => disp_blank_s,          
       disp_pxl_o      => disp_pxl_s       
     );
+
+    i_bram : xilinx_true_dual_port_read_first_1_clock_ram
+      generic map (
+        RAM_WIDTH => mem_row_width_c,
+        RAM_DEPTH => mem_depth_c,
+        INIT_FILE => "../supporting_apps/mem_file_gen/mem_file.mem"
+      )
+      port map (
+        addra => mem_addr_s,   
+        addrb => (others => '0'),   
+        dina  => (others => '0'),  
+        dinb  => (others => '0'),  
+        clka  => clk_s,  
+        wea   => '0', 
+        web   => '0', 
+        ena   => mem_ren_s, 
+        enb   => '0', 
+        douta => mem_data_s,   
+        doutb => open  
+      );
+
 
 end architecture tb;
 

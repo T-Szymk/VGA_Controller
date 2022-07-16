@@ -19,7 +19,6 @@
 -- 2022-06-28  1.1      TZS     Moved ram_pkg to separate design unit.
 --------------------------------------------------------------------------------
 library ieee;
-library work;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.vga_pkg.all;

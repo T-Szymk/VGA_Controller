@@ -119,12 +119,18 @@ pxl_width_c matches in vga_pkg.vhd */
   logic                     v_sync_s, h_sync_s;
   logic                     test_switch_s; 
   logic                     blank_s;
-  logic                     kill_simulation_s = 0;
+  logic                     kill_simulation_s = 0; // will finish simulation once set to 1
   
   pixel_t test_pxl_s, mem_pxl_s, disp_pxl_s;
 
   logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_s;
   logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_s;
+  
+  // variables used as golden reference
+  logic                      blank_golden_s;
+  pixel_t                    mem_pxl_golden_s;
+  logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_golden_s;
+  logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_golden_s;
 
   event mem_ctrl_done;
 
@@ -232,7 +238,7 @@ pxl_width_c matches in vga_pkg.vhd */
       begin 
         forever begin 
           run_mem_addr_ctrl_model(rst_sync_s, pxl_ctr_s, line_ctr_s, 
-                                  mem_addr_ctr_s, mem_pxl_ctr_s);
+                                  mem_addr_ctr_golden_s, mem_pxl_ctr_golden_s);
         end
       end 
        /*********/
@@ -241,8 +247,8 @@ pxl_width_c matches in vga_pkg.vhd */
         forever begin
            // only run mem_buff once mem_addr_ctrl has run
            @(mem_ctrl_done);
-           run_mem_buff_model(rst_sync_s, mem_addr_ctr_s, mem_pxl_ctr_s, 
-                              blank_s, mem_pxl_s);
+           run_mem_buff_model(rst_sync_s, mem_addr_ctr_golden_s, mem_pxl_ctr_golden_s, 
+                              blank_golden_s, mem_pxl_golden_s);
         end
       end
        /*********/
@@ -427,14 +433,14 @@ pxl_width_c matches in vga_pkg.vhd */
 /******************************************************************************/
 
   /* Memory Address Counter */
-  //mem_addr_ctrl_sv (
-  //  .clk_i          (),   
-  //  .rstn_i         (),    
-  //  .pxl_ctr_i      (),       
-  //  .line_ctr_i     (),        
-  //  .mem_addr_ctr_o (),            
-  //  .mem_pxl_ctr_o  ()          
-  //);
+  vga_mem_addr_ctrl i_mem_addr_ctrl (
+    .clk_i          (clk_px_s),   
+    .rstn_i         (rst_sync_s),    
+    .pxl_ctr_i      (pxl_ctr_s),       
+    .line_ctr_i     (line_ctr_s),        
+    .mem_addr_ctr_o (mem_addr_ctr_s),            
+    .mem_pxl_ctr_o  (mem_pxl_ctr_s)          
+  );
 
   /* Memory Buffers */
   //mem_buff_sv (

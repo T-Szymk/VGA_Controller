@@ -16,6 +16,7 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2022-06-24  1.0      TZS     Created
+-- 2022-07-16  1.1      TZS     Updates made for integration with mem intf model
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -62,8 +63,8 @@ begin
     
     elsif rising_edge(clk_i) then
       -- if the line counter is within the visible region and if the pixel counter is in the visible region
-      if line_ctr_s > (v_b_porch_max_lns_c - 1) AND line_ctr_s < v_disp_max_lns_c AND
-         pxl_ctr_s > (h_b_porch_max_px_c - 1) AND pxl_ctr_s < h_disp_max_px_c then
+      if line_ctr_s >= (v_b_porch_max_lns_c) AND line_ctr_s < v_disp_max_lns_c AND
+         pxl_ctr_s  >= (h_b_porch_max_px_c)  AND pxl_ctr_s < h_disp_max_px_c then
           
             if mem_pxl_ctr_r = (pxl_per_row_c - 1) then
               
