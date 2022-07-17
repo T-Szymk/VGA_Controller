@@ -23,7 +23,8 @@ use work.vga_pkg.all;
 
 entity tb_vga_mem_buff is 
 generic (
-  CLK_PERIOD : time := 40 ns
+  CLK_PERIOD    : time := 40 ns;
+  MEM_INIT_FILE : string := "../../supporting_apps/mem_file_gen/mem_file.mem"
 );
 end entity tb_vga_mem_buff;
 
@@ -144,7 +145,7 @@ begin --------------------------------------------------------------------------
       generic map (
         RAM_WIDTH => mem_row_width_c,
         RAM_DEPTH => mem_depth_c,
-        INIT_FILE => "../supporting_apps/mem_file_gen/mem_file.mem"
+        INIT_FILE => MEM_INIT_FILE
       )
       port map (
         addra => mem_addr_s,   

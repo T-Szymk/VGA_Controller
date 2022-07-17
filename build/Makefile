@@ -9,8 +9,8 @@ GHDL_OPT = --std=08 -fsynopsys -v
 
 #MODELSIM ?=
 
-RTL = ../../rtl
-TB  = ../../tb
+RTL = $(PWD)/../rtl
+TB  = $(PWD)/../tb
 RTL_FILES = $(RTL)/vga_pkg.vhd \
             $(RTL)/ram_pkg.vhd \
             $(RTL)/vga_clk_div.vhd \
@@ -229,29 +229,51 @@ sim_mem_addr_control: clean_mem_addr_control compile_mem_addr_control
 	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_mem_addr_ctrl --stop-time=200ms --wave=tb_vga_mem_addr_ctrl.ghw && \
 	gtkwave tb_vga_mem_addr_ctrl.ghw -c 16
 
-# MEM BUFF TESTING #################################################
-.PHONY: sim_mem_buff
-sim_mem_buff: clean_mem_buff compile_mem_buff
+# MEM BUFF TESTING #############################################################
+### TESTING GHDL FLOW ==========================================================
+.PHONY: sim_mem_buff_ghdl
+sim_mem_buff_ghdl: clean_mem_buff_ghdl compile_mem_buff_ghdl
 	cd mem_buff && \
 	$(GHDL_CMD) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_buff.vhd && \
 	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_mem_buff --stop-time=50ms --wave=tb_vga_mem_buff.ghw && \
 	gtkwave tb_vga_mem_buff.ghw -c 16
 
-.PHONY: compile_mem_buff
-compile_mem_buff: clean_mem_buff
+.PHONY: compile_mem_buff_ghdl
+compile_mem_buff_ghdl: clean_mem_buff_ghdl
 	@mkdir -p mem_buff && cd mem_buff && \
 	$(GHDL_CMD) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
 	                           ../$(RTL)/vga_mem_buff.vhd
 
+.PHONY: clean_mem_buff_ghdl
+clean_mem_buff_ghdl:
+	rm -rf ./mem_buff
+
+.PHONY: check_mem_buff_ghdl
+check_mem_buff_ghdl:
+	$(GHDL_CMD) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
+	                           $(RTL)/vga_mem_buff.vhd \
+												     $(TB)/tb_vga_mem_buff.vhd
+### QUESTA FLOW ================================================================
+.PHONY: sim_mem_buff_gui
+sim_mem_buff_gui: compile_mem_buff
+	cd mem_buff && \
+	$(MSIM_CMD)/vsim -voptargs="+acc" tb_vga_mem_buff -do \
+	"add wave -position insertpoint sim:/tb_vga_mem_buff/i_dut/*; run 100us"
+
+.PHONY: compile_mem_buff
+compile_mem_buff: clean_mem_buff
+	mkdir -p mem_buff && cd mem_buff && \
+	$(MSIM_CMD)/vlib vga_lib && $(MSIM_CMD)/vmap work vga_lib && \
+	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
+	                                                        $(RTL)/vga_mem_buff.vhd \
+												                                  $(TB)/tb_vga_mem_buff.vhd \
+																													&& \
+	$(MSIM_CMD)/vlog -sv -pedanticerrors $(RTL)/xilinx_dp_BRAM.sv
+
+
 .PHONY: clean_mem_buff
 clean_mem_buff:
-	rm -rf ./mem_addr_control
-
-.PHONY: check_mem_buff
-check_mem_buff:
-	$(GHDL_CMD) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
-	                       $(RTL)/vga_mem_buff.vhd \
-												 $(TB)/tb_vga_mem_buff.vhd
+	rm -rf ./mem_buff
 
 # FPGA BUILD ###################################################################
 

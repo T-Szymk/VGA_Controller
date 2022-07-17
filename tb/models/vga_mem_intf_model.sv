@@ -102,7 +102,7 @@ pxl_width_c matches in vga_pkg.vhd */
   `ifdef MONO
     parameter INIT_FILE = "../../build/RAM_INIT_monochrome.mem";
   `else  
-    parameter INIT_FILE = "../../build/RAM_INIT_rgb.mem";
+    parameter INIT_FILE = "../../supporting_apps/mem_file_gen/mem_file.mem";
   `endif
 
 /******************************************************************************/
