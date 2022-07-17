@@ -138,7 +138,7 @@ begin --------------------------------------------------------------------------
         -- buffers. 
         -- One buffer is loaded while the other buffer is read out. Once all
         -- pixels have been read out of the other buffer, the roles switch and the
-        -- formally read buffer is now loaded.
+        -- previously read buffer is now loaded.
 
           if (buff_filled_r(buff_wr_sel_r) = '0') AND 
              (disp_pxl_ctr_int_s = 0) then 
@@ -150,7 +150,7 @@ begin --------------------------------------------------------------------------
 
           elsif (disp_pxl_ctr_int_s = pxl_per_row_c - 2) then
             -- ensure memory signals are set in the last pixel so that data is 
-            --  available to be read once the pixel counter resets. 
+            -- available to be read once the pixel counter resets. 
             mem_ren_r <= '1';
             
             -- check for overflows before incrementing the memory counter

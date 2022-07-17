@@ -125,6 +125,10 @@ pxl_width_c matches in vga_pkg.vhd */
 
   logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_s;
   logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_s;
+
+  logic [MEM_ADDR_WIDTH-1:0] mem_addr_s;
+  logic [MEM_WIDTH-1:0]      mem_data_s;
+  logic mem_read_en_s;
   
   // variables used as golden reference
   logic                      blank_golden_s;
@@ -443,35 +447,36 @@ pxl_width_c matches in vga_pkg.vhd */
   );
 
   /* Memory Buffers */
-  //mem_buff_sv (
-  //  .clk_i           (),
-  //  .rstn_i          (), 
-  //  .disp_addr_ctr_i (),          
-  //  .disp_pxl_ctr_i  (),         
-  //  .mem_data_i      (),     
-  //  .mem_addr_o      (),     
-  //  .disp_blank_o    (),       
-  //  .disp_pxl_o      ()    
-  //);
+  vga_mem_buff i_vga_mem_buff (
+    .clk_i           (clk_px_s),
+    .rstn_i          (rst_sync_s), 
+    .disp_addr_ctr_i (mem_addr_ctr_s),          
+    .disp_pxl_ctr_i  (mem_pxl_ctr_s),         
+    .mem_data_i      (mem_data_s),     
+    .mem_addr_o      (mem_addr_s),
+    .mem_ren_o       (mem_read_en_s),     
+    .disp_blank_o    (blank_s), // not currently implemented    
+    .disp_pxl_o      (mem_pxl_s)    
+  );
 
   /* Memory Module */
-  //xilinx_dp_BRAM_sv #(
-  //  .RAM_WIDTH(MEM_WIDTH),
-  //  .RAM_DEPTH(MEM_DEPTH),
-  //  .INIT_FILE("")
-  //) i_xilinx_dp_bram (
-  //  .addra (),      
-  //  .addrb (),      
-  //  .dina  (),     
-  //  .dinb  (),     
-  //  .clka  (),     
-  //  .wea   (),    
-  //  .web   (),    
-  //  .ena   (),    
-  //  .enb   (),    
-  //  .douta (),      
-  //  .doutb ()  
-  //);
+  xilinx_true_dual_port_read_first_1_clock_ram #(
+    .RAM_WIDTH(MEM_WIDTH),
+    .RAM_DEPTH(MEM_DEPTH),
+    .INIT_FILE(INIT_FILE)
+  ) i_xilinx_dp_bram (
+    .addra (mem_addr_s),      
+    .addrb ('0),      
+    .dina  ('0),     
+    .dinb  ('0),     
+    .clka  (clk_px_s),     
+    .wea   ('0),    
+    .web   ('0),    
+    .ena   (mem_read_en_s),    
+    .enb   ('0),    
+    .douta (mem_data_s),      
+    .doutb ()  // not used
+  );
 
 /******************************************************************************/
 /* DPI Function Management                                                    */

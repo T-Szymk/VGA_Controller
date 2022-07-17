@@ -170,8 +170,10 @@ compile_mem_intf_model: clean_mem_intf_model
 						                                              $(RTL)/vga_mem_buff.vhd \
 						                                              $(RTL)/xilinx_dp_BRAM.vhd \
 						                                              $(RTL)/rst_sync.vhd && \
-	$(MSIM_CMD)/vlog -dpiheader ../../tb/models/dpi/includes/dpiheader.h -sv -pedanticerrors $(TB)/models/vga_mem_intf_model.sv && \
-	$(MSIM_CMD)/vlog ../../tb/models/dpi/src/vga_dpi.c
+	$(MSIM_CMD)/vlog -dpiheader $(TB)/models/dpi/includes/dpiheader.h \
+	                 -sv -pedanticerrors $(RTL)/xilinx_dp_BRAM.sv \
+									 $(TB)/models/vga_mem_intf_model.sv && \
+	$(MSIM_CMD)/vlog $(TB)/models/dpi/src/vga_dpi.c
 
 .PHONY: sim_mem_intf_model
 sim_mem_intf_model: compile_mem_intf_model
