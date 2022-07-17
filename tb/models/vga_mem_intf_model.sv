@@ -22,7 +22,7 @@ module vga_model;
 /* define for monochrome display, comment out for colour and make sure 
 pxl_width_c matches in vga_pkg.vhd */
 //`define MONO 1
-`define USE_SIMULATOR 1
+//`define USE_SIMULATOR 1
 
   timeunit 1ns/1ps; 
 
@@ -208,7 +208,7 @@ pxl_width_c matches in vga_pkg.vhd */
   generate
     if (INIT_FILE != "") begin: use_init_file
       initial
-        $readmemh(INIT_FILE, mem_arr_model, 0, MEM_DEPTH-1);
+        $readmemb(INIT_FILE, mem_arr_model, 0, MEM_DEPTH-1);
     end else begin: init_bram_to_zero
       integer ram_index;
       initial
@@ -238,21 +238,16 @@ pxl_width_c matches in vga_pkg.vhd */
   initial begin 
     
     fork
-      /*********/
-      begin 
-        forever begin 
-          run_mem_addr_ctrl_model(rst_sync_s, pxl_ctr_s, line_ctr_s, 
-                                  mem_addr_ctr_golden_s, mem_pxl_ctr_golden_s);
-        end
-      end 
-       /*********/
       begin
         
         forever begin
-           // only run mem_buff once mem_addr_ctrl has run
-           @(mem_ctrl_done);
-           run_mem_buff_model(rst_sync_s, mem_addr_ctr_golden_s, mem_pxl_ctr_golden_s, 
-                              blank_golden_s, mem_pxl_golden_s);
+          @(posedge vga_model.clk_px_s);
+          // only run mem_buff once mem_addr_ctrl has run
+          run_mem_addr_ctrl_model(rst_sync_s, pxl_ctr_s, line_ctr_s, 
+                                   mem_addr_ctr_golden_s, mem_pxl_ctr_golden_s);
+          //@(mem_ctrl_done);
+          run_mem_buff_model(rst_sync_s, mem_addr_ctr_golden_s, mem_pxl_ctr_golden_s, 
+                             blank_golden_s, mem_pxl_golden_s);
         end
       end
        /*********/
@@ -296,48 +291,53 @@ pxl_width_c matches in vga_pkg.vhd */
 /******************************************************************************/
 
   // memory address controller model
-  task static run_mem_addr_ctrl_model (
-    input  bit                      rstn_i,
-    input  bit [PXL_CTR_WIDTH-1:0]  pxl_ctr_i,
-    input  bit [LN_CTR_WIDTH-1:0]   line_ctr_i,
-    inout  bit [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_o,
-    inout  bit [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_o
+  task automatic run_mem_addr_ctrl_model (
+    ref    logic                      rstn_i,
+    ref    logic [PXL_CTR_WIDTH-1:0]  pxl_ctr_i,
+    ref    logic [LN_CTR_WIDTH-1:0]   line_ctr_i,
+    output logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_o,
+    output logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_o
   );
     begin
 
+      static logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_s;
+      static logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_s;
+
       if(!rstn_i) begin
         
-        mem_addr_ctr_o = '0; 
-        mem_pxl_ctr_o  = '0;
+        mem_addr_ctr_s = '0; 
+        mem_pxl_ctr_s  = '0;
         #1;
 
       end else begin
-
-        @(posedge vga_model.clk_px_s); 
       
         if((line_ctr_i >= (V_B_PORCH_MAX_LNS)) && 
            (line_ctr_i < V_DISP_MAX_LNS) &&
            (pxl_ctr_i >= (H_B_PORCH_MAX_PX)) &&
            (pxl_ctr_i < H_DISP_MAX_PX)) begin
 
-          if(mem_pxl_ctr_o == (PXL_PER_ROW-1)) begin
+          if(mem_pxl_ctr_s == (PXL_PER_ROW-1)) begin
 
-            mem_pxl_ctr_o <= '0;
+            mem_pxl_ctr_s = '0;
 
-            if(mem_addr_ctr_o == (MEM_DEPTH-1)) begin 
-              mem_addr_ctr_o <= '0;
+            if(mem_addr_ctr_s == (MEM_DEPTH-1)) begin 
+              mem_addr_ctr_s = '0;
             end else begin 
-              mem_addr_ctr_o <= mem_addr_ctr_o + 1;
+              mem_addr_ctr_s = mem_addr_ctr_s + 1;
             end
 
           end else begin
 
-            mem_pxl_ctr_o <= mem_pxl_ctr_o + 1;
+            mem_pxl_ctr_s = mem_pxl_ctr_s + 1;
 
           end
 
         end
       end
+      
+      mem_pxl_ctr_o  = mem_pxl_ctr_s;
+      mem_addr_ctr_o = mem_addr_ctr_s;
+
     end
     // event to synchronise execution of mem_buff task
     -> mem_ctrl_done;
