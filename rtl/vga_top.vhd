@@ -32,7 +32,8 @@
 -- 2021-12-12  1.6      TZS     Added test pattern generator      
 -- 2022-06-26  1.7      TZS     Tidied up formatting in module.
 --                              Added reset synchroniser
---                              Added switch for test pattern                          
+--                              Added switch for test pattern
+-- 2022-07-19 1.8       TZS     Added input debouncer and updated connections                     
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -41,14 +42,16 @@ use work.vga_pkg.all;
 entity vga_top is
   generic (
     -- 1 for simulation, 0 for synthesis
-    CONF_SIM       : integer := 1
+    CONF_SIM       : integer := 0;
+    INIT_FILE      : string  := "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem"
   );
   port (
     -- clock and asynch reset
     clk_i  : in std_logic;
     rstn_i : in std_logic;
     -- io
-    sw_0_i : in std_logic;
+    sw_0_i      : in std_logic;
+    rst_led_o   : out std_logic;
     -- VGA signals
     v_sync_out  : out std_logic;
     h_sync_out  : out std_logic;
@@ -83,7 +86,8 @@ ARCHITECTURE structural of vga_top IS
     port (
       clk_i      : in  std_logic;
       rstn_i     : in  std_logic;
-      clk_px_out : out std_logic
+      locked_o   : out std_logic;
+      clk_px_o   : out std_logic
     );
   end component; -- for fpga ****
 
@@ -97,6 +101,18 @@ ARCHITECTURE structural of vga_top IS
       sync_rstn_o : out std_logic
     );
     end component;
+
+    component input_dbounce
+      generic (
+        dbounce_counter_g : integer   := 10;
+        init_value_g      : std_logic := '0'
+      );
+      port (
+        clk_i    : in  std_logic;
+        signal_i : in  std_logic;
+        signal_o : out std_logic 
+      );
+      end component;
 
   -- counter to generate pixel and line counter values
 
@@ -133,6 +149,9 @@ ARCHITECTURE structural of vga_top IS
   end component;
 
   component vga_memory_intf is 
+    generic (
+      INIT_FILE : string := "../supporting_apps/mem_file_gen/mem_file.mem"
+    );
     port (
       clk_i        : in  std_logic;
       rstn_i       : in  std_logic;
@@ -158,12 +177,14 @@ ARCHITECTURE structural of vga_top IS
 
   -- intermediate signals between components
   signal rst_sync_s     : std_logic;
+  signal rst_int_s      : std_logic;
   signal pxl_clk_s      : std_logic;
   signal v_sync_s       : std_logic;
   signal h_sync_s       : std_logic;
   signal colr_en_s      : std_logic;
   signal blank_s        : std_logic;
   signal mem_blank_s    : std_logic;
+  signal test_switch_s  : std_logic;
   signal pxl_ctr_s      : std_logic_vector((pxl_ctr_width_c - 1) downto 0);
   signal line_ctr_s     : std_logic_vector((line_ctr_width_c - 1) downto 0);
   signal test_pxl_s     : pixel_t;
@@ -185,13 +206,16 @@ BEGIN --------------------------------------------------------------------------
         clk_px_out  => pxl_clk_s
       ); 
 
+      rst_int_s <= rstn_i;
+
   else generate ---------------------------------------------------------------- 
       
     i_clk_gen : clk_gen 
       port map (
       	clk_i      => clk_i,
       	rstn_i     => rstn_i,
-      	clk_px_out => pxl_clk_s
+        locked_o   => rst_int_s,
+      	clk_px_o   => pxl_clk_s
       );
 
   end generate gen_clk_src; -- Used in synthesis -------------------------------
@@ -202,8 +226,19 @@ BEGIN --------------------------------------------------------------------------
     )
     port map (
       clk_i       => pxl_clk_s,
-      rstn_i      => rstn_i,
+      rstn_i      => rst_int_s,
       sync_rstn_o => rst_sync_s
+    );
+
+  i_input_debounce : input_dbounce
+    generic map (
+      dbounce_counter_g => 100,
+      init_value_g      => '0'
+    )
+    port map (
+      clk_i    => pxl_clk_s,
+      signal_i => sw_0_i,
+      signal_o => test_switch_s
     );
 
   i_vga_pxl_counter : vga_pxl_counter
@@ -233,6 +268,9 @@ BEGIN --------------------------------------------------------------------------
     );
 
   i_vga_memory_intf : vga_memory_intf
+    generic map (
+      INIT_FILE => INIT_FILE
+    )
     port map (
       clk_i        => pxl_clk_s,
       rstn_i       => rst_sync_s,
@@ -246,12 +284,14 @@ BEGIN --------------------------------------------------------------------------
     port map (
       test_colr_i => test_pxl_s,
       mem_colr_i  => mem_pxl_s,
-      en_i        => sw_0_i,
+      en_i        => test_switch_s,
       blank_i     => blank_s,
       colr_out    => disp_pxl_s
     );
 
   blank_s <= colr_en_s or mem_blank_s;
+
+  rst_led_o <= rstn_i;
 
    -- output assignments
   v_sync_out <= v_sync_s;

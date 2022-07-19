@@ -164,8 +164,12 @@ begin --------------------------------------------------------------------------
           -- status of the previously read buffer to indicate it should now be 
           -- treated as "empty"
           elsif (disp_pxl_ctr_int_s = pxl_per_row_c - 1) then
-
-            buff_wr_sel_r <= 1 when buff_wr_sel_r = 0 else 0;
+            
+            if buff_wr_sel_r = 0 then 
+              buff_wr_sel_r <= 1;
+            else   
+              buff_wr_sel_r <= 0;
+            end if;
           
             buff_filled_r(buff_rd_sel_s) <= '0';
         

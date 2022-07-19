@@ -9,7 +9,7 @@ MEMORY_WIDTH = PIXELS_PER_LINE * PIXEL_WIDTH
 MEMORY_DEPTH = math.ceil((HEIGHT * WIDTH) / PIXELS_PER_LINE)
 
 
-def write_mem():
+def write_mem_incrementing():
     with open("mem_file.mem", 'w') as file:
         file.write("@000\n")
         for line in range(0, MEMORY_DEPTH):
@@ -19,4 +19,4 @@ def write_mem():
             file.write(tmp_binary + "\n")
 
 if __name__ == '__main__':
-    write_mem()
+    write_mem_incrementing()

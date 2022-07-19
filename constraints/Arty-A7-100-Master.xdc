@@ -4,15 +4,47 @@
 ## - rename the used ports (in each line, after get_ports) according to the top level signal names in the project
 
 ## Clock signal
-set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports clk]
-create_clock -period 10.000 -name clk -waveform {0.000 5.000} -add [get_ports clk]
+#set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports clk_i]
+#create_clock -period 10.000 -name clk -waveform {0.000 5.000} -add [get_ports clk]
 
 # Remove async inputs from timing
-set_false_path -from [get_ports rst_n]
+set_false_path -from [get_ports rstn_i]
+set_false_path -from [get_ports sw_0_i]
 
-create_generated_clock -name v_sync_clk_div -source [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0] -divide_by 2 [get_pins i_vga_controller/v_sync_r_reg/Q]
+set_false_path -to [get_ports rst_led_o]
 
-set_property -dict {PACKAGE_PIN A10 IOSTANDARD LVCMOS33} [get_ports rst_n]
+# get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -max 5.000 [get_ports g_colr_out[*]]
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -min 0.000 [get_ports g_colr_out[*]]
+
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -max 5.000 [get_ports r_colr_out[*]]
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -min 0.000 [get_ports r_colr_out[*]]
+
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -max 5.000 [get_ports b_colr_out[*]]
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -min 0.000 [get_ports b_colr_out[*]]
+
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -max 5.000 [get_ports h_sync_out]
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -min 0.000 [get_ports h_sync_out]
+
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -max 5.000 [get_ports v_sync_out]
+set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+  -min 0.000 [get_ports v_sync_out]
+
+set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports clk_i]
+
+set_property -dict {PACKAGE_PIN A10 IOSTANDARD LVCMOS33} [get_ports rstn_i]
+set_property -dict {PACKAGE_PIN A8 IOSTANDARD LVCMOS33} [get_ports {sw_0_i}]
+
+set_property -dict { PACKAGE_PIN H5 IOSTANDARD LVCMOS33 } [get_ports { rst_led_o }];
 
 set_property -dict {PACKAGE_PIN E15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[0]}]
 set_property -dict {PACKAGE_PIN E16 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[1]}]

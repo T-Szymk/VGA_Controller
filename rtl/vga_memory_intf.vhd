@@ -16,12 +16,16 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2022-06-26  1.0      TZS     Created
+-- 2022-07-19  1.1      TZS     Added generic for INIT_FILE
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.ALL;
 use work.vga_pkg.all;
 
 entity vga_memory_intf is 
+  generic (
+    INIT_FILE : string := "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem"
+  );
   port (
     clk_i        : in  std_logic;
     rstn_i       : in  std_logic;
@@ -52,34 +56,35 @@ architecture rtl of vga_memory_intf is
   component vga_mem_buff is 
     port (
       clk_i           : in  std_logic;
-      rstn_i          : in  std_logic;
+      rstn_i          : in  std_logic; -- reset MUST be synchronous
       disp_addr_ctr_i : in  std_logic_vector(mem_addr_width_c-1 downto 0);
       disp_pxl_ctr_i  : in  std_logic_vector(row_ctr_width_c-1 downto 0);
       mem_data_i      : in  std_logic_vector(mem_row_width_c-1 downto 0);
       mem_addr_o      : out std_logic_vector(mem_addr_width_c-1 downto 0);
+      mem_ren_o       : out std_logic;
       disp_blank_o    : out std_logic;
       disp_pxl_o      : out pixel_t
     );
   end component;
 
-  component xilinx_dp_BRAM is
+  component xilinx_true_dual_port_read_first_1_clock_ram is
     generic (
-      RAM_WIDTH       : integer := 18;           -- Specify RAM data width
-      RAM_DEPTH       : integer := 1024;         -- Specify RAM depth (number of entries)
-      INIT_FILE       : string := ""             -- Specify name/location of RAM initialization file if using one (leave blank if not)
+      RAM_WIDTH       : integer := 18;           
+      RAM_DEPTH       : integer := 1024;         
+      INIT_FILE       : string := ""             
     );
     port (
-      addra  : in  std_logic_vector(mem_addr_width_c-1 downto 0); -- Port A Address bus, width determined from RAM_DEPTH
-      addrb  : in  std_logic_vector(mem_addr_width_c-1 downto 0); -- Port B Address bus, width determined from RAM_DEPTH
-      dina   : in  std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port A RAM input data
-      dinb   : in  std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port B RAM input data
-      clka   : in  std_logic;                                        -- Clock
-      wea    : in  std_logic;                                        -- Port A Write enable
-      web    : in  std_logic;                                        -- Port B Write enable
-      ena    : in  std_logic;                                        -- Port A RAM Enable, for additional power savings, disable port when not in use
-      enb    : in  std_logic;                                        -- Port B RAM Enable, for additional power savings, disable port when not in use
-      douta  : out std_logic_vector(RAM_WIDTH-1 downto 0);           -- Port A RAM output data
-      doutb  : out std_logic_vector(RAM_WIDTH-1 downto 0)            -- Port B RAM output data
+      addra  : in  std_logic_vector(mem_addr_width_c-1 downto 0); 
+      addrb  : in  std_logic_vector(mem_addr_width_c-1 downto 0); 
+      dina   : in  std_logic_vector(RAM_WIDTH-1 downto 0);        
+      dinb   : in  std_logic_vector(RAM_WIDTH-1 downto 0);        
+      clka   : in  std_logic;                                     
+      wea    : in  std_logic;                                     
+      web    : in  std_logic;                                     
+      ena    : in  std_logic;                                     
+      enb    : in  std_logic;                                     
+      douta  : out std_logic_vector(RAM_WIDTH-1 downto 0);        
+      doutb  : out std_logic_vector(RAM_WIDTH-1 downto 0)         
     );
   end component;
     
@@ -88,6 +93,7 @@ architecture rtl of vga_memory_intf is
   signal mem_data_s     : std_logic_vector(mem_row_width_c-1 downto 0);
   signal mem_addr_s     : std_logic_vector(mem_addr_width_c-1 downto 0);
   signal disp_blank_s   : std_logic;
+  signal mem_ren_s      : std_logic;
   signal disp_pxl_s     : pixel_t;
 
 begin --------------------------------------------------------------------------
@@ -113,15 +119,16 @@ begin --------------------------------------------------------------------------
       disp_pxl_ctr_i  => mem_pxl_ctr_s,
       mem_data_i      => mem_data_s,
       mem_addr_o      => mem_addr_s,
+      mem_ren_o       => mem_ren_s,
       disp_blank_o    => disp_blank_s,
       disp_pxl_o      => disp_pxl_s
     );
     -- read only BRAM
-    i_xilinx_dp_ram : xilinx_dp_BRAM
+    i_xilinx_dp_ram : xilinx_true_dual_port_read_first_1_clock_ram
       generic map (
-        RAM_WIDTH => mem_row_width_c, -- Specify RAM data width
-        RAM_DEPTH => mem_depth_c,     -- Specify RAM depth (number of entries)
-        INIT_FILE => ""   -- Specify name/location of RAM initialization file if using one (leave blank if not)
+        RAM_WIDTH => mem_row_width_c, 
+        RAM_DEPTH => mem_depth_c,     
+        INIT_FILE => INIT_FILE
       )
       port map (
         addra  => mem_addr_s,
@@ -131,7 +138,7 @@ begin --------------------------------------------------------------------------
         clka   => clk_i,
         wea    => '0',
         web    => '0',
-        ena    => '1',
+        ena    => mem_ren_s,
         enb    => '0',
         douta  => mem_data_s,
         doutb  => open
