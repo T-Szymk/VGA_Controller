@@ -22,7 +22,7 @@ module vga_model;
 /* define for monochrome display, comment out for colour and make sure 
 pxl_width_c matches in vga_pkg.vhd */
 //`define MONO 1
-//`define USE_SIMULATOR 1
+`define USE_SIMULATOR 1
 
   timeunit 1ns/1ps; 
 
@@ -35,6 +35,12 @@ pxl_width_c matches in vga_pkg.vhd */
 /******************************************************************************/
 /* PARAMETERS                                                                 */
 /******************************************************************************/
+
+  `ifdef MONO
+    parameter INIT_FILE = "../../build/RAM_INIT_monochrome.mem";
+  `else  
+    parameter INIT_FILE = "../../supporting_apps/mem_file_gen/finland_flag.mem";
+  `endif
 
   parameter SIMULATION_RUNTIME = 1s;
 
@@ -98,12 +104,6 @@ pxl_width_c matches in vga_pkg.vhd */
   parameter LN_CTR_WIDTH   = $clog2(LINE_CTR_MAX - 1);
   parameter ROW_CTR_WIDTH  = $clog2(PXL_PER_ROW - 1);
   parameter DISP_CTR_WIDTH = $clog2(DISP_PXL_MAX - 1);
-
-  `ifdef MONO
-    parameter INIT_FILE = "../../build/RAM_INIT_monochrome.mem";
-  `else  
-    parameter INIT_FILE = "../../supporting_apps/mem_file_gen/mem_file.mem";
-  `endif
 
 /******************************************************************************/
 /* VARIABLES AND TYPE DEFINITIONS                                             */
@@ -224,7 +224,7 @@ pxl_width_c matches in vga_pkg.vhd */
     clk_s  = 0;
     rstn_s = 0;
 
-    test_switch_s = 0; // 1 = use memory, 0 = use pattern generator
+    test_switch_s = 1; // 1 = use memory, 0 = use pattern generator
     // release reset 10 cycles after start of simulation
     #(10 * TOP_CLK_PERIOD_NS) rstn_s = 1; 
   end

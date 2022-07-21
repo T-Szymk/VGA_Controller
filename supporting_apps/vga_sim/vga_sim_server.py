@@ -54,9 +54,9 @@ def process_data(data, line, vga_sim_obj):
     line_arr = []
     for pxl_id in range(0, vga_sim_obj.width):
         tmp_pxl = int.from_bytes(data[(3*pxl_id):(3*pxl_id)+3], "little")
-        r = tmp_pxl & 255
+        b = tmp_pxl & 255
         g = (tmp_pxl >> 8) & 255
-        b = (tmp_pxl >> 16) & 255
+        r = (tmp_pxl >> 16) & 255
         vga_sim_obj.set_pxl(pxl_id, line, (r, g, b))
     vga_sim_obj.update_display()
 

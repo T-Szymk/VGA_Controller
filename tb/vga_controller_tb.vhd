@@ -16,7 +16,8 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2021-08-28  1.0      TZS     Created
--- 2021-12-11  1.1      TZS     Modified to use external counter module
+-- 2021-12-11  1.1      TZS     Modified to use external counter modul
+-- 2022-07-19  1.2      TZS     Updated signal names to match latest DUT
 --------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
@@ -50,8 +51,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   COMPONENT vga_pxl_counter
     PORT (
-      clk        : IN STD_LOGIC;
-      rst_n      : IN STD_LOGIC;
+      clk_i      : IN STD_LOGIC;
+      rstn_i     : IN STD_LOGIC;
       
       pxl_ctr_o  : OUT STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
       line_ctr_o : OUT STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0)
@@ -60,8 +61,8 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   COMPONENT vga_controller IS -- DUT
     PORT (
-      clk        : IN STD_LOGIC;
-      rst_n      : IN STD_LOGIC;
+      clk_i      : IN STD_LOGIC;
+      rstn_i     : IN STD_LOGIC;
       pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
       line_ctr_i : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
 
@@ -208,16 +209,16 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   i_vga_pxl_counter : vga_pxl_counter
     PORT MAP (
-      clk        => clk,
-      rst_n      => rst_n,
+      clk_i      => clk,
+      rstn_i     => rst_n,
       pxl_ctr_o  => pxl_ctr_s,
       line_ctr_o => line_ctr_s
     );
 
   i_DUT : vga_controller  
     PORT MAP (
-      clk         => clk,
-      rst_n       => rst_n,
+      clk_i       => clk,
+      rstn_i      => rst_n,
       pxl_ctr_i   => pxl_ctr_s,  
       line_ctr_i  => line_ctr_s,
 
