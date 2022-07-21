@@ -9,8 +9,8 @@ PIXELS_PER_LINE = 8
 MEMORY_WIDTH = PIXELS_PER_LINE * PIXEL_WIDTH
 MEMORY_DEPTH = math.ceil((HEIGHT * WIDTH) / PIXELS_PER_LINE)
 
-IMAGE_NAME = "finland_flag"
-IMAGE_EXT = ".png"
+IMAGE_NAME = "floral"
+IMAGE_EXT = ".jpg"
 IMAGE_PATH = f"/home/tom/Pictures/{IMAGE_NAME}{IMAGE_EXT}"
 print(IMAGE_PATH)
 OUTPUT_FILENAME = IMAGE_NAME
@@ -36,7 +36,8 @@ def write_arr2mem(mem_arr, depth, output_filename):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    image = vga.VGAImage(HEIGHT, WIDTH, IMAGE_PATH)
+    image = vga.VGAImage(HEIGHT, WIDTH, IMAGE_PATH, False, 0, 0)
+    image.show_image()
     image.show_comp_image()
     mem_arr = vga.MemArray(PIXELS_PER_LINE, image.width, image.height, image.get_mem_pxl_array())
     write_arr2mem(mem_arr.get_mem_arr(), MEMORY_DEPTH, OUTPUT_FILENAME)

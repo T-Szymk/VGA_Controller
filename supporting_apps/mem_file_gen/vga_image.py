@@ -3,15 +3,18 @@ from PIL import Image
 
 class VGAImage:
 
-    def __init__(self, height, width, image_name):
+    def __init__(self, height, width, image_name, crop=False, crop_x=0, crop_y = 0):
 
         # used to affect the scaling threshold used for compression
-        white_factor = 1
+        white_factor = 1.2
 
         self.height = height
         self.width = width
-        self.image = Image.open(image_name).resize((self.width, self.height))
-        self.comp_image = Image.new("RGBA", (640, 480), 0)
+        if crop == False:
+            self.image = Image.open(image_name).resize((self.width, self.height))
+        else:
+            self.image = Image.open(image_name).crop((crop_x, crop_y, crop_x + width, crop_y + height));
+        self.comp_image = Image.new("RGBA", (width, height), 0)
         self.orig_pxl_arr = []
         self.mem_pxl_arr = []
 
@@ -22,12 +25,12 @@ class VGAImage:
                 # iterate through pixels
                 tmp_pxl = self.image.getpixel((x, y))  # take pixel
                 # try to normalise the RGB pixel values
-                tmp_mem_pxl = (round(tmp_pxl[0]/(255 * white_factor)),
-                               round(tmp_pxl[1]/(255 * white_factor)),
-                               round(tmp_pxl[2]/(255 * white_factor)))
-                tmp_comp_pxl = (round(tmp_pxl[0]/(255 * white_factor)) * 255,
-                                round(tmp_pxl[1]/(255 * white_factor)) * 255,
-                                round(tmp_pxl[2]/(255 * white_factor)) * 255, 255)
+                tmp_mem_pxl = (round((tmp_pxl[0]  * white_factor) / 255 ),
+                               round((tmp_pxl[1]  * white_factor) / 255 ),
+                               round((tmp_pxl[2]  * white_factor) / 255 ))
+                tmp_comp_pxl = (round((tmp_pxl[0] * white_factor) / 255 ) * 255,
+                                round((tmp_pxl[1] * white_factor) / 255 ) * 255,
+                                round((tmp_pxl[2] * white_factor) / 255 ) * 255, 255)
                 tmp_orig_pxl_arr.append(tmp_pxl)
                 self.mem_pxl_arr.append(tmp_mem_pxl)
                 # create an image using the compressed pixel values
@@ -67,7 +70,7 @@ class MemArray:
 
 if __name__ == "__main__":
 
-    test_image = VGAImage(480, 640, "/home/tom/Pictures/james_webb_first.png")
+    test_image = VGAImage(480, 640, "/home/tom/Pictures/james_webb_first.png", True, 750, 750)
     test_mem_arr = MemArray(8, test_image.width, test_image.height, test_image.get_mem_pxl_array())
 
     test_image.show_image()
