@@ -22,22 +22,16 @@ module xilinx_true_dual_port_read_first_1_clock_ram #(
   parameter RAM_DEPTH = 1024,                     // Specify RAM depth (number of entries)
   parameter INIT_FILE = "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem" // Specify name/location of RAM initialization file if using one (leave blank if not)
 ) (
-  input [$clog2(RAM_DEPTH-1)-1:0] addra,  // Port A address bus, width determined from RAM_DEPTH
-  input [$clog2(RAM_DEPTH-1)-1:0] addrb,  // Port B address bus, width determined from RAM_DEPTH
-  input [RAM_WIDTH-1:0] dina,           // Port A RAM input data
-  input [RAM_WIDTH-1:0] dinb,           // Port B RAM input data
-  input clka,                           // Clock
-  input wea,                            // Port A write enable
-  input web,                            // Port B write enable
-  input ena,                            // Port A RAM Enable, for additional power savings, disable port when not in use
-  input enb,                            // Port B RAM Enable, for additional power savings, disable port when not in use
-  output [RAM_WIDTH-1:0] douta,         // Port A RAM output data
-  output [RAM_WIDTH-1:0] doutb          // Port B RAM output data
+  input  logic [$clog2(RAM_DEPTH-1)-1:0] addra,  // Port A address bus, width determined from RAM_DEPTH
+  input  logic [RAM_WIDTH-1:0] dina,           // Port A RAM input data
+  input  logic clka,                           // Clock
+  input  logic wea,                            // Port A write enable
+  input  logic ena,                            // Port A RAM Enable, for additional power savings, disable port when not in use
+  input  logic rst,
+  output logic [RAM_WIDTH-1:0] douta          // Port A RAM output data
 );
 
   logic [RAM_WIDTH-1:0] BRAM [RAM_DEPTH-1:0];
-  logic [RAM_WIDTH-1:0] ram_data_a = {RAM_WIDTH{1'b0}};
-  logic [RAM_WIDTH-1:0] ram_data_b = {RAM_WIDTH{1'b0}};
 
   // The following code either initializes the memory values to a specified file or to all zeros to match hardware
   generate
@@ -52,21 +46,15 @@ module xilinx_true_dual_port_read_first_1_clock_ram #(
     end
   endgenerate
 
-  always @(posedge clka)
+  always @(posedge clka) begin
     if (ena) begin
       if (wea)
         BRAM[addra] <= dina;
-      ram_data_a <= BRAM[addra];
+      if (rst)
+        douta <= 0;
+      else 
+        douta <= BRAM[addra];
     end
-
-  always @(posedge clka)
-    if (enb) begin
-      if (web)
-        BRAM[addrb] <= dinb;
-      ram_data_b <= BRAM[addrb];
-    end
-
-  assign douta = ram_data_a;
-  assign doutb = ram_data_b;
+  end
 
 endmodule

@@ -75,16 +75,12 @@ architecture rtl of vga_memory_intf is
     );
     port (
       addra  : in  std_logic_vector(mem_addr_width_c-1 downto 0); 
-      addrb  : in  std_logic_vector(mem_addr_width_c-1 downto 0); 
-      dina   : in  std_logic_vector(RAM_WIDTH-1 downto 0);        
-      dinb   : in  std_logic_vector(RAM_WIDTH-1 downto 0);        
+      dina   : in  std_logic_vector(RAM_WIDTH-1 downto 0);               
       clka   : in  std_logic;                                     
-      wea    : in  std_logic;                                     
-      web    : in  std_logic;                                     
-      ena    : in  std_logic;                                     
-      enb    : in  std_logic;                                     
-      douta  : out std_logic_vector(RAM_WIDTH-1 downto 0);        
-      doutb  : out std_logic_vector(RAM_WIDTH-1 downto 0)         
+      wea    : in  std_logic;                                                                          
+      ena    : in  std_logic;
+      rst    : in  std_logic;                                                                          
+      douta  : out std_logic_vector(RAM_WIDTH-1 downto 0)                
     );
   end component;
     
@@ -132,16 +128,12 @@ begin --------------------------------------------------------------------------
       )
       port map (
         addra  => mem_addr_s,
-        addrb  => (others => '0'),
         dina   => (others => '0'),
-        dinb   => (others => '0'),
         clka   => clk_i,
         wea    => '0',
-        web    => '0',
         ena    => mem_ren_s,
-        enb    => '0',
-        douta  => mem_data_s,
-        doutb  => open
+        rst    => '0',
+        douta  => mem_data_s
       );
 
   disp_blank_o <= disp_blank_s;

@@ -43,7 +43,7 @@ entity vga_top is
   generic (
     -- 1 for simulation, 0 for synthesis
     CONF_SIM       : integer := 0;
-    INIT_FILE      : string  := "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/testcard.mem"
+    INIT_FILE      : string  := "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/gb.mem"
   );
   port (
     -- clock and asynch reset

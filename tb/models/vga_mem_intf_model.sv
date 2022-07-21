@@ -465,17 +465,13 @@ pxl_width_c matches in vga_pkg.vhd */
     .RAM_DEPTH(MEM_DEPTH),
     .INIT_FILE(INIT_FILE)
   ) i_xilinx_dp_bram (
-    .addra (mem_addr_s),      
-    .addrb ('0),      
-    .dina  ('0),     
-    .dinb  ('0),     
+    .addra (mem_addr_s),           
+    .dina  ('0),        
     .clka  (clk_px_s),     
-    .wea   ('0),    
-    .web   ('0),    
-    .ena   (mem_read_en_s),    
-    .enb   ('0),    
-    .douta (mem_data_s),      
-    .doutb ()  // not used
+    .wea   ('0),       
+    .ena   (mem_read_en_s),
+    .rst   (0),     
+    .douta (mem_data_s)
   );
 
 /******************************************************************************/
