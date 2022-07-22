@@ -488,19 +488,25 @@ pxl_width_c matches in vga_pkg.vhd */
   initial begin 
     
     `ifdef USE_SIMULATOR
+
       connect_result = client_connect();
       $info("client_connect() = %d", connect_result);
+      
       if (connect_result != 0) begin 
         $error("client_connect() result = %d", connect_result);
         close_result = client_close();
         $finish;
       end
+    
     `endif
 
     forever begin 
 
       @(posedge vga_model.clk_px_s or negedge vga_model.rstn_s);
     
+      // If reset is asserted and the Simulator is in use, send reset string to 
+      // server to indicate the screen should be cleared.
+
       if (!vga_model.rstn_s) begin
         
         `ifdef USE_SIMULATOR
@@ -514,7 +520,7 @@ pxl_width_c matches in vga_pkg.vhd */
           end
         `endif // USE_SIMULATOR
 
-          #1;
+          #1; // prevent infinite looping
 
       end else begin 
 
@@ -571,21 +577,22 @@ pxl_width_c matches in vga_pkg.vhd */
         end 
       
       
-        `ifdef USE_SIMULATOR
-        
-          else if ((vga_model.line_ctr_s >= V_B_PORCH_MAX_LNS) && (vga_model.line_ctr_s < V_DISP_MAX_LNS) && 
-                   (vga_model.pxl_ctr_s == H_DISP_MAX_PX)) begin 
-            
-            //$info("Calling client_send_data()");
-            send_result = client_send_data();
-            if (send_result != 0) begin 
-              $warning("client_send_data() result = %d", send_result);
-              close_result = client_close();
-              $finish;
-            end
+      `ifdef USE_SIMULATOR
+      
+        else if ((vga_model.line_ctr_s >= V_B_PORCH_MAX_LNS) && (vga_model.line_ctr_s < V_DISP_MAX_LNS) && 
+                 (vga_model.pxl_ctr_s == H_DISP_MAX_PX)) begin 
+          
+          //$info("Calling client_send_data()");
+          send_result = client_send_data();
+          if (send_result != 0) begin 
+            $warning("client_send_data() result = %d", send_result);
+            close_result = client_close();
+            $finish;
           end
-        
-        `endif
+        end
+      
+      `endif
+
       end
     end
   end
