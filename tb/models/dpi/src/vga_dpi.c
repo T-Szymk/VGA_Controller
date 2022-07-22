@@ -59,7 +59,25 @@ int client_close(void) {
   return EXIT_SUCCESS;
 }
 
-int client_send(const int colr_val) {
+int client_send_reset(void) {
+  memset(buff, 0, BUFF_SIZE); // clear data in buffer
+  char* tmp_buff = "RESET";
+  memcpy(buff, tmp_buff, 5);
+  
+  if ((status = send(client_fd, buff, BUFF_SIZE, 0)) < 0) {
+    perror("Send Error! ");
+    close(client_fd);
+    return EXIT_FAILURE;
+  } else {
+    printf("Client sent %d bytes...\n", status);
+  }
+
+   memset(buff, 0, BUFF_SIZE);
+
+   return EXIT_SUCCESS;
+}
+
+int client_send_data(void) {
 
   if ((status = send(client_fd, buff, BUFF_SIZE, 0)) < 0) {
       perror("Send Error! ");

@@ -1,23 +1,24 @@
 /*******************************************************************************
--- Title      : VGA Controller - Dual Port BRAM
+-- Title      : VGA Controller - Single Port BRAM
 -- Project    : VGA Controller
 ********************************************************************************
 -- File       : xilinx_dp_BRAM.sv
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
 -- Created    : 2022-06-26
--- Design     : xilinx_dp_BRAM
+-- Design     : xilinx_single_port_ram
 -- Platform   : -
 -- Standard   : SystemVerilog '17
 ********************************************************************************
--- Description: Modified code taken from the true dual port BRAM taken from
---              Xilinx templates.
+-- Description: Modified code taken from the single port BRAM taken from
+--              Xilinx templates.(To become a dual port RAM in future)
 ********************************************************************************
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2022-07-01  1.0      TZS     Created
+-- 2022-07-22  1.1      TZS     Modified to single port RAM
 *******************************************************************************/                 
-module xilinx_true_dual_port_read_first_1_clock_ram #(
+module xilinx_single_port_ram #(
   parameter RAM_WIDTH = 18,                       // Specify RAM data width
   parameter RAM_DEPTH = 1024,                     // Specify RAM depth (number of entries)
   parameter INIT_FILE = "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem" // Specify name/location of RAM initialization file if using one (leave blank if not)

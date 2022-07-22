@@ -32,6 +32,7 @@
 -- Date        Version  Author  Description
 -- 2022-06-25  1.0      TZS     Created
 -- 2022-07-17  1.1      TZS     Refactored code to use simpler FSM
+-- 2022-07-22  1.2      TZS     Fixed missing state reset state
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -86,6 +87,8 @@ begin --------------------------------------------------------------------------
       -- from the memory in the second cycle. This is why a synchronous reset 
       -- deassertion is required.
       mem_ren_r <= '1';
+
+      c_state <= IDLE;
 
       -- data buffer_r is a custom type and is not trivial to clear.
       for idx in 0 to pxl_per_row_c - 1 loop

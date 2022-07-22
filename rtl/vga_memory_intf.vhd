@@ -67,7 +67,7 @@ architecture rtl of vga_memory_intf is
     );
   end component;
 
-  component xilinx_true_dual_port_read_first_1_clock_ram is
+  component xilinx_single_port_ram is
     generic (
       RAM_WIDTH       : integer := 18;           
       RAM_DEPTH       : integer := 1024;         
@@ -120,7 +120,7 @@ begin --------------------------------------------------------------------------
       disp_pxl_o      => disp_pxl_s
     );
     -- read only BRAM
-    i_xilinx_dp_ram : xilinx_true_dual_port_read_first_1_clock_ram
+    i_xilinx_dp_ram : xilinx_single_port_ram
       generic map (
         RAM_WIDTH => mem_row_width_c, 
         RAM_DEPTH => mem_depth_c,     

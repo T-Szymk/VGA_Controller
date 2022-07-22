@@ -49,6 +49,10 @@ client_connect();
 
 DPI_LINK_DECL DPI_DLLESPEC
 int
-client_send();
+client_send_data();
+
+DPI_LINK_DECL DPI_DLLESPEC
+int
+client_send_reset();
 
 #endif 
