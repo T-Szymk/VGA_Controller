@@ -577,21 +577,21 @@ pxl_width_c matches in vga_pkg.vhd */
         end 
       
       
-      `ifdef USE_SIMULATOR
-      
-        else if ((vga_model.line_ctr_s >= V_B_PORCH_MAX_LNS) && (vga_model.line_ctr_s < V_DISP_MAX_LNS) && 
-                 (vga_model.pxl_ctr_s == H_DISP_MAX_PX)) begin 
-          
-          //$info("Calling client_send_data()");
-          send_result = client_send_data();
-          if (send_result != 0) begin 
-            $warning("client_send_data() result = %d", send_result);
-            close_result = client_close();
-            $finish;
+        `ifdef USE_SIMULATOR
+        
+          else if ((vga_model.line_ctr_s >= V_B_PORCH_MAX_LNS) && (vga_model.line_ctr_s < V_DISP_MAX_LNS) && 
+                   (vga_model.pxl_ctr_s == H_DISP_MAX_PX)) begin 
+            
+            //$info("Calling client_send_data()");
+            send_result = client_send_data();
+            if (send_result != 0) begin 
+              $warning("client_send_data() result = %d", send_result);
+              close_result = client_close();
+              $finish;
+            end
           end
-        end
-      
-      `endif
+        
+        `endif
 
       end
     end
