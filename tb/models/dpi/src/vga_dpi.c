@@ -106,9 +106,11 @@ int add_pxl_to_client_buff_mono(const int r, const int g, const int b, const int
 
 int add_pxl_to_client_buff(const int r, const int g, const int b, const int pos) {
   // Assign values to 3 bytes and copy 3 bytes into the buff
-  uint32_t tmp = (r) ? 255 : 0;
-  tmp |= (g) ? (255 << 8) : 0;
-  tmp |= (b) ? (255 << 16) : 0;
+  // Each 4b value x16 ( << 4) to scale to 8b encoding scheme
+  uint32_t tmp = 0;
+  tmp |= r << ( 0 + 4);
+  tmp |= g << ( 8 + 4);
+  tmp |= b << (16 + 4);
 
   memcpy((buff + (3 * pos)), &tmp, 3);
 
