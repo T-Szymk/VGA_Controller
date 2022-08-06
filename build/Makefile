@@ -182,6 +182,7 @@ sim_mem_intf_model: compile_mem_intf_model
 
 .PHONY: sim_mem_intf_model_gui
 sim_mem_intf_model_gui: compile_mem_intf_model
+	python3 ../supporting_apps/vga_sim/vga_sim_server.py &
 	cd mem_intf_model && \
 	vsim -voptargs="+acc" -onfinish stop vga_model -do ../../build/mem_intf_model.do
 

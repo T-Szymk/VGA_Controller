@@ -73,22 +73,24 @@ PACKAGE vga_pkg IS
   
   -- VIDEO MEMORY CONSTANTS/TYPES ##############################################
 
+  CONSTANT tile_size_c  : INTEGER := 4;
+  CONSTANT tile_shift_c : INTEGER := INTEGER(CEIL(LOG2(REAL(tile_size_c))));
+
   TYPE pxl_width_arr_t IS ARRAY(1 DOWNTO 0) OF INTEGER;
   CONSTANT pxl_width_arr_c : pxl_width_arr_t := (1, 3); 
   --!!!
   -- set monochrome_en to 1 and depth_colr_c to 1 to show monochrome, else set monochrome_en_c to 0 and set depth_colr_c as needed 
   CONSTANT monochrome_en_c : integer := 0;
   -- depth of each pxl colour
-  CONSTANT depth_colr_c    : INTEGER := 1;
+  CONSTANT depth_colr_c    : INTEGER := 4;
   CONSTANT pxl_width_c     : INTEGER := depth_colr_c * pxl_width_arr_c(monochrome_en_c); -- Monochrome format
-
 
   CONSTANT pxl_per_row_c   : INTEGER := 8;
   -- width of counter used to count current pixel in memory row beign displayed
   CONSTANT row_ctr_width_c : INTEGER := INTEGER(CEIL(LOG2(REAL(pxl_per_row_c - 1))));
 
   CONSTANT mem_row_width_c : INTEGER := pxl_per_row_c * pxl_width_c;
-  CONSTANT mem_depth_c     : INTEGER := INTEGER(CEIL(REAL(disp_pxl_max_c)/REAL(pxl_per_row_c)));
+  CONSTANT mem_depth_c     : INTEGER := INTEGER(CEIL(REAL(disp_pxl_max_c)/REAL(pxl_per_row_c * tile_size_c * tile_size_c)));
   -- width of memory address signals
   CONSTANT mem_addr_width_c : INTEGER := INTEGER(CEIL(LOG2(REAL(mem_depth_c - 1))));
   -- array to contain colours(RGB) in integer format

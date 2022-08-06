@@ -16,6 +16,7 @@
  Date        Version  Author  Description
  2022-07-16  1.0      TZS     Created
  2022-07-22  1.1      TZS     Updated model to handle resets
+ 2022-08-06  1.2      TZS     Added tiling to model and refactored mem_buff
 ------------------------------------------------------------------------------*/
 
 module vga_model;
@@ -41,7 +42,7 @@ pxl_width_c matches in vga_pkg.vhd */
   `ifdef MONO
     parameter INIT_FILE = "../../build/RAM_INIT_monochrome.mem";
   `else  
-    parameter INIT_FILE = "../../supporting_apps/mem_file_gen/gb.mem";
+    parameter INIT_FILE = "../../supporting_apps/mem_file_gen/pulla_tile_4_green.mem";
   `endif
 
   parameter SIMULATION_RUNTIME = 1s;
@@ -83,7 +84,7 @@ pxl_width_c matches in vga_pkg.vhd */
   parameter DISP_PXL_MAX      = HEIGHT_PX * WIDTH_PX;
 
    // depth of each colour
-  parameter DEPTH_COLR     = 1;
+  parameter DEPTH_COLR     = 4;
   parameter MONO_PXL_WIDTH = DEPTH_COLR;
   parameter COLR_PXL_WIDTH = DEPTH_COLR * 3;
 
@@ -93,19 +94,27 @@ pxl_width_c matches in vga_pkg.vhd */
   `else
     parameter PXL_WIDTH = COLR_PXL_WIDTH;
   `endif
-  
+
+  // set size n of tile (nxn). If not tiling is desired, set to 1. 
+  parameter TILE_SIZE  = 4;
+  parameter TILE_SHIFT = $clog2(TILE_SIZE);
+
+  // use max value to calculate bit width of counter
+  parameter PXL_CTR_WIDTH      = $clog2(PXL_CTR_MAX - 1);
+  parameter LN_CTR_WIDTH       = $clog2(LINE_CTR_MAX - 1);
+  parameter DISP_PXL_CTR_WIDTH = $clog2(WIDTH_PX-1);
+  parameter DISP_LN_CTR_WIDTH  = $clog2(HEIGHT_PX-1);
+  parameter TOT_DISP_PXL_WIDTH = $clog2(DISP_PXL_MAX-1);
+
   // memory definitions
   parameter PXL_PER_ROW    = 8;
-  // BRAM width in bits and depth in rows
-  parameter MEM_WIDTH      = PXL_PER_ROW * PXL_WIDTH;
-  parameter MEM_DEPTH      = DISP_PXL_MAX / PXL_PER_ROW;
-  parameter MEM_ADDR_WIDTH = $clog2(MEM_DEPTH-1);
   
-  // use max value to calculate bit width of counter
-  parameter PXL_CTR_WIDTH  = $clog2(PXL_CTR_MAX - 1);
-  parameter LN_CTR_WIDTH   = $clog2(LINE_CTR_MAX - 1);
+  // BRAM width in bits
+  parameter MEM_WIDTH      = PXL_PER_ROW * PXL_WIDTH;
   parameter ROW_CTR_WIDTH  = $clog2(PXL_PER_ROW - 1);
-  parameter DISP_CTR_WIDTH = $clog2(DISP_PXL_MAX - 1);
+  // BRAM width in bits and depth in rows after tiling has been applied.
+  parameter TILED_MEM_DEPTH      = (DISP_PXL_MAX / (PXL_PER_ROW * TILE_SIZE * TILE_SIZE));
+  parameter TILED_MEM_ADDR_WIDTH = $clog2(TILED_MEM_DEPTH-1);
 
 /******************************************************************************/
 /* VARIABLES AND TYPE DEFINITIONS                                             */
@@ -125,22 +134,19 @@ pxl_width_c matches in vga_pkg.vhd */
   
   pixel_t test_pxl_s, mem_pxl_s, disp_pxl_s;
 
-  logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_s;
-  logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_s;
+  logic [ROW_CTR_WIDTH-1:0]        ctrl_mem_pxl_ctr_s;
+  logic [TILED_MEM_ADDR_WIDTH-1:0] ctrl_mem_addr_ctr_s;
 
-  logic [MEM_ADDR_WIDTH-1:0] mem_addr_s;
-  logic [MEM_WIDTH-1:0]      mem_data_s;
+  logic [TILED_MEM_ADDR_WIDTH-1:0] mem_addr_s;
+  logic [MEM_WIDTH-1:0]            mem_data_s;
   logic mem_read_en_s;
   
   // variables used as golden reference
-  logic                      blank_golden_s;
-  pixel_t                    mem_pxl_golden_s;
-  logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_golden_s;
-  logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_golden_s;
+  logic                                disp_active_golden_s;
+  pixel_t                              mem_pxl_golden_s;
+  bit   [DISP_LN_CTR_WIDTH-1:0]        disp_ln_ctr_s;
 
-  event mem_ctrl_done;
-
-  bit [MEM_WIDTH-1:0] mem_arr_model [MEM_DEPTH-1:0];
+  bit [MEM_WIDTH-1:0] mem_arr_model [TILED_MEM_DEPTH-1:0];
 
   int position = 0;
   int r_val    = 0;
@@ -197,7 +203,7 @@ pxl_width_c matches in vga_pkg.vhd */
 
   vga_colr_mux i_vga_colr_mux (
     .test_colr_i (test_pxl_s),
-    .mem_colr_i  (mem_pxl_s),
+    .mem_colr_i  (mem_pxl_golden_s), // (mem_pxl_s),
     .en_i        (test_switch_s),
     .blank_i     (colr_en_s),
     .colr_out    (disp_pxl_s)
@@ -210,11 +216,11 @@ pxl_width_c matches in vga_pkg.vhd */
   generate
     if (INIT_FILE != "") begin: use_init_file
       initial
-        $readmemb(INIT_FILE, mem_arr_model, 0, MEM_DEPTH-1);
+        $readmemb(INIT_FILE, mem_arr_model, 0, TILED_MEM_DEPTH-1);
     end else begin: init_bram_to_zero
       integer ram_index;
       initial
-        for (ram_index = 0; ram_index < MEM_DEPTH; ram_index = ram_index + 1)
+        for (ram_index = 0; ram_index < TILED_MEM_DEPTH; ram_index = ram_index + 1)
           mem_arr_model[ram_index] = {MEM_WIDTH{1'b0}};
     end
   endgenerate
@@ -245,11 +251,10 @@ pxl_width_c matches in vga_pkg.vhd */
         forever begin
           @(posedge vga_model.clk_px_s);
           // only run mem_buff once mem_addr_ctrl has run
-          run_mem_addr_ctrl_model(rst_sync_s, pxl_ctr_s, line_ctr_s, 
-                                   mem_addr_ctr_golden_s, mem_pxl_ctr_golden_s);
-          //@(mem_ctrl_done);
-          run_mem_buff_model(rst_sync_s, mem_addr_ctr_golden_s, mem_pxl_ctr_golden_s, 
-                             blank_golden_s, mem_pxl_golden_s);
+          disp_pxl_ctr_gen(rst_sync_s, pxl_ctr_s, line_ctr_s, 
+                           disp_active_golden_s, disp_ln_ctr_s);
+          run_mem_buff_model(rst_sync_s, disp_active_golden_s, disp_ln_ctr_s,
+                             mem_pxl_golden_s);
         end
       end
        /*********/
@@ -273,7 +278,7 @@ pxl_width_c matches in vga_pkg.vhd */
 /******************************************************************************/
   // read before write BRAM memory model
   task static run_memory_model (
-    input  bit [MEM_ADDR_WIDTH-1:0 ] addra,
+    input  bit [TILED_MEM_ADDR_WIDTH-1:0 ] addra,
     input  bit [MEM_WIDTH-1:0]       dina = '0,
     input  bit                       wea = 0,
     input  bit                       ena,
@@ -293,151 +298,187 @@ pxl_width_c matches in vga_pkg.vhd */
 /******************************************************************************/
 
   // memory address controller model
-  task automatic run_mem_addr_ctrl_model (
-    ref    logic                      rstn_i,
-    ref    logic [PXL_CTR_WIDTH-1:0]  pxl_ctr_i,
-    ref    logic [LN_CTR_WIDTH-1:0]   line_ctr_i,
-    output logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_o,
-    output logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_o
+  task automatic disp_pxl_ctr_gen (
+    ref    logic                            rstn_i,
+    ref    logic [PXL_CTR_WIDTH-1:0]        pxl_ctr_i,
+    ref    logic [LN_CTR_WIDTH-1:0]         line_ctr_i,
+    output logic                            disp_active_o,
+    output bit [DISP_LN_CTR_WIDTH-1:0]      disp_ln_ctr_o
   );
     begin
-
-      static logic [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_s;
-      static logic [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_s;
+      // counter will be wider if using tiling
+      static bit [DISP_PXL_CTR_WIDTH-1:0] display_pixel_counter_s;
+      static bit [DISP_LN_CTR_WIDTH-1:0]  display_line_counter_s;
+      static bit disp_active_s;
+      
+      // if within display range, indicate with bit
+      disp_active_s = ((line_ctr_i >= (V_B_PORCH_MAX_LNS)) && (line_ctr_i < V_DISP_MAX_LNS) && 
+                       (pxl_ctr_i >= (H_B_PORCH_MAX_PX)) && (pxl_ctr_i < H_DISP_MAX_PX));
+      disp_active_o = disp_active_s;
 
       if(!rstn_i) begin
-        
-        mem_addr_ctr_s = '0; 
-        mem_pxl_ctr_s  = '0;
+
+        display_pixel_counter_s = '0;  
+        display_line_counter_s  = '0; 
+        disp_active_s  = '0;  
         #1;
 
       end else begin
       
-        if((line_ctr_i >= (V_B_PORCH_MAX_LNS)) && 
-           (line_ctr_i < V_DISP_MAX_LNS) &&
-           (pxl_ctr_i >= (H_B_PORCH_MAX_PX)) &&
-           (pxl_ctr_i < H_DISP_MAX_PX)) begin
+        if(disp_active_s) begin
 
-          if(mem_pxl_ctr_s == (PXL_PER_ROW-1)) begin
+          if (display_pixel_counter_s == (WIDTH_PX-1)) begin 
 
-            mem_pxl_ctr_s = '0;
-
-            if(mem_addr_ctr_s == (MEM_DEPTH-1)) begin 
-              mem_addr_ctr_s = '0;
-            end else begin 
-              mem_addr_ctr_s = mem_addr_ctr_s + 1;
+            display_pixel_counter_s = '0;
+            
+            if (display_line_counter_s == (HEIGHT_PX-1)) begin 
+              display_line_counter_s = '0;
+            end else begin
+              display_line_counter_s++;
             end
 
-          end else begin
+          end else begin 
 
-            mem_pxl_ctr_s = mem_pxl_ctr_s + 1;
-
+            display_pixel_counter_s++;
+          
           end
-
         end
       end
-      
-      mem_pxl_ctr_o  = mem_pxl_ctr_s;
-      mem_addr_ctr_o = mem_addr_ctr_s;
+
+      disp_ln_ctr_o  = display_line_counter_s;
 
     end
-    // event to synchronise execution of mem_buff task
-    -> mem_ctrl_done;
   endtask
 
 /******************************************************************************/
 
   // memory buffer model
-  task static run_mem_buff_model (
-    input  bit     rstn_i,
-    input  bit     [MEM_ADDR_WIDTH-1:0] mem_addr_ctr_i,
-    input  bit     [ROW_CTR_WIDTH-1:0]  mem_pxl_ctr_i,
-    output bit     disp_blank_o,
-    output pixel_t disp_pxl_o
+  task automatic run_mem_buff_model (
+    ref    logic                        rstn_i,
+    ref    logic                        disp_active_i,
+    ref    bit [DISP_LN_CTR_WIDTH-1:0]  disp_ln_ctr_i,
+    output pixel_t                      disp_pxl_o
   );
     
     static bit init = 0;
     static bit buff_sel = 0; // 0: A, 1: B
-    static bit [MEM_WIDTH-1:0]      buff_A_data, buff_B_data = '0;
-    static bit [MEM_ADDR_WIDTH-1:0] buff_A_addr, buff_B_addr = '0;
-    static bit [MEM_ADDR_WIDTH-1:0] internal_mem_ctr = '0;
+    static bit [MEM_WIDTH-1:0]            buff_A_data, buff_B_data = '0;
+    static bit [TILED_MEM_ADDR_WIDTH-1:0] buff_A_addr, buff_B_addr = '0;
+    
+    static bit [DISP_PXL_CTR_WIDTH-1:0]     nxt_pixel_s   = '0;
+    static bit [TILED_MEM_ADDR_WIDTH-1:0]   mem_addr_s    = '0;
+    static bit [PXL_PER_ROW+TILE_SHIFT-1:0] row_pxl_ctr_s = '0;
+
+    static pixel_t disp_pxl_s = '0;
+    
 
     if(!rstn_i) begin 
       
       init             = '0;
       buff_sel         = '0;
-      disp_blank_o     = '0;
-      disp_pxl_o       = '0;
+      disp_pxl_s       = '0;
       buff_A_data      = '0;   
       buff_B_data      = '0;   
       buff_A_addr      = '0;   
-      buff_B_addr      = '0;   
-      internal_mem_ctr = '0;        
+      buff_B_addr      = '0;
+      nxt_pixel_s      = '0;
+      mem_addr_s       = '0;
+      row_pxl_ctr_s    = '0;
 
     end else begin
 
       // Fill A and then B on first pass
       if(!init) begin 
         
-        run_memory_model(internal_mem_ctr, , 0, 1, buff_A_data);
-        buff_A_addr = internal_mem_ctr;
-        internal_mem_ctr++;
-        run_memory_model(internal_mem_ctr, , 0, 1, buff_B_data);
-        buff_B_addr = internal_mem_ctr;
-        internal_mem_ctr++;
+        mem_addr_s = get_mem_addr(nxt_pixel_s, disp_ln_ctr_i);
+        run_memory_model(mem_addr_s, , 0, 1, buff_A_data);
+        buff_A_addr = mem_addr_s;
+
+        nxt_pixel_s = nxt_pixel_s + (PXL_PER_ROW * TILE_SIZE);
+        mem_addr_s = get_mem_addr(nxt_pixel_s, disp_ln_ctr_i);
+        run_memory_model(mem_addr_s, , 0, 1, buff_B_data);
+        buff_B_addr = mem_addr_s;
+        // nxt pixel is the idx of the display pxl on the row immediately
+        // the last display pixel covered in the previous buffer.
+        // Therefore, if a tile is 4 pxls and a buffer contains 8 vals,
+        // the next pixel will be 'curr_pxl_id + (8 * 4)
+        nxt_pixel_s = nxt_pixel_s + (PXL_PER_ROW * TILE_SIZE);
 
         init = 1;
       
-      end else begin
-        
+      end else if (disp_active_i) begin
+
         if(!buff_sel) begin
-          // if the memory address counter matches the buffer address, display the pixel
-          if(buff_A_addr == mem_addr_ctr_i) begin
-            disp_pxl_o   = buff_A_data[(mem_pxl_ctr_i*PXL_WIDTH)+:3];
-            disp_blank_o = 0;
-            
-            // once A has been read, fill A and move to read B
-            if(mem_pxl_ctr_i == PXL_PER_ROW - 1) begin               
-              run_memory_model(internal_mem_ctr, , 0, 1, buff_A_data);
-              buff_A_addr = internal_mem_ctr;
-              internal_mem_ctr = (internal_mem_ctr == (MEM_DEPTH-1)) ? '0 : internal_mem_ctr + 1;
-              buff_sel = ~buff_sel;
+
+          disp_pxl_s = buff_A_data[((row_pxl_ctr_s / TILE_SIZE) * PXL_WIDTH)+:PXL_WIDTH];
+          
+          // once A has been read, fill A and move to read B
+          if (row_pxl_ctr_s == (PXL_PER_ROW * TILE_SIZE) - 1) begin  // end of a row   
+
+            mem_addr_s = get_mem_addr(nxt_pixel_s, disp_ln_ctr_i);
+            run_memory_model(mem_addr_s, , 0, 1, buff_A_data);
+            buff_A_addr = mem_addr_s;
+           
+            if (nxt_pixel_s == (WIDTH_PX - (PXL_PER_ROW * TILE_SIZE))) begin 
+              nxt_pixel_s = '0;
+            end else begin 
+              nxt_pixel_s = nxt_pixel_s + (PXL_PER_ROW * TILE_SIZE);
             end
-          // if the memory address counter does not match the buffer address, blank the pixel
+
+            buff_sel = ~buff_sel;      
+            row_pxl_ctr_s = 0;
+                 
           end else begin 
-            $warning("[%0tns] run_mem_buff_model(): Display Address does not match Buffer A Address.\n", $time,
-                      "mem_addr_ctr_i = 0x%0h, buff_A_addr = 0x%0h", mem_addr_ctr_i, buff_A_addr);
-            disp_pxl_o   = '0;
-            disp_blank_o = 1;
+            row_pxl_ctr_s++;
           end
+
 
         end else begin 
-          // if the memory address counter matches the buffer address, display the pixel
-          if(buff_B_addr == mem_addr_ctr_i) begin
-            disp_pxl_o   = buff_B_data[(mem_pxl_ctr_i*PXL_WIDTH)+:3];
 
-            disp_blank_o = 0;
+          disp_pxl_s = buff_B_data[((row_pxl_ctr_s / TILE_SIZE) * PXL_WIDTH)+:PXL_WIDTH];
             
-            //once B has been read, fill B and move to read A
-            if(mem_pxl_ctr_i == PXL_PER_ROW - 1) begin               
-              run_memory_model(internal_mem_ctr, , 0, 1, buff_B_data);
-              buff_B_addr = internal_mem_ctr;
-              internal_mem_ctr = (internal_mem_ctr == (MEM_DEPTH-1)) ? '0 : internal_mem_ctr + 1;
-              buff_sel = ~buff_sel;
+          // once B has been read, fill B and move to read A
+          if (row_pxl_ctr_s == (PXL_PER_ROW * TILE_SIZE) - 1) begin  // end of a row   
+
+            mem_addr_s = get_mem_addr(nxt_pixel_s, disp_ln_ctr_i);
+            run_memory_model(mem_addr_s, , 0, 1, buff_B_data);
+            buff_B_addr = mem_addr_s;
+           
+            if (nxt_pixel_s == (WIDTH_PX - (PXL_PER_ROW * TILE_SIZE))) begin 
+              nxt_pixel_s = '0;
+            end else begin 
+              nxt_pixel_s = nxt_pixel_s + (PXL_PER_ROW * TILE_SIZE);
             end
-          // if the memory address counter does not match the buffer address, blank the pixel
+
+            buff_sel = ~buff_sel;      
+            row_pxl_ctr_s = 0;
+                 
           end else begin 
-            $warning("[%0tns] run_mem_buff_model(): Display Address does not match Buffer B Address.\n", $time,
-                      "mem_addr_ctr_i = 0x%0h, buff_B_addr = 0x%0h", mem_addr_ctr_i, buff_B_addr);
-            disp_pxl_o   = '0;
-            disp_blank_o = 1;
+            row_pxl_ctr_s++;
           end
+
         end
-      
-      end
+      end 
+
+      disp_pxl_o = disp_pxl_s;
+
     end
 
   endtask
+
+/******************************************************************************/
+
+function automatic bit [TILED_MEM_ADDR_WIDTH-1:0] get_mem_addr(
+  input bit [PXL_CTR_WIDTH-1:0] pxl_val_i,
+  input bit [LN_CTR_WIDTH-1:0]  line_val_i
+);
+
+  bit [PXL_CTR_WIDTH-TILE_SHIFT-1:0] tiled_pxl_val = pxl_val_i[PXL_CTR_WIDTH-1:TILE_SHIFT];
+  bit [LN_CTR_WIDTH-TILE_SHIFT-1:0]  tiled_ln_val  = line_val_i[LN_CTR_WIDTH-1:TILE_SHIFT];
+
+  get_mem_addr = (tiled_pxl_val + ((WIDTH_PX/TILE_SIZE) * tiled_ln_val)) / PXL_PER_ROW;
+
+endfunction
 
 /******************************************************************************/
 /* MEMORY INTERFACE MODULES                                                   */
@@ -449,16 +490,16 @@ pxl_width_c matches in vga_pkg.vhd */
     .rstn_i         (rst_sync_s),    
     .pxl_ctr_i      (pxl_ctr_s),       
     .line_ctr_i     (line_ctr_s),        
-    .mem_addr_ctr_o (mem_addr_ctr_s),            
-    .mem_pxl_ctr_o  (mem_pxl_ctr_s)          
+    .mem_addr_ctr_o (ctrl_mem_addr_ctr_s),            
+    .mem_pxl_ctr_o  (ctrl_mem_pxl_ctr_s)          
   );
 
   /* Memory Buffers */
   vga_mem_buff i_vga_mem_buff (
     .clk_i           (clk_px_s),
     .rstn_i          (rst_sync_s), 
-    .disp_addr_ctr_i (mem_addr_ctr_s),          
-    .disp_pxl_ctr_i  (mem_pxl_ctr_s),         
+    .disp_addr_ctr_i (ctrl_mem_addr_ctr_s),          
+    .disp_pxl_ctr_i  (ctrl_mem_pxl_ctr_s),         
     .mem_data_i      (mem_data_s),     
     .mem_addr_o      (mem_addr_s),
     .mem_ren_o       (mem_read_en_s),     
@@ -469,7 +510,7 @@ pxl_width_c matches in vga_pkg.vhd */
   /* Memory Module */
   xilinx_single_port_ram #(
     .RAM_WIDTH(MEM_WIDTH),
-    .RAM_DEPTH(MEM_DEPTH),
+    .RAM_DEPTH(TILED_MEM_DEPTH),
     .INIT_FILE(INIT_FILE)
   ) i_xilinx_bram (
     .addra (mem_addr_s),           
@@ -477,7 +518,7 @@ pxl_width_c matches in vga_pkg.vhd */
     .clka  (clk_px_s),     
     .wea   ('0),       
     .ena   (mem_read_en_s),
-    .rst   (0),     
+    .rst   ('0),     
     .douta (mem_data_s)
   );
 
@@ -558,9 +599,9 @@ pxl_width_c matches in vga_pkg.vhd */
             
             `else // MONO
             
-              r_val = int'(vga_model.disp_pxl_s[0]);
-              g_val = int'(vga_model.disp_pxl_s[1]);
-              b_val = int'(vga_model.disp_pxl_s[2]);
+              r_val = int'(vga_model.disp_pxl_s[0*DEPTH_COLR+:DEPTH_COLR]);
+              g_val = int'(vga_model.disp_pxl_s[1*DEPTH_COLR+:DEPTH_COLR]);
+              b_val = int'(vga_model.disp_pxl_s[2*DEPTH_COLR+:DEPTH_COLR]);
               // use the line below for debugging
               //$display("[%0t] DEBUG: calling add_pxl_to_client_buff(r=%d, g=%d, b=%d, pos=%d)", $time, r_val, g_val, b_val, position);
               add_pxl_result = add_pxl_to_client_buff(r_val, g_val, b_val, position);
