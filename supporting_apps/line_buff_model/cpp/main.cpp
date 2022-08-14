@@ -3,10 +3,18 @@
 #include "SPRAM.h"
 #include "skylight_defs.h"
 
-void run_buff_ctrl_model();
-void run_buff_model();
+
+
+void test_SPRAM();
 
 int main() {
+
+  test_SPRAM();
+
+  return 0;
+}
+
+void test_SPRAM() {
 
   SPRAM frame_buffer(PXL_PER_MEM_ROW, FRAME_BUFF_DEPTH);
 
@@ -22,13 +30,13 @@ int main() {
 
   test_row = frame_buffer.read_mem(1024);
 
-  for (pixel_t pixel : test_row) {
-    std::cout << "{"  << (int)(pixel[2]) <<
-                 ", " << (int)(pixel[1]) <<
-                 ", " << (int)(pixel[0]) <<
-                 "} ";
+  std::cout << "{ ";
+  for(int pixel = PXL_PER_MEM_ROW-1; pixel >= 0; pixel--) {
+    std::cout << "{"  << (int)(test_row[pixel][2]) <<
+              ", " << (int)(test_row[pixel][1]) <<
+              ", " << (int)(test_row[pixel][0]) <<
+              "} ";
   }
-  std::cout << std::endl;
+  std::cout << " }" << std::endl;
 
-  return 0;
 }
