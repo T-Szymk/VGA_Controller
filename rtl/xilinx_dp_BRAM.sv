@@ -21,7 +21,7 @@
 module xilinx_single_port_ram #(
   parameter RAM_WIDTH = 18,                       // Specify RAM data width
   parameter RAM_DEPTH = 1024,                     // Specify RAM depth (number of entries)
-  parameter INIT_FILE = "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem" // Specify name/location of RAM initialization file if using one (leave blank if not)
+  parameter INIT_FILE = "" // Specify name/location of RAM initialization file if using one (leave blank if not)
 ) (
   input  logic [$clog2(RAM_DEPTH-1)-1:0] addra,  // Port A address bus, width determined from RAM_DEPTH
   input  logic [RAM_WIDTH-1:0] dina,           // Port A RAM input data

@@ -104,7 +104,7 @@ pxl_width_c matches in vga_pkg.vhd */
   parameter LN_CTR_WIDTH   = $clog2(LINE_CTR_MAX - 1);
 
   // memory definitions
-  parameter TILES_PER_MEM_ROW = 8;
+  parameter TILES_PER_MEM_ROW = 5;
   
   // BRAM width in bits
   parameter MEM_WIDTH      = TILES_PER_MEM_ROW * PXL_WIDTH;
