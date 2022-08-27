@@ -17,20 +17,22 @@
 -- Date        Version  Author  Description
 -- 2022-07-01  1.0      TZS     Created
 -- 2022-07-22  1.1      TZS     Modified to single port RAM
+-- 2022-08-27  1.2      TZS     Removed reset
 *******************************************************************************/                 
 module xilinx_single_port_ram #(
-  parameter RAM_WIDTH = 18,                       // Specify RAM data width
-  parameter RAM_DEPTH = 1024,                     // Specify RAM depth (number of entries)
-  parameter INIT_FILE = "" // Specify name/location of RAM initialization file if using one (leave blank if not)
+  parameter RAM_WIDTH = 18, 
+  parameter RAM_DEPTH = 1024,
+  parameter INIT_FILE = "" 
 ) (
-  input  logic [$clog2(RAM_DEPTH-1)-1:0] addra,  // Port A address bus, width determined from RAM_DEPTH
-  input  logic [RAM_WIDTH-1:0] dina,           // Port A RAM input data
-  input  logic clka,                           // Clock
-  input  logic wea,                            // Port A write enable
-  input  logic ena,                            // Port A RAM Enable, for additional power savings, disable port when not in use
-  input  logic rst,
-  output logic [RAM_WIDTH-1:0] douta          // Port A RAM output data
+  input  logic [$clog2(RAM_DEPTH-1)-1:0] addra,
+  input  logic [RAM_WIDTH-1:0]           dina,           
+  input  logic                           clka,                           
+  input  logic                           wea,                            
+  input  logic                           ena,
+  output logic [RAM_WIDTH-1:0]           douta          
 );
+
+  timeunit 1ns/1ps;
 
   logic [RAM_WIDTH-1:0] BRAM [RAM_DEPTH-1:0];
 
@@ -51,8 +53,6 @@ module xilinx_single_port_ram #(
     if (ena) begin
       if (wea)
         BRAM[addra] <= dina;
-      if (rst)
-        douta <= 0;
       else 
         douta <= BRAM[addra];
     end

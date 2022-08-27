@@ -5,16 +5,26 @@
 -- File       : line_buff_ctrl.sv
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
--- Created    : 2022-08-25
+-- Created    : 2022-08-27
 -- Design     : line_buff_ctrl
 -- Platform   : -
 -- Standard   : SystemVerilog '17
 ********************************************************************************
--- Description: VGA line buffer controller model written in SV
+-- Description: VGA line buffer controller model written in SV.
+--
+--              A buffer is only written to if it is marked as empty (!full),
+--              A buffer is only read from if it is marked as full.
+--              This provides interlocking and prevents the line buffers from
+--              being read/written at the same time. 
+--
+--              The limitation of this is that if the write process takes too
+--              long (i.e. > an entire line of the frame incl. porch), the 
+--              displayed pixels with fall out of sync. However, as this is a 
+--              long time, it is not realistic that this would cause an issue.
 ********************************************************************************
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-08-25  1.0      TZS     Created
+-- 2022-08-27  1.0      TZS     Created
 *******************************************************************************/
 
 module line_buff_ctrl #(
@@ -50,8 +60,8 @@ module line_buff_ctrl #(
                              FILL_B 
                            } fill_buff_states_t;
   
-  localparam DISP_START_PX  = H_B_PORCH_MAX_PX - 1; // subtract 1 to counter the 1 cycle latency of a memory buffer operations
-  localparam DISP_END_PX    = H_B_PORCH_MAX_PX + WIDTH_PX - 1; 
+  localparam DISP_START_PX  = H_B_PORCH_MAX_PX - 2; // subtract 2 to counter the 1 cycle latency of a memory buffer operations
+  localparam DISP_END_PX    = H_B_PORCH_MAX_PX + WIDTH_PX - 2; 
 
   localparam DISP_START_LNS = V_B_PORCH_MAX_LNS;
   localparam DISP_END_LNS   = V_B_PORCH_MAX_LNS + HEIGHT_LNS;
@@ -76,7 +86,7 @@ module line_buff_ctrl #(
   assign buff_sel_o      = buff_sel_s;
   assign disp_pxl_id_o   = disp_pxl_id_r;
 
-  /*** READ BUFF FSM **********************************************************/
+  /*** READ FROM BUFF FSM *****************************************************/
 
   always_ff @(posedge clk_i or negedge rstn_i) begin : read_buff_fsm
 
@@ -104,14 +114,14 @@ module line_buff_ctrl #(
           
           if (last_disp_pixel_s == 1 && buff_full_r[1] == 1'b1) begin 
             read_buff_state_r <= READ_BUFF_B;
-            buff_sel_s          <= 2'b10;
+            buff_sel_s        <= 2'b10;
           end
           
         READ_BUFF_B :
 
           if (last_disp_pixel_s == 1 && buff_full_r[0] == 1'b1) begin 
             read_buff_state_r <= READ_BUFF_A;
-            buff_sel_s          <= 2'b01;
+            buff_sel_s        <= 2'b01;
           end
 
         default : 
@@ -138,7 +148,7 @@ module line_buff_ctrl #(
 
         FILL_BUFF_RESET : begin 
           fill_buff_state_r <= FILL_A;
-          buff_fill_req_r   <= 2'b01;
+          buff_fill_req_r   <= 2'b01; // send fill request pulse
         end
         
         FILL_A : begin
@@ -148,7 +158,7 @@ module line_buff_ctrl #(
           // If A is full and B is empty
           if (buff_full_r == 2'b01) begin 
             fill_buff_state_r <= FILL_B;
-            buff_fill_req_r     <= 2'b10;
+            buff_fill_req_r   <= 2'b10;
           end 
           
         end
@@ -160,7 +170,7 @@ module line_buff_ctrl #(
           // If B is full and A is empty
           if (buff_full_r == 2'b10) begin 
             fill_buff_state_r <= FILL_A;
-            buff_fill_req_r     <= 2'b01;
+            buff_fill_req_r   <= 2'b01;
           end 
 
         end
@@ -237,7 +247,7 @@ module line_buff_ctrl #(
           // set buff_full once confirmation received from buffer that fill is complete
           if(buff_fill_done_i[buff_idx] == 1'b1) begin 
             buff_full_r[buff_idx] <= 1'b1;
-          end else if(last_disp_pixel_s == 1'b1) begin // if last display signal is active, clear full status of buffer being read
+          end else if(last_disp_pixel_s == 1'b1) begin // if last display pixel signal is active, clear full status of buffer being read
             if(buff_sel_s[buff_idx] == 1'b1) begin 
               buff_full_r[buff_idx] <= 1'b0;
             end

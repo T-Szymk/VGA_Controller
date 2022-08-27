@@ -5,7 +5,7 @@
 -- File       : line_buffers.sv
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
--- Created    : 2022-08-26
+-- Created    : 2022-08-27
 -- Design     : line_buffers
 -- Platform   : -
 -- Standard   : SystemVerilog '17
@@ -14,11 +14,12 @@
 ********************************************************************************
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-08-26  1.0      TZS     Created
+-- 2022-08-27  1.0      TZS     Created
 *******************************************************************************/
 
-/* NOTE: when the term ROW is used, it relates to a row in the FRAME BUFFER memory,
-         when the term LINE is used, it relates to a PIXEL LINE of the frame. */
+/* NOTE: when the term ROW is used, it relates to a row in the FRAME BUFFER 
+         memory, when the term LINE is used, it relates to a PIXEL LINE of the 
+         frame. */
 
 module line_buffers #(
   parameter COLR_PXL_WIDTH   =   12,
@@ -40,11 +41,12 @@ module line_buffers #(
   output logic [1:0]                  buff_fill_done_o,
   output logic [COLR_PXL_WIDTH-1:0]   disp_pxl_o,
   output logic [FBUFF_ADDR_WIDTH-1:0] fbuff_addr_o,
-  output logic                        fbuff_en_s
+  output logic                        fbuff_en_o
 );
 
-  localparam BUFF_ADDR_WIDTH     = $clog2(TILE_PER_LINE-1);
-  localparam FBUFF_ROWS_PER_LINE = TILE_PER_LINE / (TILES_PER_ROW); 
+  timeunit 1ns/1ps;
+
+  localparam FBUFF_ROWS_PER_LINE = TILE_PER_LINE / TILES_PER_ROW; 
   localparam READ_COUNTER_WIDTH  = $clog2(FBUFF_ROWS_PER_LINE);
   localparam TILE_COUNTER_WIDTH  = $clog2(TILES_PER_ROW); 
 
@@ -54,8 +56,11 @@ module line_buffers #(
 
   logic rst_s;
 
-  logic [1:0][BUFF_ADDR_WIDTH-1:0] lbuff_addra_s;
-  logic [1:0][BUFF_ADDR_WIDTH-1:0] lbuff_addra_r;
+  logic [1:0][TILE_CTR_WIDTH-1:0]  lbuff_addra_s;
+  logic [1:0][TILE_CTR_WIDTH-1:0]  lbuff_wr_addra_r;
+
+  wire  [TILE_CTR_WIDTH-1:0]  lbuff_rd_addra_s;
+
   logic [1:0][COLR_PXL_WIDTH-1:0]  lbuff_dina_s;
   logic [1:0][COLR_PXL_WIDTH-1:0]  lbuff_dina_r;
   logic [1:0]                      lbuff_wea_s;
@@ -65,24 +70,32 @@ module line_buffers #(
 
   logic [1:0] fill_in_progress_r;
   logic [1:0] buff_fill_done_r;
+  logic       fill_select_r;
 
   logic [READ_COUNTER_WIDTH-1:0]   lbuff_read_ctr_r;
   logic [TILE_COUNTER_WIDTH-1:0]   lbuff_tile_ctr_r;
   logic [FBUFF_ADDR_WIDTH-1:0]     fbuff_addr_r;
   logic [FBUFF_DATA_WIDTH-1:0]     fbuff_row_r;
 
-  assign rst_s        = ~rstn_i;
-  assign lbuff_ena_s  = 2'b11;
-  assign fbuff_en_s   = 1'b1;
+  assign fbuff_en_o   = 1'b1;
   assign fbuff_addr_o = fbuff_addr_r;
+  
+  assign buff_fill_done_o = buff_fill_done_r;
 
-  assign lbuff_addra_s = lbuff_addra_r;
+  assign lbuff_ena_s   = 2'b11;
   assign lbuff_wea_s   = lbuff_wea_r;
   assign lbuff_dina_s  = lbuff_dina_r;
+
+  // mux outputs depending buff_sel value
+  assign disp_pxl_o = (buff_sel_i[0] == 1'b1) ? lbuff_douta_s[0] : (buff_sel_i[1] == 1'b1) ? lbuff_douta_s[1] : '0;
+  assign lbuff_rd_addra_s = disp_pxl_id_i;
 
   genvar buff_idx;
   generate
     for(buff_idx = 0; buff_idx < 2; buff_idx++) begin
+      // mux read logic address signals if buff_sel is set, else mux in the address from the write logic
+      assign lbuff_addra_s[buff_idx] = (buff_sel_i[buff_idx] == 1'b1) ? lbuff_rd_addra_s : lbuff_wr_addra_r[buff_idx];
+
       xilinx_single_port_ram #(
         .RAM_WIDTH (COLR_PXL_WIDTH),
         .RAM_DEPTH (TILE_PER_LINE),
@@ -92,11 +105,12 @@ module line_buffers #(
         .dina  (lbuff_dina_s[buff_idx]),    
         .clka  (clk_i),    
         .wea   (lbuff_wea_s[buff_idx]),   
-        .ena   (lbuff_ena_s[buff_idx]),   
-        .rst   (rst_s),   
+        .ena   (lbuff_ena_s[buff_idx]),
         .douta (lbuff_douta_s[buff_idx])   
       );  
     end
+
+  endgenerate
 
   /*** FILL BUFFER LOGIC ******************************************************/
     always_ff @(posedge clk_i or negedge rstn_i) begin : buff_fill_fsm
@@ -105,11 +119,12 @@ module line_buffers #(
         
         lbuff_read_ctr_r    <= '0;
         lbuff_tile_ctr_r    <= '0;
-        lbuff_addra_r       <= '0;
+        lbuff_wr_addra_r    <= '0;
         lbuff_wea_r         <= '0;
         lbuff_dina_r        <= '0;
         fbuff_addr_r        <= '0;
         fbuff_row_r         <= '0;
+        buff_fill_done_r    <= '0;
         fill_buff_c_state_r <= IDLE;
      
       end else begin 
@@ -117,12 +132,16 @@ module line_buffers #(
         case (fill_buff_c_state_r)
         
           IDLE : begin
-            if (fill_in_progress_r[buff_idx] == 1'b1) begin 
-              lbuff_wea_r[buff_idx]   <= '0;    
-              lbuff_dina_r[buff_idx]  <= '0;     
-              lbuff_addra_r[buff_idx] <= '0;      
-              fill_buff_c_state_r     <= READ_FBUFF;
+
+            lbuff_wea_r[fill_select_r]      <= '0;    
+            lbuff_dina_r[fill_select_r]     <= '0;     
+            lbuff_wr_addra_r[fill_select_r] <= '0;      
+            buff_fill_done_r[fill_select_r] <= 1'b0;
+
+            if (fill_in_progress_r[fill_select_r] == 1'b1) begin 
+              fill_buff_c_state_r <= READ_FBUFF;
             end
+
           end
 
           READ_FBUFF : begin 
@@ -141,14 +160,17 @@ module line_buffers #(
           end
           
           WRITE_LBUFF : begin 
+
+            buff_fill_done_r[fill_select_r] <= 1'b0;
+
             /* iterate through each frame buffer row and populate the line buffer,
                one tile at a time. Once the line buffer is full, return to the idle state. */
-            if (lbuff_tile_ctr_r == (TILES_PER_ROW - 1)) begin                           
-
+            if (lbuff_tile_ctr_r == (TILES_PER_ROW - 1)) begin
+              
               if (lbuff_read_ctr_r == (FBUFF_ROWS_PER_LINE - 1)) begin
 
-                lbuff_read_ctr_r    <= '0;
-                fill_buff_c_state_r <= IDLE;
+                lbuff_read_ctr_r           <= '0;
+                fill_buff_c_state_r        <= IDLE;
 
               end else begin 
 
@@ -157,20 +179,28 @@ module line_buffers #(
 
               end
 
-              lbuff_tile_ctr_r        <= '0;
+              lbuff_tile_ctr_r <= '0;
 
             end else begin 
 
-              lbuff_tile_ctr_r        <= lbuff_tile_ctr_r + 1;
-              fill_buff_c_state_r     <= WRITE_LBUFF;
+              lbuff_tile_ctr_r    <= lbuff_tile_ctr_r + 1;
+              fill_buff_c_state_r <= WRITE_LBUFF;
             
             end
 
-            lbuff_wea_r[buff_idx]   <= 1'b1;
-            lbuff_dina_r[buff_idx]  <= fbuff_row_r[lbuff_tile_ctr_r * COLR_PXL_WIDTH +: COLR_PXL_WIDTH];
-            lbuff_addra_r[buff_idx] <= (lbuff_read_ctr_r * TILES_PER_ROW) + lbuff_tile_ctr_r;
+            lbuff_wea_r[fill_select_r]      <= 1'b1;
+            lbuff_dina_r[fill_select_r]     <= fbuff_row_r[lbuff_tile_ctr_r * COLR_PXL_WIDTH +: COLR_PXL_WIDTH];
+            lbuff_wr_addra_r[fill_select_r] <= (lbuff_read_ctr_r * TILES_PER_ROW) + lbuff_tile_ctr_r;
 
-          end 
+            // indicate fill is done, 1 cycle early so that in_progress can be cleared in time
+            if (lbuff_read_ctr_r == (FBUFF_ROWS_PER_LINE - 1) && lbuff_tile_ctr_r == (TILES_PER_ROW - 2)) begin
+  
+              buff_fill_done_r[fill_select_r] <= 1'b1;
+
+            end
+
+          end
+
           
           default :
 
@@ -181,32 +211,36 @@ module line_buffers #(
       end
     end
   /****************************************************************************/
-  endgenerate
 
-  /*** BUFFER FILL IN PROGRESS ************************************************/
+  /*** BUFFER FILL IN PROGRESS + FILL SELECT LOGIC ****************************/
   always_ff @(posedge clk_i or negedge rstn_i) begin : in_progress
     
     if (~rstn_i) begin 
       fill_in_progress_r <= '0;
+      fill_select_r      <= '0;
     end else begin 
-      // prioritise buffer_A. Only one buffer should be filled at a time as there is a single frame buff memory interface
+      // prioritise buffer_A. Only one buffer should be filled at a time as 
+      // there is a single frame buff memory interface
       if (fill_in_progress_r == 2'b00) begin 
         if (buff_fill_req_i[0] == 1'b1) begin 
           fill_in_progress_r[0] <= 1'b1;
+          fill_select_r         <= 1'b0;
         end else if (buff_fill_req_i[1] == 1'b1) begin 
           fill_in_progress_r[1] <= 1'b1;
+          fill_select_r         <= 1'b1;
         end
       end else begin
         if (buff_fill_done_r[0] == 1'b1) begin 
-          fill_in_progress_r[0] <= 1'b0; 
+          fill_in_progress_r[0] <= 1'b0;
+          fill_select_r         <= 1'b0; 
         end else if (buff_fill_done_r[1] == 1'b1) begin
           fill_in_progress_r[1] <= 1'b0; 
+          fill_select_r         <= 1'b0;
         end
       end
     end
   
   end
   /****************************************************************************/
-
 
 endmodule
