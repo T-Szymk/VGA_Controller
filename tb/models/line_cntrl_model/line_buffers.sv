@@ -53,9 +53,7 @@ module line_buffers #(
   typedef enum {IDLE, READ_FBUFF, WRITE_LBUFF} fill_buff_states_t;
 
   fill_buff_states_t fill_buff_c_state_r;
-
-  logic rst_s;
-
+  
   logic [1:0][TILE_CTR_WIDTH-1:0]  lbuff_addra_s;
   logic [1:0][TILE_CTR_WIDTH-1:0]  lbuff_wr_addra_r;
 

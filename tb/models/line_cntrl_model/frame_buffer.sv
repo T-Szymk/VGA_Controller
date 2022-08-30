@@ -46,4 +46,4 @@ module frame_buffer #(
     .douta ( douta_s )
   );
 
-endmodule;
+endmodule

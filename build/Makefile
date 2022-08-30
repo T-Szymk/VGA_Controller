@@ -19,11 +19,11 @@ RTL_FILES = $(RTL)/vga_pkg.vhd \
             $(RTL)/xilinx_top_clk.vhd \
             $(RTL)/vga_pxl_counter.vhd \
             $(RTL)/vga_pattern_gen.vhd \
-						$(RTL)/vga_memory_intf.vhd \
-						$(RTL)/vga_mem_addr_ctrl.vhd \
-						$(RTL)/vga_mem_buff.vhd \
-						$(RTL)/xilinx_dp_BRAM.vhd \
-						$(RTL)/rst_sync.vhd \
+            $(RTL)/vga_memory_intf.vhd \
+            $(RTL)/vga_mem_addr_ctrl.vhd \
+            $(RTL)/vga_mem_buff.vhd \
+            $(RTL)/xilinx_dp_BRAM.vhd \
+            $(RTL)/rst_sync.vhd \
             $(RTL)/vga_top.vhd 
 TB_FILES =  $(TB)/vga_tb.vhd \
             $(TB)/vga_colr_mux_tb.vhd \

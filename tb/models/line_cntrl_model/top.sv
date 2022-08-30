@@ -5,7 +5,7 @@
 -- File       : top.sv
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
--- Created    : 2022-08-27
+-- Created    : 2022-08-28
 -- Design     : top
 -- Platform   : -
 -- Standard   : SystemVerilog '17
@@ -14,7 +14,7 @@
 ********************************************************************************
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-08-27  1.0      TZS     Created
+-- 2022-08-28  1.0      TZS     Created
 *******************************************************************************/ 
 
 module top;
@@ -22,11 +22,9 @@ module top;
   timeunit 1ns/1ps;
 
   parameter SIMULATION_RUNTIME = 1us;
-  parameter CLK_PERIOD         = 40ns;
 
-  parameter TOP_CLK_FREQ_HZ   =   100_000_000;
-  parameter TOP_CLK_PERIOD_NS = 1_000_000_000 / TOP_CLK_FREQ_HZ;
   parameter PXL_CLK_FREQ_HZ   =    25_000_000;
+  parameter PXL_CLK_PERIOD_NS = 1_000_000_000 / PXL_CLK_FREQ_HZ;
 
   // height and width of display area in pixels
   parameter HEIGHT_PX     = 480;
@@ -66,7 +64,6 @@ module top;
   parameter COLR_PXL_WIDTH = DEPTH_COLR * 3;
 
   parameter PXL_WIDTH = COLR_PXL_WIDTH;
-
 
   // use max value to calculate bit width of counter
   parameter PXL_CTR_WIDTH  = $clog2(PXL_CTR_MAX - 1);
@@ -173,8 +170,8 @@ module top;
   );
 
   frame_buffer #(
-    .RAM_WIDTH( FBUFF_DATA_WIDTH ),
-    .RAM_DEPTH( FBUFF_DEPTH )
+    .FBUFF_WIDTH( FBUFF_DATA_WIDTH ),
+    .FBUFF_DEPTH( FBUFF_DEPTH )
   ) i_frame_buffer (
     .addra ( fbuff_addr_s     ),
     .dina  ( fbuff_data_in_s  ),
@@ -187,16 +184,17 @@ module top;
   initial begin
     forever begin
       clk = 0;
-      #(CLK_PERIOD/2);
+      #(PXL_CLK_PERIOD_NS/2);
       clk = 1;
-      #(CLK_PERIOD/2);
+      #(PXL_CLK_PERIOD_NS/2);
     end
     
   end
 
   initial begin // initialise FBUFF memory to known test pattern
     
-    automatic bit [DEPTH_COLR-1:0] counter = '0;
+    automatic bit [DEPTH_COLR-1:0] counter         = '0; // max value == 0xf
+    automatic bit                  count_direction =  1; // 1 = increment
 
     init_fbuff_data_in_s = '0;
     init_fbuff_addr_s    = '0;
@@ -205,19 +203,23 @@ module top;
     init_done_s          = '0;
     ref_fbuff_array      = '0; // reference array to be used to verify display pixel values
     
-    #(5*CLK_PERIOD);
+    #(5*PXL_CLK_PERIOD_NS);
     $display("%0tns: Initialising frame buffer.", $time);
 
     init_fbuff_en_s = 1'b1;
 
     for (int row_id = 0; row_id < FBUFF_DEPTH; row_id++) begin
       for(int tile_idx = 0; tile_idx < TILE_PER_ROW; tile_idx++) begin 
-        init_fbuff_data_in_s[(tile_idx * PXL_WIDTH)+:PXL_WIDTH]    = {3{counter}};
+        init_fbuff_data_in_s[(tile_idx * PXL_WIDTH)+:PXL_WIDTH] = {3{counter}};
         ref_fbuff_array[row_id][tile_idx] = {3{counter}};
       end
         init_fbuff_addr_s = row_id;
         init_fbuff_wen_s  = 1'b1;
-        counter++;
+        
+        
+        
+        //increment counter logic
+
         @(posedge clk);
     end
     
