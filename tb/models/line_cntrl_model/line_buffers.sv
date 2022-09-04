@@ -50,7 +50,7 @@ module line_buffers #(
   localparam READ_COUNTER_WIDTH  = $clog2(FBUFF_ROWS_PER_LINE);
   localparam TILE_COUNTER_WIDTH  = $clog2(TILES_PER_ROW); 
 
-  typedef enum {IDLE, READ_FBUFF, WRITE_LBUFF} fill_buff_states_t;
+  typedef enum {IDLE, READ_FBUFF, PREP_LBUFF, WRITE_LBUFF} fill_buff_states_t;
 
   fill_buff_states_t fill_buff_c_state_r;
   
@@ -153,8 +153,19 @@ module line_buffers #(
               fbuff_addr_r <= fbuff_addr_r + 1;
             end
             
-            fill_buff_c_state_r <= WRITE_LBUFF;
+            fill_buff_c_state_r <= PREP_LBUFF;
          
+          end
+
+          PREP_LBUFF : begin 
+
+            lbuff_wea_r[fill_select_r]      <= 1'b1;
+            lbuff_dina_r[fill_select_r]     <= fbuff_row_r[lbuff_tile_ctr_r * COLR_PXL_WIDTH +: COLR_PXL_WIDTH];
+            lbuff_wr_addra_r[fill_select_r] <= (lbuff_read_ctr_r * TILES_PER_ROW) + lbuff_tile_ctr_r;
+            lbuff_tile_ctr_r                <= lbuff_tile_ctr_r + 1;
+
+            fill_buff_c_state_r <= WRITE_LBUFF;
+
           end
           
           WRITE_LBUFF : begin 
@@ -164,8 +175,8 @@ module line_buffers #(
             /* iterate through each frame buffer row and populate the line buffer,
                one tile at a time. Once the line buffer is full, return to the idle state. */
             if (lbuff_tile_ctr_r == (TILES_PER_ROW - 1)) begin
-              
-              if (lbuff_read_ctr_r == (FBUFF_ROWS_PER_LINE - 1)) begin
+               
+              if (lbuff_read_ctr_r == (FBUFF_ROWS_PER_LINE - 1)) begin // lbuff_read_ctr_r counts fbuff rows in each line
 
                 lbuff_read_ctr_r           <= '0;
                 fill_buff_c_state_r        <= IDLE;
@@ -230,10 +241,10 @@ module line_buffers #(
       end else begin
         if (buff_fill_done_r[0] == 1'b1) begin 
           fill_in_progress_r[0] <= 1'b0;
-          fill_select_r         <= 1'b0; 
+          //fill_select_r         <= 1'b0; 
         end else if (buff_fill_done_r[1] == 1'b1) begin
           fill_in_progress_r[1] <= 1'b0; 
-          fill_select_r         <= 1'b0;
+          //fill_select_r         <= 1'b0;
         end
       end
     end

@@ -18,4 +18,5 @@ compile: clean lib
 	vlog -sv -pedanticerrors $(FILES)
 
 sim: clean lib compile
+	#vsim -voptargs="+acc" -onfinish stop $(TOP) -c
 	vsim -voptargs="+acc" -onfinish stop $(TOP) -do "line_buff.do"

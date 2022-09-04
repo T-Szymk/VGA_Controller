@@ -62,7 +62,9 @@ sim:/top/i_line_buffers/fill_select_r \
 sim:/top/i_line_buffers/lbuff_read_ctr_r \
 sim:/top/i_line_buffers/lbuff_tile_ctr_r \
 sim:/top/i_line_buffers/fbuff_addr_r \
-sim:/top/i_line_buffers/fbuff_row_r
+sim:/top/i_line_buffers/fbuff_row_r \
+sim:/top/i_line_buffers/genblk1[0]/i_buffer_A/BRAM \
+sim:/top/i_line_buffers/genblk1[1]/i_buffer_A/BRAM
 
 add wave -group "FRAME BUFFER" \
 sim:/top/i_frame_buffer/addra \
@@ -77,7 +79,7 @@ set StdArithNoWarnings 1
 run 0 ns 
 set StdArithNoWarnings 0
 
-run 30 ms
+run 20 ms
 
 wave zoom full
 config wave -signalnamewidth 1

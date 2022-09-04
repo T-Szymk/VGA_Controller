@@ -193,8 +193,10 @@ module top;
 
   initial begin // initialise FBUFF memory to known test pattern
     
-    automatic bit [DEPTH_COLR-1:0] counter         = '0; // max value == 0xf
-    automatic bit                  count_direction =  1; // 1 = increment
+    automatic bit [DEPTH_COLR-1:0] counter             = '0; // max value == 0xf
+    automatic bit                  count_direction     =  1; // 1 = increment
+    automatic int                  tile_counter        = '0;
+    automatic int                  current_line        =  0;
 
     init_fbuff_data_in_s = '0;
     init_fbuff_addr_s    = '0;
@@ -207,27 +209,42 @@ module top;
     $display("%0tns: Initialising frame buffer.", $time);
 
     init_fbuff_en_s = 1'b1;
-
-    for (int row_id = 0; row_id < FBUFF_DEPTH; row_id++) begin
-      for(int tile_idx = 0; tile_idx < TILE_PER_ROW; tile_idx++) begin 
-        init_fbuff_data_in_s[(tile_idx * PXL_WIDTH)+:PXL_WIDTH] = {3{counter}};
-        ref_fbuff_array[row_id][tile_idx] = {3{counter}};
-      end
-        init_fbuff_addr_s = row_id;
-        init_fbuff_wen_s  = 1'b1;
-        
-        
-        
-        //increment counter logic
-
-        @(posedge clk);
-    end
     
+    /* initialise fbuff so that each scan line as different data from the previous line
+       and each tile has a different value from the previous tile */
+    for (int fbuff_row = 0; fbuff_row < FBUFF_DEPTH; fbuff_row++) begin
+      for(int tile = 0; tile < TILE_PER_ROW; tile++) begin 
+        
+        init_fbuff_data_in_s[(tile * PXL_WIDTH)+:PXL_WIDTH] = {3{counter}};
+        ref_fbuff_array[fbuff_row][tile] = {3{counter}};
+        
+        // invert count direction once end of line is reached
+        if (tile_counter == TILE_PER_LINE - 1) begin 
+          tile_counter = 0;
+          count_direction = ~count_direction;
+          counter = (count_direction) ? '1 : '0;
+        end else begin
+          tile_counter++; 
+          counter = (count_direction) ? counter + 1 : counter - 1;
+        end
+
+        
+       
+      end
+      
+      init_fbuff_addr_s = fbuff_row;
+      init_fbuff_wen_s  = 1'b1;
+       
+      @(posedge clk);
+      
+    end
+
     init_fbuff_wen_s  = 1'b0;
     init_fbuff_en_s   = 1'b0;
     init_done_s       = 1'b1;
 
     @(posedge clk);
+
     $display("%0tns: Frame buffer initialised.", $time);
   end
 
