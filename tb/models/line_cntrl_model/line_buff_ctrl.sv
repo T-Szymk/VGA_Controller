@@ -24,7 +24,7 @@
 ********************************************************************************
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-09-04  1.0      TZS     Created
+-- 2022-09-05  1.0      TZS     Created
 *******************************************************************************/
 
 module line_buff_ctrl #(
@@ -68,22 +68,24 @@ module line_buff_ctrl #(
 
 
   logic last_disp_pixel_s = '0; // pulse which is 1 for a cycle during the final cycle of the last pixel in the display buffer 
-  logic counter_en_s      = '0;
+  logic counter_en_s      = '0; // register enable used to control display counters
 
-  logic [1:0] buff_sel_s       = '0; // one-hot encoded
+  // used to determine which buffer is used to source display pixel (one-hot encoded)
+  logic [1:0] buff_sel_s       = '0;
+  // signal used to indicate that line buffer should be filled from frame buffer
   logic [1:0] buff_fill_req_r  = '0;
   logic [1:0] buff_full_r      = '0; 
 
   logic [TILE_CTR_WIDTH-1:0] disp_pxl_id_r = '0;
-
+  
   logic [$clog2(TILE_WIDTH)-1:0] tile_pxl_cntr_r = '0;
   logic [$clog2(TILE_WIDTH)-1:0] tile_lns_cntr_r = '0;
 
   read_buff_states_t read_buff_state_r;
   fill_buff_states_t fill_buff_state_r;
-
+  
   assign buff_fill_req_o = buff_fill_req_r;
-  assign buff_sel_o      = buff_sel_s;
+  assign buff_sel_o      = buff_sel_s; 
   assign disp_pxl_id_o   = disp_pxl_id_r;
 
   /*** READ FROM BUFF FSM *****************************************************/
@@ -104,21 +106,23 @@ module line_buff_ctrl #(
           read_buff_state_r <= INIT;
       
         INIT :
-        
+          /* only begin reading from buffer A once buffer A has been filled */
           if(buff_full_r[0] == 1'b1) begin 
             read_buff_state_r <= READ_BUFF_A;
             buff_sel_s <= 2'b01;
           end 
         
         READ_BUFF_A :
-          
+          /* switch to reading from buffer B once last pixel of buffer A is 
+             being displayed and buffer B has been filled */
           if (last_disp_pixel_s == 1 && buff_full_r[1] == 1'b1) begin 
             read_buff_state_r <= READ_BUFF_B;
             buff_sel_s        <= 2'b10;
           end
           
         READ_BUFF_B :
-
+          /* switch to reading from buffer A once last pixel of buffer B is 
+             being displayed and buffer A has been filled */
           if (last_disp_pixel_s == 1 && buff_full_r[0] == 1'b1) begin 
             read_buff_state_r <= READ_BUFF_A;
             buff_sel_s        <= 2'b01;
@@ -155,7 +159,7 @@ module line_buff_ctrl #(
 
           buff_fill_req_r <= '0;
           
-          // If A is full and B is empty
+          // If A is full and B is empty (i.e. B has been read from)
           if (buff_full_r == 2'b01) begin 
             fill_buff_state_r <= FILL_B;
             buff_fill_req_r   <= 2'b10;
@@ -167,7 +171,7 @@ module line_buff_ctrl #(
 
           buff_fill_req_r <= '0;
           
-          // If B is full and A is empty
+          // If B is full and A is empty (i.e. A has been read from)
           if (buff_full_r == 2'b10) begin 
             fill_buff_state_r <= FILL_A;
             buff_fill_req_r   <= 2'b01;
@@ -294,7 +298,7 @@ module line_buff_ctrl #(
     
     // during the last cycle of the display pixel of a buffer, set last_disp_pixel to 1
     if ( tile_lns_cntr_r == (TILE_WIDTH - 1) && 
-         disp_pxl_id_r == (TILE_PER_LINE - 1) && 
+         disp_pxl_id_r   == (TILE_PER_LINE - 1) && 
          tile_pxl_cntr_r == (TILE_WIDTH - 1) ) begin : comb_last_pxl_logic
  
       last_disp_pixel_s = 1'b1;

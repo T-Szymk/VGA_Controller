@@ -15,6 +15,7 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2022-08-27  1.0      TZS     Created
+-- 2022-09-05  1.1      TZS     Added comments
 *******************************************************************************/
 
 /* NOTE: when the term ROW is used, it relates to a row in the FRAME BUFFER 
@@ -28,7 +29,7 @@ module line_buffers #(
   parameter FBUFF_ADDR_WIDTH =   12, // log2((((640 / 4) * (480 / 4)) / 5 tiles_per_line) - 1)
   parameter FBUFF_DATA_WIDTH =   60,
   parameter FBUFF_DEPTH      = 3840,
-  parameter TILES_PER_ROW     =    5,
+  parameter TILES_PER_ROW    =    5,
   parameter TILE_PER_LINE    = WIDTH_PX / TILE_WIDTH, // tile is 4 pixels wide (640/4)
   parameter TILE_CTR_WIDTH   = $clog2(TILE_PER_LINE)
 ) (
@@ -70,7 +71,7 @@ module line_buffers #(
   logic [1:0] buff_fill_done_r;
   logic       fill_select_r;
 
-  logic [READ_COUNTER_WIDTH-1:0]   lbuff_read_ctr_r;
+  logic [READ_COUNTER_WIDTH-1:0]   fbuff_row_ctr_r;
   logic [TILE_COUNTER_WIDTH-1:0]   lbuff_tile_ctr_r;
   logic [FBUFF_ADDR_WIDTH-1:0]     fbuff_addr_r;
   logic [FBUFF_DATA_WIDTH-1:0]     fbuff_row_r;
@@ -95,16 +96,16 @@ module line_buffers #(
       assign lbuff_addra_s[buff_idx] = (buff_sel_i[buff_idx] == 1'b1) ? lbuff_rd_addra_s : lbuff_wr_addra_r[buff_idx];
 
       xilinx_single_port_ram #(
-        .RAM_WIDTH (COLR_PXL_WIDTH),
-        .RAM_DEPTH (TILE_PER_LINE),
-        .INIT_FILE ("")
+        .RAM_WIDTH ( COLR_PXL_WIDTH ),
+        .RAM_DEPTH ( TILE_PER_LINE  ),
+        .INIT_FILE ( ""             )
       ) i_buffer_A (
-        .addra (lbuff_addra_s[buff_idx]),     
-        .dina  (lbuff_dina_s[buff_idx]),    
-        .clka  (clk_i),    
-        .wea   (lbuff_wea_s[buff_idx]),   
-        .ena   (lbuff_ena_s[buff_idx]),
-        .douta (lbuff_douta_s[buff_idx])   
+        .addra ( lbuff_addra_s[buff_idx] ),     
+        .dina  ( lbuff_dina_s[buff_idx]  ),    
+        .clka  ( clk_i                   ),    
+        .wea   ( lbuff_wea_s[buff_idx]   ),   
+        .ena   ( lbuff_ena_s[buff_idx]   ),
+        .douta ( lbuff_douta_s[buff_idx] )   
       );  
     end
 
@@ -115,7 +116,7 @@ module line_buffers #(
       
       if (~rstn_i) begin 
         
-        lbuff_read_ctr_r    <= '0;
+        fbuff_row_ctr_r    <= '0;
         lbuff_tile_ctr_r    <= '0;
         lbuff_wr_addra_r    <= '0;
         lbuff_wea_r         <= '0;
@@ -161,7 +162,7 @@ module line_buffers #(
 
             lbuff_wea_r[fill_select_r]      <= 1'b1;
             lbuff_dina_r[fill_select_r]     <= fbuff_row_r[lbuff_tile_ctr_r * COLR_PXL_WIDTH +: COLR_PXL_WIDTH];
-            lbuff_wr_addra_r[fill_select_r] <= (lbuff_read_ctr_r * TILES_PER_ROW) + lbuff_tile_ctr_r;
+            lbuff_wr_addra_r[fill_select_r] <= (fbuff_row_ctr_r * TILES_PER_ROW) + lbuff_tile_ctr_r;
             lbuff_tile_ctr_r                <= lbuff_tile_ctr_r + 1;
 
             fill_buff_c_state_r <= WRITE_LBUFF;
@@ -176,14 +177,14 @@ module line_buffers #(
                one tile at a time. Once the line buffer is full, return to the idle state. */
             if (lbuff_tile_ctr_r == (TILES_PER_ROW - 1)) begin
                
-              if (lbuff_read_ctr_r == (FBUFF_ROWS_PER_LINE - 1)) begin // lbuff_read_ctr_r counts fbuff rows in each line
+              if (fbuff_row_ctr_r == (FBUFF_ROWS_PER_LINE - 1)) begin // fbuff_row_ctr_r counts fbuff rows in each line
 
-                lbuff_read_ctr_r           <= '0;
+                fbuff_row_ctr_r           <= '0;
                 fill_buff_c_state_r        <= IDLE;
 
               end else begin 
 
-                lbuff_read_ctr_r    <= lbuff_read_ctr_r + 1;
+                fbuff_row_ctr_r    <= fbuff_row_ctr_r + 1;
                 fill_buff_c_state_r <= READ_FBUFF; 
 
               end
@@ -199,10 +200,10 @@ module line_buffers #(
 
             lbuff_wea_r[fill_select_r]      <= 1'b1;
             lbuff_dina_r[fill_select_r]     <= fbuff_row_r[lbuff_tile_ctr_r * COLR_PXL_WIDTH +: COLR_PXL_WIDTH];
-            lbuff_wr_addra_r[fill_select_r] <= (lbuff_read_ctr_r * TILES_PER_ROW) + lbuff_tile_ctr_r;
+            lbuff_wr_addra_r[fill_select_r] <= (fbuff_row_ctr_r * TILES_PER_ROW) + lbuff_tile_ctr_r;
 
             // indicate fill is done, 1 cycle early so that in_progress can be cleared in time
-            if (lbuff_read_ctr_r == (FBUFF_ROWS_PER_LINE - 1) && lbuff_tile_ctr_r == (TILES_PER_ROW - 2)) begin
+            if (fbuff_row_ctr_r == (FBUFF_ROWS_PER_LINE - 1) && lbuff_tile_ctr_r == (TILES_PER_ROW - 2)) begin
   
               buff_fill_done_r[fill_select_r] <= 1'b1;
 
@@ -225,27 +226,39 @@ module line_buffers #(
   always_ff @(posedge clk_i or negedge rstn_i) begin : in_progress
     
     if (~rstn_i) begin 
+      
       fill_in_progress_r <= '0;
       fill_select_r      <= '0;
+
     end else begin 
       // prioritise buffer_A. Only one buffer should be filled at a time as 
       // there is a single frame buff memory interface
       if (fill_in_progress_r == 2'b00) begin 
+
         if (buff_fill_req_i[0] == 1'b1) begin 
+
           fill_in_progress_r[0] <= 1'b1;
           fill_select_r         <= 1'b0;
+
         end else if (buff_fill_req_i[1] == 1'b1) begin 
+
           fill_in_progress_r[1] <= 1'b1;
           fill_select_r         <= 1'b1;
+
         end
+
       end else begin
+
         if (buff_fill_done_r[0] == 1'b1) begin 
+
           fill_in_progress_r[0] <= 1'b0;
-          //fill_select_r         <= 1'b0; 
+          
         end else if (buff_fill_done_r[1] == 1'b1) begin
+
           fill_in_progress_r[1] <= 1'b0; 
-          //fill_select_r         <= 1'b0;
+          
         end
+
       end
     end
   

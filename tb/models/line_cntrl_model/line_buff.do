@@ -72,7 +72,7 @@ sim:/top/i_line_buffers/fill_in_progress_r \
 sim:/top/i_line_buffers/buff_fill_done_r \
 sim:/top/i_line_buffers/fill_select_r \
 -unsigned \
-sim:/top/i_line_buffers/lbuff_read_ctr_r \
+sim:/top/i_line_buffers/fbuff_row_ctr_r \
 sim:/top/i_line_buffers/lbuff_tile_ctr_r \
 -hex \
 sim:/top/i_line_buffers/fbuff_addr_r \
