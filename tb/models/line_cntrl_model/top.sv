@@ -5,7 +5,7 @@
 -- File       : top.sv
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
--- Created    : 2022-08-28
+-- Created    : 2022-09-05
 -- Design     : top
 -- Platform   : -
 -- Standard   : SystemVerilog '17
@@ -14,7 +14,7 @@
 ********************************************************************************
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-08-28  1.0      TZS     Created
+-- 2022-09-05  1.0      TZS     Created
 *******************************************************************************/ 
 
 module top;
@@ -116,7 +116,12 @@ module top;
   logic [FBUFF_DATA_WIDTH-1:0] init_fbuff_data_in_s;
   logic                        init_fbuff_wen_s;
 
-  logic [FBUFF_DEPTH-1:0][TILE_PER_ROW-1:0][PXL_WIDTH-1:0] ref_fbuff_array;
+  logic [(HEIGHT_PX/4)-1:0][(WIDTH_PX/4)-1:0][PXL_WIDTH-1:0] ref_fbuff_array;
+  logic [PXL_WIDTH-1:0] ref_pixel = '0;
+
+  int ref_tile_val  = 0;
+  int ref_line_val  = 0;
+  int frame_counter;
 
   assign rstn = init_done_s; // reset is de-asserted once initialisation is complete
   // mux between init signals and dut signals to allow memory initialisation
@@ -196,7 +201,7 @@ module top;
     automatic bit [DEPTH_COLR-1:0] counter             = '0; // max value == 0xf
     automatic bit                  count_direction     =  1; // 1 = increment
     automatic int                  tile_counter        = '0;
-    automatic int                  current_line        =  0;
+    automatic int                  line_counter        =  0;
 
     init_fbuff_data_in_s = '0;
     init_fbuff_addr_s    = '0;
@@ -216,20 +221,22 @@ module top;
       for(int tile = 0; tile < TILE_PER_ROW; tile++) begin 
         
         init_fbuff_data_in_s[(tile * PXL_WIDTH)+:PXL_WIDTH] = {3{counter}};
-        ref_fbuff_array[fbuff_row][tile] = {3{counter}};
+        ref_fbuff_array[line_counter][tile_counter] = {3{counter}};
         
         // invert count direction once end of line is reached
         if (tile_counter == TILE_PER_LINE - 1) begin 
-          tile_counter = 0;
+          
+          tile_counter    = 0;
           count_direction = ~count_direction;
-          counter = (count_direction) ? '1 : '0;
+          counter         = (count_direction) ? '0 : '1;
+
+          line_counter = (line_counter == ((HEIGHT_PX/4) - 1)) ? 0 : line_counter + 1;
+
         end else begin
           tile_counter++; 
           counter = (count_direction) ? counter + 1 : counter - 1;
         end
 
-        
-       
       end
       
       init_fbuff_addr_s = fbuff_row;
@@ -255,15 +262,17 @@ module top;
   
     if (~rstn) begin 
 
-      pxl_cntr_s <= '0; 
-      ln_cntr_s  <= '0;
+      pxl_cntr_s    <= '0; 
+      ln_cntr_s     <= '0;
+      frame_counter <= '0;
 
     end else begin
       
       if (pxl_cntr_s == (PXL_CTR_MAX - 1)) begin 
         pxl_cntr_s <= '0;
         if (ln_cntr_s == (LINE_CTR_MAX - 1)) begin 
-          ln_cntr_s <= '0;
+          ln_cntr_s     <= '0;
+          frame_counter <= frame_counter + 1;
         end else begin 
           ln_cntr_s <= ln_cntr_s + 1;
         end
@@ -273,6 +282,49 @@ module top;
 
     end
   end
+  /****************************************************************************/
+
+  /* CHECKING OF TEST PATTERN *************************************************/
+
+  initial begin
+
+    forever begin
+
+      /* If pixel counter is greater than minimum and less than max
+           If line counter is greater than minimum and less than max
+             subtract minimum pixel counter value from current pixel counter value and divide by 4
+             subtract minimum line counter value from current line counter value and divide by 4  
+             compare output pixel value with reference array
+             Assert values are the same
+      */
+
+      @(negedge clk);   
+
+      if( (ln_cntr_s >= V_B_PORCH_MAX_LNS) && 
+          (ln_cntr_s < V_DISP_MAX_LNS)     &&
+          (pxl_cntr_s >= (H_B_PORCH_MAX_PX)) && 
+          (pxl_cntr_s < (H_DISP_MAX_PX)) ) begin 
+
+        ref_tile_val = (pxl_cntr_s - (H_B_PORCH_MAX_PX)) / 4;
+        ref_line_val = (ln_cntr_s  - V_B_PORCH_MAX_LNS) / 4;
+
+        ref_pixel = ref_fbuff_array[ref_line_val][ref_tile_val];
+
+        a0_display_pxl : assert (ref_pixel == disp_pxl_s) else
+          $error("Displayed pixel != Reference pixel. disp_pxl_s = %x, ref_pixel = %x", disp_pxl_s, ref_pixel);   
+
+      end else begin 
+
+        ref_tile_val = '0;
+        ref_line_val = '0;
+
+        ref_pixel = '0;
+   
+      end 
+    
+    end
+  end
+
   /****************************************************************************/
 
 

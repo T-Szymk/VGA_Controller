@@ -5,7 +5,7 @@
 -- File       : line_buff_ctrl.sv
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
--- Created    : 2022-08-27
+-- Created    : 2022-09-04
 -- Design     : line_buff_ctrl
 -- Platform   : -
 -- Standard   : SystemVerilog '17
@@ -24,7 +24,7 @@
 ********************************************************************************
 -- Revisions:
 -- Date        Version  Author  Description
--- 2022-08-27  1.0      TZS     Created
+-- 2022-09-04  1.0      TZS     Created
 *******************************************************************************/
 
 module line_buff_ctrl #(
@@ -60,8 +60,8 @@ module line_buff_ctrl #(
                              FILL_B 
                            } fill_buff_states_t;
   
-  localparam DISP_START_PX  = H_B_PORCH_MAX_PX - 2; // subtract 2 to counter the 1 cycle latency of a memory buffer operations
-  localparam DISP_END_PX    = H_B_PORCH_MAX_PX + WIDTH_PX - 2; 
+  localparam DISP_START_PX  = H_B_PORCH_MAX_PX - 1; // subtract 1 to counter the 1 cycle latency of a memory buffer operations
+  localparam DISP_END_PX    = H_B_PORCH_MAX_PX + WIDTH_PX - 1; 
 
   localparam DISP_START_LNS = V_B_PORCH_MAX_LNS;
   localparam DISP_END_LNS   = V_B_PORCH_MAX_LNS + HEIGHT_LNS;

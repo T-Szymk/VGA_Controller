@@ -4,16 +4,26 @@ add wave -group "TOP"  \
 sim:/top/clk \
 sim:/top/rstn \
 -divider "counters" \
+-unsigned \
 sim:/top/disp_pxl_id_s \
 sim:/top/pxl_cntr_s \
 sim:/top/ln_cntr_s \
+-hex \
 sim:/top/disp_pxl_s \
 -divider "frame buffer signals" \
 sim:/top/fbuff_addr_s \
 sim:/top/fbuff_en_s \
 sim:/top/fbuff_data_in_s \
 sim:/top/fbuff_wen_s \
-sim:/top/fbuff_data_out_s
+sim:/top/fbuff_data_out_s \
+-divider "debug_values" \
+sim:/top/ref_pixel \
+-unsigned \
+sim:/top/ref_tile_val \
+sim:/top/ref_line_val \
+sim:/top/frame_counter \
+-hex \
+sim:/top/ref_fbuff_array
 
 add wave -group "LINE BUFFER CONTROL" \
 sim:/top/i_line_buff_ctrl/clk_i \
@@ -30,8 +40,10 @@ sim:/top/i_line_buff_ctrl/buff_sel_s \
 sim:/top/i_line_buff_ctrl/buff_fill_req_r \
 sim:/top/i_line_buff_ctrl/buff_full_r \
 sim:/top/i_line_buff_ctrl/disp_pxl_id_r \
+-unsigned \
 sim:/top/i_line_buff_ctrl/tile_pxl_cntr_r \
 sim:/top/i_line_buff_ctrl/tile_lns_cntr_r \
+-symbolic \
 sim:/top/i_line_buff_ctrl/read_buff_state_r \
 sim:/top/i_line_buff_ctrl/fill_buff_state_r
 
@@ -59,8 +71,10 @@ sim:/top/i_line_buffers/lbuff_douta_s \
 sim:/top/i_line_buffers/fill_in_progress_r \
 sim:/top/i_line_buffers/buff_fill_done_r \
 sim:/top/i_line_buffers/fill_select_r \
+-unsigned \
 sim:/top/i_line_buffers/lbuff_read_ctr_r \
 sim:/top/i_line_buffers/lbuff_tile_ctr_r \
+-hex \
 sim:/top/i_line_buffers/fbuff_addr_r \
 sim:/top/i_line_buffers/fbuff_row_r \
 sim:/top/i_line_buffers/genblk1[0]/i_buffer_A/BRAM \
@@ -73,7 +87,8 @@ sim:/top/i_frame_buffer/clka \
 sim:/top/i_frame_buffer/wea \
 sim:/top/i_frame_buffer/ena \
 sim:/top/i_frame_buffer/douta \
-sim:/top/i_frame_buffer/douta_s
+sim:/top/i_frame_buffer/douta_s \
+sim:/top/i_frame_buffer/i_xilinx_sp_ram/BRAM
 
 set StdArithNoWarnings 1 
 run 0 ns 
