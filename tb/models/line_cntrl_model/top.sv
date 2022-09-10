@@ -186,16 +186,28 @@ module top;
     .douta ( fbuff_data_out_s )
   );
 
+  /* SIMULATION CLOCK GENERATION **********************************************/
   initial begin
+
     forever begin
+
       clk = 0;
       #(PXL_CLK_PERIOD_NS/2);
       clk = 1;
       #(PXL_CLK_PERIOD_NS/2);
-    end
-    
-  end
 
+      if ($time > 1000ms) begin 
+        
+        $display("Simulation complete!");
+        $finish;
+      
+      end
+
+    end
+  end
+  /****************************************************************************/
+
+  /* FBUFF INITIALISATION *****************************************************/
   initial begin // initialise FBUFF memory to known test pattern
     
     automatic bit [DEPTH_COLR-1:0] counter             = '0; // max value == 0xf
@@ -209,9 +221,11 @@ module top;
     init_fbuff_wen_s     = '0;
     init_done_s          = '0;
     ref_fbuff_array      = '0; // reference array to be used to verify display pixel values
+
+    $timeformat(-9, 3, " ns");
     
     #(5*PXL_CLK_PERIOD_NS);
-    $display("%0tns: Initialising frame buffer.", $time);
+    $display("[%0t]: Initialising frame buffer.", $time);
 
     init_fbuff_en_s = 1'b1;
     
@@ -233,8 +247,10 @@ module top;
           line_counter = (line_counter == ((HEIGHT_PX/4) - 1)) ? 0 : line_counter + 1;
 
         end else begin
+
           tile_counter++; 
           counter = (count_direction) ? counter + 1 : counter - 1;
+
         end
 
       end
@@ -252,11 +268,12 @@ module top;
 
     @(posedge clk);
 
-    $display("%0tns: Frame buffer initialised.", $time);
+    $display("[%0t]: Frame buffer initialised.", $time);
+
   end
+  /****************************************************************************/
 
-
-  /* LINE AND PIXEL COUNTER GENERATION ****************************************/
+  /* PIXEL, LINE AND FRAME COUNTER GENERATION *********************************/
   
   always_ff @(posedge clk or negedge rstn) begin 
   
@@ -269,15 +286,24 @@ module top;
     end else begin
       
       if (pxl_cntr_s == (PXL_CTR_MAX - 1)) begin 
+
         pxl_cntr_s <= '0;
+        
         if (ln_cntr_s == (LINE_CTR_MAX - 1)) begin 
+          
           ln_cntr_s     <= '0;
-          frame_counter <= frame_counter + 1;
+          frame_counter <= frame_counter + 1; // incr. frame counter for debug purposes
+        
         end else begin 
+          
           ln_cntr_s <= ln_cntr_s + 1;
+        
         end
+      
       end else begin 
+        
         pxl_cntr_s <= pxl_cntr_s + 1;
+      
       end
 
     end

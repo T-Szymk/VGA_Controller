@@ -55,26 +55,26 @@ module line_buffers #(
 
   fill_buff_states_t fill_buff_c_state_r;
   
-  logic [1:0][TILE_CTR_WIDTH-1:0]  lbuff_addra_s;
-  logic [1:0][TILE_CTR_WIDTH-1:0]  lbuff_wr_addra_r;
+  logic [1:0][TILE_CTR_WIDTH-1:0] lbuff_addra_s;
+  logic [1:0][TILE_CTR_WIDTH-1:0] lbuff_wr_addra_r;
 
   wire  [TILE_CTR_WIDTH-1:0]  lbuff_rd_addra_s;
 
-  logic [1:0][COLR_PXL_WIDTH-1:0]  lbuff_dina_s;
-  logic [1:0][COLR_PXL_WIDTH-1:0]  lbuff_dina_r;
-  logic [1:0]                      lbuff_wea_s;
-  logic [1:0]                      lbuff_wea_r;
-  logic [1:0]                      lbuff_ena_s;
-  logic [1:0][COLR_PXL_WIDTH-1:0]  lbuff_douta_s;
+  logic [1:0][COLR_PXL_WIDTH-1:0] lbuff_dina_s;
+  logic [1:0][COLR_PXL_WIDTH-1:0] lbuff_dina_r;
+  logic [1:0]                     lbuff_wea_s;
+  logic [1:0]                     lbuff_wea_r;
+  logic [1:0]                     lbuff_ena_s;
+  logic [1:0][COLR_PXL_WIDTH-1:0] lbuff_douta_s;
 
   logic [1:0] fill_in_progress_r;
   logic [1:0] buff_fill_done_r;
   logic       fill_select_r;
 
-  logic [READ_COUNTER_WIDTH-1:0]   fbuff_row_ctr_r;
-  logic [TILE_COUNTER_WIDTH-1:0]   lbuff_tile_ctr_r;
-  logic [FBUFF_ADDR_WIDTH-1:0]     fbuff_addr_r;
-  logic [FBUFF_DATA_WIDTH-1:0]     fbuff_row_r;
+  logic [READ_COUNTER_WIDTH-1:0] fbuff_row_ctr_r;
+  logic [TILE_COUNTER_WIDTH-1:0] lbuff_tile_ctr_r;
+  logic [FBUFF_ADDR_WIDTH-1:0]   fbuff_addr_r;
+  logic [FBUFF_DATA_WIDTH-1:0]   fbuff_row_r;
 
   assign fbuff_en_o   = 1'b1;
   assign fbuff_addr_o = fbuff_addr_r;
@@ -116,7 +116,7 @@ module line_buffers #(
       
       if (~rstn_i) begin 
         
-        fbuff_row_ctr_r    <= '0;
+        fbuff_row_ctr_r     <= '0;
         lbuff_tile_ctr_r    <= '0;
         lbuff_wr_addra_r    <= '0;
         lbuff_wea_r         <= '0;
@@ -158,11 +158,11 @@ module line_buffers #(
          
           end
 
-          PREP_LBUFF : begin 
+          PREP_LBUFF : begin // set initial values to start writing line buffer
 
             lbuff_wea_r[fill_select_r]      <= 1'b1;
-            lbuff_dina_r[fill_select_r]     <= fbuff_row_r[lbuff_tile_ctr_r * COLR_PXL_WIDTH +: COLR_PXL_WIDTH];
-            lbuff_wr_addra_r[fill_select_r] <= (fbuff_row_ctr_r * TILES_PER_ROW) + lbuff_tile_ctr_r;
+            lbuff_dina_r[fill_select_r]     <= fbuff_row_r[0 +: COLR_PXL_WIDTH]; // TODO the assignment of a value to the data_in port can be done in a separate comb process
+            lbuff_wr_addra_r[fill_select_r] <= fbuff_row_ctr_r * TILES_PER_ROW;
             lbuff_tile_ctr_r                <= lbuff_tile_ctr_r + 1;
 
             fill_buff_c_state_r <= WRITE_LBUFF;
@@ -179,12 +179,12 @@ module line_buffers #(
                
               if (fbuff_row_ctr_r == (FBUFF_ROWS_PER_LINE - 1)) begin // fbuff_row_ctr_r counts fbuff rows in each line
 
-                fbuff_row_ctr_r           <= '0;
-                fill_buff_c_state_r        <= IDLE;
+                fbuff_row_ctr_r     <= '0;
+                fill_buff_c_state_r <= IDLE;
 
               end else begin 
 
-                fbuff_row_ctr_r    <= fbuff_row_ctr_r + 1;
+                fbuff_row_ctr_r     <= fbuff_row_ctr_r + 1;
                 fill_buff_c_state_r <= READ_FBUFF; 
 
               end
