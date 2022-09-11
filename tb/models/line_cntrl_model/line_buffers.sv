@@ -15,7 +15,7 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2022-08-27  1.0      TZS     Created
--- 2022-09-05  1.1      TZS     Added comments
+-- 2022-09-11  1.1      TZS     Refactored/Optimised FSM design
 *******************************************************************************/
 
 /* NOTE: when the term ROW is used, it relates to a row in the FRAME BUFFER 
@@ -58,7 +58,7 @@ module line_buffers #(
   logic [1:0][TILE_CTR_WIDTH-1:0] lbuff_addra_s;
   logic [1:0][TILE_CTR_WIDTH-1:0] lbuff_wr_addra_r;
 
-  wire  [TILE_CTR_WIDTH-1:0]  lbuff_rd_addra_s;
+  logic [TILE_CTR_WIDTH-1:0]      lbuff_rd_addra_s;
 
   logic [1:0][COLR_PXL_WIDTH-1:0] lbuff_dina_s;
   logic [1:0][COLR_PXL_WIDTH-1:0] lbuff_dina_r;
@@ -71,10 +71,7 @@ module line_buffers #(
   logic [1:0] buff_fill_done_r;
   logic       fill_select_r;
 
-  logic [READ_COUNTER_WIDTH-1:0] fbuff_row_ctr_r;
-  logic [TILE_COUNTER_WIDTH-1:0] lbuff_tile_ctr_r;
   logic [FBUFF_ADDR_WIDTH-1:0]   fbuff_addr_r;
-  logic [FBUFF_DATA_WIDTH-1:0]   fbuff_row_r;
 
   assign fbuff_en_o   = 1'b1;
   assign fbuff_addr_o = fbuff_addr_r;
@@ -86,7 +83,7 @@ module line_buffers #(
   assign lbuff_dina_s  = lbuff_dina_r;
 
   // mux outputs depending buff_sel value
-  assign disp_pxl_o = (buff_sel_i[0] == 1'b1) ? lbuff_douta_s[0] : (buff_sel_i[1] == 1'b1) ? lbuff_douta_s[1] : '0;
+  assign disp_pxl_o       = (buff_sel_i[0] == 1'b1) ? lbuff_douta_s[0] : (buff_sel_i[1] == 1'b1) ? lbuff_douta_s[1] : '0;
   assign lbuff_rd_addra_s = disp_pxl_id_i;
 
   genvar buff_idx;
@@ -116,105 +113,18 @@ module line_buffers #(
       
       if (~rstn_i) begin 
         
-        fbuff_row_ctr_r     <= '0;
-        lbuff_tile_ctr_r    <= '0;
         lbuff_wr_addra_r    <= '0;
         lbuff_wea_r         <= '0;
         lbuff_dina_r        <= '0;
         fbuff_addr_r        <= '0;
-        fbuff_row_r         <= '0;
         buff_fill_done_r    <= '0;
         fill_buff_c_state_r <= IDLE;
      
       end else begin 
 
         case (fill_buff_c_state_r)
-        
-          IDLE : begin
-
-            lbuff_wea_r[fill_select_r]      <= '0;    
-            lbuff_dina_r[fill_select_r]     <= '0;     
-            lbuff_wr_addra_r[fill_select_r] <= '0;      
-            buff_fill_done_r[fill_select_r] <= 1'b0;
-
-            if (fill_in_progress_r[fill_select_r] == 1'b1) begin 
-              fill_buff_c_state_r <= READ_FBUFF;
-            end
-
-          end
-
-          READ_FBUFF : begin 
-            /* firstly, read a row from the frame buffer into local registers */
-            fbuff_row_r <= fbuff_data_i;
-
-            /* protect frame buffers addresses from overflow */
-            if (fbuff_addr_r == (FBUFF_DEPTH - 1)) begin 
-              fbuff_addr_r <= '0;
-            end else begin 
-              fbuff_addr_r <= fbuff_addr_r + 1;
-            end
-            
-            fill_buff_c_state_r <= PREP_LBUFF;
-         
-          end
-
-          PREP_LBUFF : begin // set initial values to start writing line buffer
-
-            lbuff_wea_r[fill_select_r]      <= 1'b1;
-            lbuff_dina_r[fill_select_r]     <= fbuff_row_r[0 +: COLR_PXL_WIDTH]; // TODO the assignment of a value to the data_in port can be done in a separate comb process
-            lbuff_wr_addra_r[fill_select_r] <= fbuff_row_ctr_r * TILES_PER_ROW;
-            lbuff_tile_ctr_r                <= lbuff_tile_ctr_r + 1;
-
-            fill_buff_c_state_r <= WRITE_LBUFF;
-
-          end
           
-          WRITE_LBUFF : begin 
-
-            buff_fill_done_r[fill_select_r] <= 1'b0;
-
-            /* iterate through each frame buffer row and populate the line buffer,
-               one tile at a time. Once the line buffer is full, return to the idle state. */
-            if (lbuff_tile_ctr_r == (TILES_PER_ROW - 1)) begin
-               
-              if (fbuff_row_ctr_r == (FBUFF_ROWS_PER_LINE - 1)) begin // fbuff_row_ctr_r counts fbuff rows in each line
-
-                fbuff_row_ctr_r     <= '0;
-                fill_buff_c_state_r <= IDLE;
-
-              end else begin 
-
-                fbuff_row_ctr_r     <= fbuff_row_ctr_r + 1;
-                fill_buff_c_state_r <= READ_FBUFF; 
-
-              end
-
-              lbuff_tile_ctr_r <= '0;
-
-            end else begin 
-
-              lbuff_tile_ctr_r    <= lbuff_tile_ctr_r + 1;
-              fill_buff_c_state_r <= WRITE_LBUFF;
-            
-            end
-
-            lbuff_wea_r[fill_select_r]      <= 1'b1;
-            lbuff_dina_r[fill_select_r]     <= fbuff_row_r[lbuff_tile_ctr_r * COLR_PXL_WIDTH +: COLR_PXL_WIDTH];
-            lbuff_wr_addra_r[fill_select_r] <= (fbuff_row_ctr_r * TILES_PER_ROW) + lbuff_tile_ctr_r;
-
-            // indicate fill is done, 1 cycle early so that in_progress can be cleared in time
-            if (fbuff_row_ctr_r == (FBUFF_ROWS_PER_LINE - 1) && lbuff_tile_ctr_r == (TILES_PER_ROW - 2)) begin
-  
-              buff_fill_done_r[fill_select_r] <= 1'b1;
-
-            end
-
-          end
-
-          
-          default :
-
-            fill_buff_c_state_r <= IDLE;
+          default : begin end
         
         endcase
         
