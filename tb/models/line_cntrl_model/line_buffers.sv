@@ -16,6 +16,7 @@
 -- Date        Version  Author  Description
 -- 2022-08-27  1.0      TZS     Created
 -- 2022-09-11  1.1      TZS     Refactored/Optimised FSM design
+-- 2022-09-12  1.2      TZS     Added supporting procedural blocks
 *******************************************************************************/
 
 /* NOTE: when the term ROW is used, it relates to a row in the FRAME BUFFER 
@@ -39,9 +40,11 @@ module line_buffers #(
   input  logic [1:0]                  buff_sel_i,
   input  logic [LBUFF_ADDR_WIDTH-1:0] disp_pxl_id_i,
   input  logic [FBUFF_DATA_WIDTH-1:0] fbuff_data_i,
+  output logic                        fbuff_rd_rsp_i,
   output logic [1:0]                  buff_fill_done_o,
   output logic [COLR_PXL_WIDTH-1:0]   disp_pxl_o,
   output logic [FBUFF_ADDR_WIDTH-1:0] fbuff_addr_o,
+  output logic                        fbuff_rd_req_o,
   output logic                        fbuff_en_o
 );
 
@@ -64,11 +67,10 @@ module line_buffers #(
   logic [1:0]                       lbuff_wea_r;
   logic [1:0]                       lbuff_ena_s;
   logic [1:0][COLR_PXL_WIDTH-1:0]   lbuff_douta_s;
-  logic                             lbuff_tile_cntr_en_r;
+  logic                             lbuff_cntr_en_r;
   logic [TILE_COUNTER_WIDTH-1:0]    lbuff_tile_cntr_r;
   
   logic fbuff_rd_req_r;
-  logic fbuff_rd_rsp_r;
 
   logic [FBUFF_ADDR_WIDTH-1:0] fbuff_addr_r;
   logic [COLR_PXL_WIDTH-1:0]   fbuff_pxl_s;  
@@ -77,7 +79,13 @@ module line_buffers #(
   assign fbuff_en_o       = 1'b1;
   assign fbuff_addr_o     = fbuff_addr_r;
   assign buff_fill_done_o = lbuff_fill_done_r;
-  
+  assign fbuff_rd_req_o   = fbuff_rd_req_r;
+
+  // select pixel within row for write to line buffer
+  assign fbuff_pxl_s = fbuff_data_i[lbuff_tile_cntr_r*COLR_PXL_WIDTH +: COLR_PXL_WIDTH];
+  // assign tile for write
+  always_comb lbuff_dina_r[fill_select_r] = fbuff_pxl_s; 
+
   // read enable of line buffer is always set
   assign lbuff_ena_s = 2'b11;
 
@@ -112,10 +120,9 @@ module line_buffers #(
       
       if (~rstn_i) begin 
         
-        lbuff_wr_addra_r     <= '0;
         lbuff_wea_r          <= '0;
         lbuff_fill_done_r    <= '0;
-        lbuff_tile_cntr_en_r <= '0;
+        lbuff_cntr_en_r      <= '0;
         fill_lbuff_c_state_r <= RESET;
      
       end else begin 
@@ -135,7 +142,7 @@ module line_buffers #(
                writing the line buffer if this is not the case.
             */
             if (fill_in_progress_r != 2'b00) begin
-              lbuff_tile_cntr_en_r <= 1'b1;
+              lbuff_cntr_en_r      <= 1'b1;
               lbuff_wea_r          <= 1'b1;
               fill_lbuff_c_state_r <= WRITE_LBUFF;
             end
@@ -147,8 +154,8 @@ module line_buffers #(
                completed */
             fbuff_rd_req_r       <= 1'b0;
             
-            if (fbuff_rd_rsp_r == 1'b1) begin 
-              lbuff_tile_cntr_en_r <= 1'b1;
+            if (fbuff_rd_rsp_i == 1'b1) begin 
+              lbuff_cntr_en_r      <= 1'b1;
               fill_lbuff_c_state_r <= WRITE_LBUFF;
             end
           
@@ -160,7 +167,7 @@ module line_buffers #(
             */
             if (lbuff_tile_cntr_r == (TILES_PER_ROW - 1)) begin 
               
-              lbuff_tile_cntr_en_r <= 1'b0;
+              lbuff_cntr_en_r      <= 1'b0;
               lbuff_wea_r          <= 1'b0;
 
               if (lbuff_wr_addra_r == (TILE_PER_LINE - 1)) begin
@@ -193,6 +200,34 @@ module line_buffers #(
         
       end
     end
+  /****************************************************************************/
+  
+  /*** LINE BUFFER ADDR + TILE COUNTER LOGIC **********************************/
+  always_ff @(posedge clk_i or negedge rstn_i) begin : tile_addr_counters
+
+    if (~rstn_i) begin 
+
+      lbuff_wr_addra_r  <= '0;
+      lbuff_tile_cntr_r <= '0;
+    
+    end else begin 
+
+      if (lbuff_cntr_en_r == 1'b1) begin 
+        // increment line buffer address counter
+        if (lbuff_wr_addra_r == (TILE_PER_LINE - 1))
+          lbuff_wr_addra_r <= '0;
+        else 
+          lbuff_wr_addra_r <= lbuff_wr_addra_r + 1;
+        // increment tile in row counter
+        if (lbuff_tile_cntr_r == (TILES_PER_ROW - 1))
+          lbuff_tile_cntr_r <= '0;
+        else 
+          lbuff_tile_cntr_r <= lbuff_tile_cntr_r + 1;
+
+      end
+
+    end
+  end
   /****************************************************************************/
 
   /*** BUFFER FILL IN PROGRESS + FILL SELECT LOGIC ****************************/
