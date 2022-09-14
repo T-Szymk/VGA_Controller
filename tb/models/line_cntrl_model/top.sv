@@ -167,10 +167,12 @@ module top;
     .buff_fill_req_i  ( buff_fill_req_s  ),            
     .buff_sel_i       ( buff_sel_s       ),       
     .disp_pxl_id_i    ( disp_pxl_id_s    ),          
-    .fbuff_data_i     ( fbuff_data_out_s ),         
+    .fbuff_data_i     ( fbuff_data_out_s ), 
+    .fbuff_rd_rsp_i   (),        
     .buff_fill_done_o ( buff_fill_done_s ),             
     .disp_pxl_o       ( disp_pxl_s       ),       
-    .fbuff_addr_o     ( dut_fbuff_addr_s ),         
+    .fbuff_addr_o     ( dut_fbuff_addr_s ),
+    .fbuff_rd_req_o   (),         
     .fbuff_en_o       ( dut_fbuff_en_s   )      
   );
 
