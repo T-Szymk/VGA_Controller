@@ -152,7 +152,7 @@ module line_buff_ctrl #(
 
         FILL_BUFF_RESET : begin 
           fill_buff_state_r <= FILL_A;
-          buff_fill_req_r   <= 2'b01; // send fill request pulse
+          buff_fill_req_r   <= 2'b01; // send fill request pulse for line buffer A
         end
         
         FILL_A : begin

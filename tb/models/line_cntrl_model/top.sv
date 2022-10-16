@@ -15,6 +15,7 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2022-09-05  1.0      TZS     Created
+-- 2022-10-02  1.1      TZS     Added fbuff read req/rsp
 *******************************************************************************/ 
 
 module top;
@@ -82,11 +83,14 @@ module top;
      2) The memory size of the target. 
      e.g. Xilinx 7-series SDP = < 72bits, and as pixels/tiles are 12-bits wide, 
      ideally reach row would contain 6 tiles. However, this is not a factor of 
-     the 160 (number of tiles per line) and so a value of 5 should be used.  */
-  parameter TILE_PER_ROW = 5; // tile count per row of memory
+     the 160. Additionally, to allow easy translation between the processing 
+     system AXI bus and the frame buffer, the number of tiles should be a power 
+     of 2. This is why a value of 4 tiles per row of the frame buffer should be 
+     used.  */
+  parameter TILE_PER_ROW = 4; // tile count per row of memory
   parameter FBUFF_DATA_WIDTH = TILE_PER_ROW * PXL_WIDTH;
   parameter FBUFF_DEPTH      = (TOTAL_TILES / TILE_PER_ROW);
-  parameter FBUFF_ADDR_WIDTH = $clog2(FBUFF_DEPTH);
+  parameter FBUFF_ADDR_WIDTH = $clog2(FBUFF_DEPTH-1);
 
   logic clk;
   logic rstn;
@@ -107,16 +111,18 @@ module top;
   wire  [FBUFF_DATA_WIDTH-1:0] fbuff_data_in_s;
   wire                         fbuff_wen_s;
   wire  [FBUFF_DATA_WIDTH-1:0] fbuff_data_out_s;
+
+  logic fbuff_read_req_s;
+  logic fbuff_read_rsp_s;
   
   wire  [FBUFF_ADDR_WIDTH-1:0] dut_fbuff_addr_s;
-  wire                         dut_fbuff_en_s;
 
   logic [FBUFF_ADDR_WIDTH-1:0] init_fbuff_addr_s;
   logic                        init_fbuff_en_s;
   logic [FBUFF_DATA_WIDTH-1:0] init_fbuff_data_in_s;
   logic                        init_fbuff_wen_s;
 
-  logic [(HEIGHT_PX/4)-1:0][(WIDTH_PX/4)-1:0][PXL_WIDTH-1:0] ref_fbuff_array;
+  logic [(HEIGHT_PX/4)-1:0][(WIDTH_PX/4)-1:0][PXL_WIDTH-1:0] ref_fbuff_array; // reference array to be used to verify display pixel values
   logic [PXL_WIDTH-1:0] ref_pixel = '0;
 
   int ref_tile_val  = 0;
@@ -126,7 +132,7 @@ module top;
   assign rstn = init_done_s; // reset is de-asserted once initialisation is complete
   // mux between init signals and dut signals to allow memory initialisation
   assign fbuff_addr_s    = (init_done_s == 1'b1) ? dut_fbuff_addr_s : init_fbuff_addr_s;
-  assign fbuff_en_s      = (init_done_s == 1'b1) ? dut_fbuff_en_s : init_fbuff_en_s;
+  assign fbuff_en_s      = (init_done_s == 1'b1) ?  1 : init_fbuff_en_s;
   assign fbuff_data_in_s = (init_done_s == 1'b1) ? '0 : init_fbuff_data_in_s;
   assign fbuff_wen_s     = (init_done_s == 1'b1) ? '0 : init_fbuff_wen_s;
 
@@ -154,13 +160,12 @@ module top;
   line_buffers #(
     .COLR_PXL_WIDTH   ( PXL_WIDTH        ),         
     .TILE_WIDTH       ( TILE_WIDTH       ),     
-    .WIDTH_PX         ( WIDTH_PX         ),   
+    .WIDTH_PX         ( WIDTH_PX         ),
+    .FBUFF_DEPTH      ( FBUFF_DEPTH      ),   
     .FBUFF_ADDR_WIDTH ( FBUFF_ADDR_WIDTH ),           
-    .FBUFF_DATA_WIDTH ( FBUFF_DATA_WIDTH ),           
-    .FBUFF_DEPTH      ( FBUFF_DEPTH      ),      
+    .FBUFF_DATA_WIDTH ( FBUFF_DATA_WIDTH ),      
     .TILES_PER_ROW    ( TILE_PER_ROW     ),        
-    .TILE_PER_LINE    ( TILE_PER_LINE    ),        
-    .TILE_CTR_WIDTH   ( TILE_CTR_WIDTH   )
+    .TILE_PER_LINE    ( TILE_PER_LINE    )
   ) i_line_buffers (
     .clk_i            ( clk              ),  
     .rstn_i           ( rstn             ),   
@@ -168,24 +173,27 @@ module top;
     .buff_sel_i       ( buff_sel_s       ),       
     .disp_pxl_id_i    ( disp_pxl_id_s    ),          
     .fbuff_data_i     ( fbuff_data_out_s ), 
-    .fbuff_rd_rsp_i   (),        
+    .fbuff_rd_rsp_i   ( fbuff_read_rsp_s ),        
     .buff_fill_done_o ( buff_fill_done_s ),             
-    .disp_pxl_o       ( disp_pxl_s       ),       
-    .fbuff_addr_o     ( dut_fbuff_addr_s ),
-    .fbuff_rd_req_o   (),         
-    .fbuff_en_o       ( dut_fbuff_en_s   )      
+    .disp_pxl_o       ( disp_pxl_s       ),
+    .fbuff_rd_req_o   ( fbuff_read_req_s ),
+    .fbuff_addra_o    ( dut_fbuff_addr_s )  
   );
 
   frame_buffer #(
-    .FBUFF_WIDTH( FBUFF_DATA_WIDTH ),
-    .FBUFF_DEPTH( FBUFF_DEPTH )
+    .FBUFF_ADDR_WIDTH ( FBUFF_ADDR_WIDTH ),
+    .FBUFF_WIDTH      ( FBUFF_DATA_WIDTH ),
+    .FBUFF_DEPTH      ( FBUFF_DEPTH      )
   ) i_frame_buffer (
-    .addra ( fbuff_addr_s     ),
-    .dina  ( fbuff_data_in_s  ),
-    .clka  ( clk              ),
-    .wea   ( fbuff_wen_s      ),
-    .ena   ( fbuff_en_s       ),
-    .douta ( fbuff_data_out_s )
+    .clk_i    ( clk              ),
+    .rstn_i   ( rstn             ),
+    .addra_i  ( fbuff_addr_s     ),
+    .dina_i   ( fbuff_data_in_s  ),     
+    .wea_i    ( fbuff_wen_s      ),   
+    .ena_i    ( fbuff_en_s       ),   
+    .rd_req_i ( fbuff_read_req_s ),
+    .rd_rsp_o ( fbuff_read_rsp_s ),
+    .douta    ( fbuff_data_out_s )
   );
 
   /* SIMULATION CLOCK GENERATION **********************************************/
@@ -222,7 +230,7 @@ module top;
     init_fbuff_en_s      = '0;
     init_fbuff_wen_s     = '0;
     init_done_s          = '0;
-    ref_fbuff_array      = '0; // reference array to be used to verify display pixel values
+    ref_fbuff_array      = '0; 
 
     $timeformat(-9, 3, " ns");
     

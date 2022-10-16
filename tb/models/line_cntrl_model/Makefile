@@ -1,9 +1,10 @@
 LIB   = line_buff_model_lib
 FILES = xilinx_sp_BRAM.sv \
         line_buffers.sv \
-		line_buff_ctrl.sv \
-		frame_buffer.sv \
-		top.sv 
+	line_buff_ctrl.sv \
+	frame_buffer.sv \
+	top.sv
+
 TOP   = top
 
 clean:

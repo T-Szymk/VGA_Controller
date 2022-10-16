@@ -25,11 +25,11 @@ module xilinx_single_port_ram #(
   parameter INIT_FILE = "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem" // Specify name/location of RAM initialization file if using one (leave blank if not)
 ) (
   input  logic [$clog2(RAM_DEPTH-1)-1:0] addra,  
-  input  logic [RAM_WIDTH-1:0] dina,           
-  input  logic clka,                           
-  input  logic wea,                            
-  input  logic ena,
-  output logic [RAM_WIDTH-1:0] douta          
+  input  logic [RAM_WIDTH-1:0]           dina,           
+  input  logic                           clka,                           
+  input  logic                           wea,                            
+  input  logic                           ena,
+  output logic [RAM_WIDTH-1:0]           douta          
 );
 
   logic [RAM_WIDTH-1:0] BRAM [RAM_DEPTH-1:0];
