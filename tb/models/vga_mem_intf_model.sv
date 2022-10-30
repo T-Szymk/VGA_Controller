@@ -42,7 +42,7 @@ pxl_width_c matches in vga_pkg.vhd */
   `ifdef MONO
     parameter INIT_FILE = "../../build/RAM_INIT_monochrome.mem";
   `else  
-    parameter INIT_FILE = "../../supporting_apps/mem_file_gen/pulla_tile_4_green.mem";
+    parameter INIT_FILE = "../../supporting_apps/mem_file_gen/pulla.mem";
   `endif
 
   parameter SIMULATION_RUNTIME = 1s;
@@ -96,22 +96,24 @@ pxl_width_c matches in vga_pkg.vhd */
   `endif
 
   // set size n of tile (nxn). If not tiling is desired, set to 1. 
-  parameter TILE_SIZE_PX  = 4;
-  parameter TILE_SHIFT = $clog2(TILE_SIZE_PX);
+  parameter TILE_WIDTH     = 4;
+  parameter TILE_SHIFT     = $clog2(TILE_WIDTH);
+  parameter TILE_PER_LINE  = WIDTH_PX / TILE_WIDTH;
+  parameter TILE_CTR_WIDTH = $clog2(TILE_PER_LINE);
 
   // use max value to calculate bit width of counter
   parameter PXL_CTR_WIDTH  = $clog2(PXL_CTR_MAX - 1);
   parameter LN_CTR_WIDTH   = $clog2(LINE_CTR_MAX - 1);
 
   // memory definitions
-  parameter TILES_PER_MEM_ROW = 5;
+  parameter TILE_PER_ROW = 4;
   
   // BRAM width in bits
-  parameter MEM_WIDTH      = TILES_PER_MEM_ROW * PXL_WIDTH;
-  parameter ROW_CTR_WIDTH  = $clog2(TILES_PER_MEM_ROW - 1);
+  parameter FBUFF_DATA_WIDTH  = TILE_PER_ROW * PXL_WIDTH;
+  parameter ROW_CTR_WIDTH     = $clog2(TILE_PER_ROW - 1);
   // BRAM width in bits and depth in rows after tiling has been applied.
-  parameter TILED_MEM_DEPTH      = (DISP_PXL_MAX / (TILES_PER_MEM_ROW * TILE_SIZE_PX * TILE_SIZE_PX));
-  parameter TILED_MEM_ADDR_WIDTH = $clog2(TILED_MEM_DEPTH-1);
+  parameter FBUFF_DEPTH      = (DISP_PXL_MAX / (TILE_PER_ROW * TILE_WIDTH * TILE_WIDTH));
+  parameter FBUFF_ADDR_WIDTH = $clog2(FBUFF_DEPTH-1);
 
 /******************************************************************************/
 /* VARIABLES AND TYPE DEFINITIONS                                             */
@@ -125,24 +127,22 @@ pxl_width_c matches in vga_pkg.vhd */
   logic [LN_CTR_WIDTH-1:0]  line_ctr_s;
   logic                     colr_en_s;
   logic                     v_sync_s, h_sync_s;
-  logic                     test_switch_s; 
-  logic                     blank_s;
+  logic                     test_switch_s;
   logic                     kill_simulation_s = 0; // will finish simulation once set to 1
   
+  wire [1:0]                   buff_fill_done_s, buff_fill_req_s, buff_sel_s;
+  wire                         fbuff_read_req_s, fbuff_read_rsp_s;
+  wire [TILE_CTR_WIDTH-1:0]    disp_pxl_id_s;
+  wire [FBUFF_DATA_WIDTH-1:0]  fbuff_data_out_s;
+  wire [FBUFF_ADDR_WIDTH-1:0]  dut_fbuff_addr_s;
+
   pixel_t test_pxl_s, mem_pxl_s, disp_pxl_s;
-
-  logic [ROW_CTR_WIDTH-1:0]        ctrl_mem_pxl_ctr_s;
-  logic [TILED_MEM_ADDR_WIDTH-1:0] ctrl_mem_addr_ctr_s;
-
-  logic [TILED_MEM_ADDR_WIDTH-1:0] mem_addr_s;
-  logic [MEM_WIDTH-1:0]            mem_data_s;
-  logic mem_read_en_s;
   
   // variables used as golden reference
-  logic                                disp_active_golden_s;
-  pixel_t                              mem_pxl_golden_s;
+  logic   disp_active_golden_s;
+  pixel_t mem_pxl_golden_s;
 
-  bit [MEM_WIDTH-1:0] mem_arr_model [TILED_MEM_DEPTH-1:0];
+  bit [FBUFF_DATA_WIDTH-1:0] mem_arr_model [FBUFF_DEPTH-1:0];
 
   int position = 0;
   int r_val    = 0;
@@ -199,7 +199,7 @@ pxl_width_c matches in vga_pkg.vhd */
 
   vga_colr_mux i_vga_colr_mux (
     .test_colr_i (test_pxl_s),
-    .mem_colr_i  (mem_pxl_golden_s), // (mem_pxl_s),
+    .mem_colr_i  (mem_pxl_s), // (mem_pxl_golden_s),
     .en_i        (test_switch_s),
     .blank_i     (colr_en_s),
     .colr_out    (disp_pxl_s)
@@ -212,12 +212,12 @@ pxl_width_c matches in vga_pkg.vhd */
   generate
     if (INIT_FILE != "") begin: use_init_file
       initial
-        $readmemb(INIT_FILE, mem_arr_model, 0, TILED_MEM_DEPTH-1);
+        $readmemb(INIT_FILE, mem_arr_model, 0, FBUFF_DEPTH-1);
     end else begin: init_bram_to_zero
       integer ram_index;
       initial
-        for (ram_index = 0; ram_index < TILED_MEM_DEPTH; ram_index = ram_index + 1)
-          mem_arr_model[ram_index] = {MEM_WIDTH{1'b0}};
+        for (ram_index = 0; ram_index < FBUFF_DEPTH; ram_index = ram_index + 1)
+          mem_arr_model[ram_index] = {FBUFF_DATA_WIDTH{1'b0}};
     end
   endgenerate
 
@@ -270,11 +270,11 @@ pxl_width_c matches in vga_pkg.vhd */
 /******************************************************************************/
   // read before write BRAM memory model
   task static run_memory_model (
-    input  bit [TILED_MEM_ADDR_WIDTH-1:0 ] addra,
-    input  bit [MEM_WIDTH-1:0]       dina = '0,
+    input  bit [FBUFF_ADDR_WIDTH-1:0 ] addra,
+    input  bit [FBUFF_DATA_WIDTH-1:0]       dina = '0,
     input  bit                       wea = 0,
     input  bit                       ena,
-    output bit [MEM_WIDTH-1:0]       douta
+    output bit [FBUFF_DATA_WIDTH-1:0]       douta
   );
     begin 
 
@@ -313,7 +313,7 @@ pxl_width_c matches in vga_pkg.vhd */
 
 /******************************************************************************/
 
-function automatic bit [TILED_MEM_ADDR_WIDTH-1:0] get_mem_addr(
+function automatic bit [FBUFF_ADDR_WIDTH-1:0] get_mem_addr(
   input bit [PXL_CTR_WIDTH-1:0] pxl_val_i,
   input bit [LN_CTR_WIDTH-1:0]  line_val_i
 );
@@ -321,7 +321,7 @@ function automatic bit [TILED_MEM_ADDR_WIDTH-1:0] get_mem_addr(
   bit [PXL_CTR_WIDTH-TILE_SHIFT-1:0] tiled_pxl_val = pxl_val_i[PXL_CTR_WIDTH-1:TILE_SHIFT];
   bit [LN_CTR_WIDTH-TILE_SHIFT-1:0]  tiled_ln_val  = line_val_i[LN_CTR_WIDTH-1:TILE_SHIFT];
 
-  get_mem_addr = (tiled_pxl_val + ((WIDTH_PX/TILE_SIZE_PX) * tiled_ln_val)) / TILES_PER_MEM_ROW;
+  get_mem_addr = (tiled_pxl_val + ((WIDTH_PX/TILE_WIDTH) * tiled_ln_val)) / TILE_PER_ROW;
 
 endfunction
 
@@ -329,42 +329,65 @@ endfunction
 /* MEMORY INTERFACE MODULES                                                   */
 /******************************************************************************/
 
-  /* Memory Address Counter */
-  vga_mem_addr_ctrl i_mem_addr_ctrl (
-    .clk_i          (clk_px_s),   
-    .rstn_i         (rst_sync_s),    
-    .pxl_ctr_i      (pxl_ctr_s),       
-    .line_ctr_i     (line_ctr_s),        
-    .mem_addr_ctr_o (ctrl_mem_addr_ctr_s),            
-    .mem_pxl_ctr_o  (ctrl_mem_pxl_ctr_s)          
+  line_buff_ctrl #(
+    .WIDTH_PX          ( WIDTH_PX          ),          
+    .HEIGHT_LNS        ( HEIGHT_PX         ),        
+    .H_B_PORCH_MAX_PX  ( H_B_PORCH_MAX_PX  ),  
+    .V_B_PORCH_MAX_LNS ( V_B_PORCH_MAX_LNS ), 
+    .TILE_WIDTH        ( TILE_WIDTH        ),        
+    .PXL_CTR_WIDTH     ( PXL_CTR_WIDTH     ),     
+    .LN_CTR_WIDTH      ( LN_CTR_WIDTH      ),      
+    .TILE_PER_LINE     ( TILE_PER_LINE     ),      
+    .TILE_CTR_WIDTH    ( TILE_CTR_WIDTH    )
+  ) i_line_buff_ctrl (
+    .clk_i            ( clk_px_s         ),
+    .rstn_i           ( rst_sync_s       ),
+    .buff_fill_done_i ( buff_fill_done_s ),
+    .pxl_cntr_i       ( pxl_ctr_s        ),
+    .ln_cntr_i        ( line_ctr_s       ),
+    .buff_fill_req_o  ( buff_fill_req_s  ),
+    .buff_sel_o       ( buff_sel_s       ),
+    .disp_pxl_id_o    ( disp_pxl_id_s    )
   );
 
-  /* Memory Buffers */
-  vga_mem_buff i_vga_mem_buff (
-    .clk_i           (clk_px_s),
-    .rstn_i          (rst_sync_s), 
-    .disp_addr_ctr_i (ctrl_mem_addr_ctr_s),          
-    .disp_pxl_ctr_i  (ctrl_mem_pxl_ctr_s),         
-    .mem_data_i      (mem_data_s),     
-    .mem_addr_o      (mem_addr_s),
-    .mem_ren_o       (mem_read_en_s),     
-    .disp_blank_o    (blank_s), // not currently implemented    
-    .disp_pxl_o      (mem_pxl_s)    
+  line_buffers #(
+    .COLR_PXL_WIDTH   ( PXL_WIDTH        ),         
+    .TILE_WIDTH       ( TILE_WIDTH       ),     
+    .WIDTH_PX         ( WIDTH_PX         ),
+    .FBUFF_DEPTH      ( FBUFF_DEPTH      ),   
+    .FBUFF_ADDR_WIDTH ( FBUFF_ADDR_WIDTH ),           
+    .FBUFF_DATA_WIDTH ( FBUFF_DATA_WIDTH ),      
+    .TILES_PER_ROW    ( TILE_PER_ROW     ),        
+    .TILE_PER_LINE    ( TILE_PER_LINE    )
+  ) i_line_buffers (
+    .clk_i            ( clk_px_s         ),  
+    .rstn_i           ( rst_sync_s       ),   
+    .buff_fill_req_i  ( buff_fill_req_s  ),            
+    .buff_sel_i       ( buff_sel_s       ),       
+    .disp_pxl_id_i    ( disp_pxl_id_s    ),          
+    .fbuff_data_i     ( fbuff_data_out_s ), 
+    .fbuff_rd_rsp_i   ( fbuff_read_rsp_s ),        
+    .buff_fill_done_o ( buff_fill_done_s ),             
+    .disp_pxl_o       ( mem_pxl_s        ),
+    .fbuff_rd_req_o   ( fbuff_read_req_s ),
+    .fbuff_addra_o    ( dut_fbuff_addr_s )  
   );
 
-  /* Memory Module */
-  xilinx_single_port_ram #(
-    .RAM_WIDTH(MEM_WIDTH),
-    .RAM_DEPTH(TILED_MEM_DEPTH),
-    .INIT_FILE(INIT_FILE)
-  ) i_xilinx_bram (
-    .addra (mem_addr_s),           
-    .dina  ('0),        
-    .clka  (clk_px_s),     
-    .wea   ('0),       
-    .ena   (mem_read_en_s),
-    .rst   ('0),     
-    .douta (mem_data_s)
+    frame_buffer #(
+    .FBUFF_ADDR_WIDTH ( FBUFF_ADDR_WIDTH ),
+    .FBUFF_WIDTH      ( FBUFF_DATA_WIDTH ),
+    .FBUFF_DEPTH      ( FBUFF_DEPTH      ),
+    .INIT_FILE        ( INIT_FILE        )
+  ) i_frame_buffer (
+    .clk_i    ( clk_px_s         ),
+    .rstn_i   ( rst_sync_s       ),
+    .addra_i  ( dut_fbuff_addr_s ),
+    .dina_i   ( '0               ),     
+    .wea_i    ( 1'b0             ),   
+    .ena_i    ( 1'b1             ),   
+    .rd_req_i ( fbuff_read_req_s ),
+    .rd_rsp_o ( fbuff_read_rsp_s ),
+    .douta    ( fbuff_data_out_s )
   );
 
 /******************************************************************************/

@@ -52,8 +52,8 @@ ARCHITECTURE rtl OF vga_controller IS
 
   SIGNAL c_state, n_state : state_t;
 
-  SIGNAL pxl_ctr_r  : INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
-  SIGNAL line_ctr_r : INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
+  SIGNAL pxl_ctr_s  : INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
+  SIGNAL line_ctr_s : INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
 
   SIGNAL v_sync_r  : STD_LOGIC;
   SIGNAL h_sync_r  : STD_LOGIC;
@@ -85,41 +85,41 @@ BEGIN
 
       WHEN V_SYNC =>                                                        ----
 
-        IF (line_ctr_r = (v_sync_max_lns_c - 1) AND 
-                         pxl_ctr_r = pxl_ctr_t'HIGH) THEN
+        IF (line_ctr_s = (v_sync_max_lns_c - 1) AND 
+                         pxl_ctr_s = pxl_ctr_t'HIGH) THEN
           n_state <= V_B_PORCH;
         END IF;
 
       WHEN V_B_PORCH =>                                                     ----
 
-        IF (line_ctr_r = (v_b_porch_max_lns_c - 1) AND 
-           pxl_ctr_r = pxl_ctr_t'HIGH) THEN
+        IF (line_ctr_s = (v_b_porch_max_lns_c - 1) AND 
+           pxl_ctr_s = pxl_ctr_t'HIGH) THEN
           n_state <= H_SYNC;
         END IF;
 
       WHEN H_SYNC =>                                                        ----
 
-        IF pxl_ctr_r = h_sync_max_px_c - 1 THEN
+        IF pxl_ctr_s = h_sync_max_px_c - 1 THEN
           n_state <= H_B_PORCH;
         END IF;
 
       WHEN H_B_PORCH =>                                                     ----
 
-        IF pxl_ctr_r = h_b_porch_max_px_c - 1 THEN
+        IF pxl_ctr_s = h_b_porch_max_px_c - 1 THEN
           n_state <= DISPLAY;
         END IF;
 
       WHEN DISPLAY =>                                                       ----
  
-        IF pxl_ctr_r = h_disp_max_px_c - 1 THEN
+        IF pxl_ctr_s = h_disp_max_px_c - 1 THEN
           n_state <= H_F_PORCH;
         END IF;
 
       WHEN H_F_PORCH =>                                                     ----
 
-        IF pxl_ctr_r = h_f_porch_max_px_c - 1 THEN
-          IF (line_ctr_r = (v_disp_max_lns_c - 1) AND 
-             pxl_ctr_r = pxl_ctr_t'HIGH) THEN
+        IF pxl_ctr_s = h_f_porch_max_px_c - 1 THEN
+          IF (line_ctr_s = (v_disp_max_lns_c - 1) AND 
+             pxl_ctr_s = pxl_ctr_t'HIGH) THEN
             n_state <= V_F_PORCH;
           ELSE
             n_state <= H_SYNC;
@@ -128,8 +128,8 @@ BEGIN
 
       WHEN V_F_PORCH =>                                                     ----
 
-        IF (line_ctr_r = (v_f_porch_max_lns_c - 1) AND 
-           pxl_ctr_r = pxl_ctr_t'HIGH) THEN
+        IF (line_ctr_s = (v_f_porch_max_lns_c - 1) AND 
+           pxl_ctr_s = pxl_ctr_t'HIGH) THEN
           n_state <= V_SYNC;
         END IF;
 
@@ -153,25 +153,25 @@ BEGIN
     ELSIF RISING_EDGE(clk_i) THEN
       
       -- h_sync conditions
-      IF pxl_ctr_r = pxl_ctr_t'HIGH THEN
+      IF pxl_ctr_s = pxl_ctr_t'HIGH THEN
         h_sync_r <= '0';
-      ELSIF pxl_ctr_r = (h_sync_max_px_c - 1) THEN
+      ELSIF pxl_ctr_s = (h_sync_max_px_c - 1) THEN
         h_sync_r <= '1';
       END IF;
       
       -- v_sync conditions
-      IF (line_ctr_r = (v_f_porch_max_lns_c - 1) AND 
-        pxl_ctr_r = pxl_ctr_t'HIGH) THEN
+      IF (line_ctr_s = (v_f_porch_max_lns_c - 1) AND 
+        pxl_ctr_s = pxl_ctr_t'HIGH) THEN
         v_sync_r <= '0';
-      ELSIF (line_ctr_r = (v_sync_max_lns_c - 1) AND 
-        pxl_ctr_r = pxl_ctr_t'HIGH) THEN
+      ELSIF (line_ctr_s = (v_sync_max_lns_c - 1) AND 
+        pxl_ctr_s = pxl_ctr_t'HIGH) THEN
         v_sync_r <= '1';
       END IF;
 
       -- colr_en conditions
-      IF c_state = H_B_PORCH AND pxl_ctr_r = (h_b_porch_max_px_c - 1) THEN
+      IF c_state = H_B_PORCH AND pxl_ctr_s = (h_b_porch_max_px_c - 1) THEN
         colr_en_r <= '0';
-      ELSIF c_state = DISPLAY AND pxl_ctr_r = (h_disp_max_px_c - 1) THEN
+      ELSIF c_state = DISPLAY AND pxl_ctr_s = (h_disp_max_px_c - 1) THEN
         colr_en_r <= '1';
       END IF;
 
@@ -182,8 +182,8 @@ BEGIN
   h_sync_out  <= h_sync_r;
   v_sync_out  <= v_sync_r;
   colr_en_out <= colr_en_r;
-  pxl_ctr_r   <= TO_INTEGER(UNSIGNED(pxl_ctr_i));
-  line_ctr_r  <= TO_INTEGER(UNSIGNED(line_ctr_i));
+  pxl_ctr_s   <= TO_INTEGER(UNSIGNED(pxl_ctr_i));
+  line_ctr_s  <= TO_INTEGER(UNSIGNED(line_ctr_i));
   
 END ARCHITECTURE rtl;
 
