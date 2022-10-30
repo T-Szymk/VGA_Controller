@@ -1,0 +1,131 @@
+m255
+K4
+z2
+!s11f vlog 2019.2_2 2019.06, Jun 15 2019
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 d/home/tom/Development/VGA_Controller/tb/models/line_cntrl_model
+vframe_buffer
+Z1 DXx6 sv_std 3 std 0 22 9oUSJO;AeEaW`l:M@^WG92
+Z2 !s110 1667085308
+!i10b 1
+!s100 d08J<Bh8bAQm3I:G?F:hO1
+!s11b >CJ^V<LZ<TeA^5J3^eX=a0
+IiB^@^F8[MKH140DHB?7?70
+Z3 VDg1SIo80bB@j0V0VzS_@n1
+S1
+R0
+w1665926378
+8frame_buffer.sv
+Fframe_buffer.sv
+Z4 L0 21
+Z5 OL;L;2019.2_2;69
+r1
+!s85 0
+31
+Z6 !s108 1667085308.000000
+!s107 top.sv|frame_buffer.sv|line_buff_ctrl.sv|line_buffers.sv|xilinx_sp_BRAM.sv|
+Z7 !s90 -sv|-pedanticerrors|xilinx_sp_BRAM.sv|line_buffers.sv|line_buff_ctrl.sv|frame_buffer.sv|top.sv|
+!i113 0
+Z8 o-sv -pedanticerrors -L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+Z9 tCvgOpt 0
+vline_buff_ctrl
+R1
+R2
+!i10b 1
+!s100 5K7cg1RmT@EbGleBZSlEO3
+!s11b ]DHMEd5^YbI<>7E8LV_Wz0
+IA4PCD]Re<lO]@;MEZm7Ig3
+R3
+S1
+R0
+w1664699399
+8line_buff_ctrl.sv
+Fline_buff_ctrl.sv
+L0 30
+R5
+r1
+!s85 0
+31
+R6
+Z10 !s107 top.sv|frame_buffer.sv|line_buff_ctrl.sv|line_buffers.sv|xilinx_sp_BRAM.sv|
+R7
+!i113 0
+R8
+R9
+vline_buffers
+R1
+R2
+!i10b 1
+!s100 586E4FFoQdeaE:6Q3;MbW0
+!s11b Z<>Sh^[FaeeHlKfg]PbER3
+I?49Re>97OR5=jGCJ02CR]0
+R3
+S1
+R0
+w1666121393
+8line_buffers.sv
+Fline_buffers.sv
+L0 27
+R5
+r1
+!s85 0
+31
+R6
+R10
+R7
+!i113 0
+R8
+R9
+vtop
+R1
+R2
+!i10b 1
+!s100 FWb_RD@MEJ?XBhBSa:nl22
+!s11b S=em<<Zam;DJ@e5FkTAS`3
+IPnAGAHNC2H::Ab>C]IZQW3
+R3
+S1
+R0
+w1666125081
+8top.sv
+Ftop.sv
+R4
+R5
+r1
+!s85 0
+31
+R6
+R10
+R7
+!i113 0
+R8
+R9
+vxilinx_single_port_ram
+R1
+R2
+!i10b 1
+!s100 d1YDz;61o^8C@Tn;l5YCA2
+!s11b 2]ddcZ^4JGQ:BJaDBLZS82
+I[:WI0[_TSb>1V9[WeAc]_0
+R3
+S1
+R0
+w1665926002
+8xilinx_sp_BRAM.sv
+Fxilinx_sp_BRAM.sv
+L0 22
+R5
+r1
+!s85 0
+31
+R6
+R10
+R7
+!i113 0
+R8
+R9

@@ -94,8 +94,7 @@ module line_buffers #(
   assign lbuff_rd_addra_s = disp_pxl_id_i;
 
   genvar buff_idx;
-  generate
-    for(buff_idx = 0; buff_idx < 2; buff_idx++) begin
+    for(buff_idx = 0; buff_idx < 2; buff_idx++) begin : generate_frame_buffs
       // mux read logic address signals if buff_sel is set, else mux in the address from the write logic
       assign lbuff_addra_s[buff_idx] = (buff_sel_i[buff_idx] == 1'b1) ? lbuff_rd_addra_s : lbuff_wr_addra_r[buff_idx];
 
@@ -112,8 +111,6 @@ module line_buffers #(
         .douta ( lbuff_douta_s[buff_idx] )   
       );  
     end
-
-  endgenerate
 
   /*** FILL BUFFER FSM ********************************************************/
     always_ff @(posedge clk_i or negedge rstn_i) begin : buff_fill_fsm

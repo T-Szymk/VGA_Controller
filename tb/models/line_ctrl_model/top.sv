@@ -16,11 +16,14 @@
 -- Date        Version  Author  Description
 -- 2022-09-05  1.0      TZS     Created
 -- 2022-10-02  1.1      TZS     Added fbuff read req/rsp
+-- 2022-10-30  1.2      TZS     Added INIT_FILE for frame_buff
 *******************************************************************************/ 
 
 module top;
 
   timeunit 1ns/1ps;
+  
+  parameter INIT_FILE = "";
 
   parameter SIMULATION_RUNTIME = 1us;
 
@@ -76,17 +79,17 @@ module top;
   parameter TILE_CTR_WIDTH = $clog2(TILE_PER_LINE);
   parameter TOTAL_TILES    = (HEIGHT_PX * WIDTH_PX) / (TILE_WIDTH ** 2);
 
-  /* The following items should be considered when selecting the row width:
-     1) Whether the number of tiles in a frame line is cleanly divisible by the 
-        number of tiles within a row of memory (i.e. tiles_per_line / tiles_per_row
-        has no remainder). This is to keep the memory access logic simple.
-     2) The memory size of the target. 
-     e.g. Xilinx 7-series SDP = < 72bits, and as pixels/tiles are 12-bits wide, 
-     ideally reach row would contain 6 tiles. However, this is not a factor of 
-     the 160. Additionally, to allow easy translation between the processing 
-     system AXI bus and the frame buffer, the number of tiles should be a power 
-     of 2. This is why a value of 4 tiles per row of the frame buffer should be 
-     used.  */
+/* The following items should be considered when selecting the row width:
+1) Whether the number of tiles in a frame line is cleanly divisible by the
+   number of tiles within a row of memory (i.e. tiles_per_line / tiles_per_row
+   has no remainder). This is to keep the memory access logic simple.
+2) The memory size of the target. e.g. Xilinx 7-series SDP = < 72bits, and as
+   pixels/tiles are 12-bits wide, ideally reach row would contain 6 tiles.
+   However, this is not a factor of the 160. Additionally, to allow easy
+   translation between the processing system AXI bus and the frame buffer, the
+   number of tiles should be a power of 2. This is why a value of 4 tiles per
+   row of the frame buffer should be used.  
+*/
   parameter TILE_PER_ROW = 4; // tile count per row of memory
   parameter FBUFF_DATA_WIDTH = TILE_PER_ROW * PXL_WIDTH;
   parameter FBUFF_DEPTH      = (TOTAL_TILES / TILE_PER_ROW);
@@ -183,7 +186,8 @@ module top;
   frame_buffer #(
     .FBUFF_ADDR_WIDTH ( FBUFF_ADDR_WIDTH ),
     .FBUFF_WIDTH      ( FBUFF_DATA_WIDTH ),
-    .FBUFF_DEPTH      ( FBUFF_DEPTH      )
+    .FBUFF_DEPTH      ( FBUFF_DEPTH      ),
+    .INIT_FILE        ( INIT_FILE        )
   ) i_frame_buffer (
     .clk_i    ( clk              ),
     .rstn_i   ( rstn             ),
@@ -239,8 +243,9 @@ module top;
 
     init_fbuff_en_s = 1'b1;
     
-    /* initialise fbuff so that each scan line as different data from the previous line
-       and each tile has a different value from the previous tile */
+    /* initialise fbuff so that each scan line as different data from the 
+       previous line and each tile has a different value from the previous tile 
+    */
     for (int fbuff_row = 0; fbuff_row < FBUFF_DEPTH; fbuff_row++) begin
       for(int tile = 0; tile < TILE_PER_ROW; tile++) begin 
         
@@ -326,12 +331,12 @@ module top;
 
     forever begin
 
-      /* If pixel counter is greater than minimum and less than max
-           If line counter is greater than minimum and less than max
-             subtract minimum pixel counter value from current pixel counter value and divide by 4
-             subtract minimum line counter value from current line counter value and divide by 4  
-             compare output pixel value with reference array
-             Assert values are the same
+      /* If pixel counter is greater than minimum and less than max If line
+         counter is greater than minimum and less than max subtract minimum 
+         pixel counter value from current pixel counter value and divide by 4 
+         subtract minimum line counter value from current line counter value and 
+         divide by 4 compare output pixel value with reference array Assert 
+         values are the same
       */
 
       @(negedge clk);   

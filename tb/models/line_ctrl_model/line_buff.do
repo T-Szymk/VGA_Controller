@@ -74,8 +74,8 @@ sim:/top/i_line_buffers/lbuff_cntr_en_r \
 sim:/top/i_line_buffers/lbuff_tile_cntr_r \
 sim:/top/i_line_buffers/fbuff_rd_req_r \
 sim:/top/i_line_buffers/fbuff_pxl_s \
-sim:/top/i_line_buffers/genblk1[0]/i_line_buffer/BRAM \
-sim:/top/i_line_buffers/genblk1[1]/i_line_buffer/BRAM
+sim:/top/i_line_buffers/generate_frame_buffs[0]/i_line_buffer/BRAM \
+sim:/top/i_line_buffers/generate_frame_buffs[1]/i_line_buffer/BRAM
 
 add wave -group "FRAME BUFFER"  \
 sim:/top/i_frame_buffer/clk_i \

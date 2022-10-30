@@ -16,12 +16,14 @@
 -- Date        Version  Author  Description
 -- 2022-08-27  1.0      TZS     Created
 -- 2022-10-16  1.1      TZS     Add read req/rsp signals
+-- 2022-10-30  1.2      TZS     Added init file parameter
 *******************************************************************************/
 
 module frame_buffer #(
   parameter FBUFF_ADDR_WIDTH = 12,
   parameter FBUFF_WIDTH      = 60, 
-  parameter FBUFF_DEPTH      = 3840
+  parameter FBUFF_DEPTH      = 3840,
+  parameter INIT_FILE        = ""
 ) (
   input  logic                        clk_i,
   input  logic                        rstn_i,
@@ -90,7 +92,7 @@ module frame_buffer #(
   xilinx_single_port_ram #(
     .RAM_WIDTH( FBUFF_WIDTH ),
     .RAM_DEPTH( FBUFF_DEPTH ),
-    .INIT_FILE( "" )
+    .INIT_FILE( INIT_FILE )
   ) i_xilinx_sp_ram (
     .addra ( addra_i ),
     .dina  ( dina_i  ),
