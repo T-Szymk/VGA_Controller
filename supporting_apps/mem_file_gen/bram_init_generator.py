@@ -1,21 +1,25 @@
 import math
 import vga_image as vga
 
-HEIGHT = 480
-WIDTH  = 640
-COLOUR_DEPTH = 1
-PIXEL_WIDTH = 3 * COLOUR_DEPTH
-PIXELS_PER_LINE = 8
-MEMORY_WIDTH = PIXELS_PER_LINE * PIXEL_WIDTH
-MEMORY_DEPTH = math.ceil((HEIGHT * WIDTH) / PIXELS_PER_LINE)
+# TODO: input and output filenames should be arguments
 
-IMAGE_NAME = "floral"
+HEIGHT = 480
+WIDTH = 640
+COLOUR_DEPTH = 4
+PIXEL_WIDTH = 3 * COLOUR_DEPTH
+TILES_PER_MEM_ROW = 4  # defines how many
+TILE_SIZE = 4
+MEMORY_WIDTH = TILES_PER_MEM_ROW * PIXEL_WIDTH
+MEMORY_DEPTH = math.ceil((HEIGHT * WIDTH) / (TILES_PER_MEM_ROW * (TILE_SIZE ** 2)))
+
+IMAGE_NAME = "pulla"
 IMAGE_EXT = ".jpg"
 IMAGE_PATH = f"/home/tom/Pictures/{IMAGE_NAME}{IMAGE_EXT}"
-print(IMAGE_PATH)
 OUTPUT_FILENAME = IMAGE_NAME
 
 
+# function that will write out a test memory initialisation file which contains incrementing values within each pixel
+# to be used in testing
 def write_incrementing_value_mem(depth):
     with open("mem_file.mem", 'w') as file:
         file.write("@000\n")
@@ -26,18 +30,24 @@ def write_incrementing_value_mem(depth):
             file.write(tmp_binary + "\n")
 
 
-def write_arr2mem(mem_arr, depth, output_filename):
+# take memory array and write it out into a memory init file which can subsequently be read using readmemb()
+def write_arr2mem(mem_array, output_filename):
     with open(output_filename + ".mem", 'w') as file:
         file.write("@000\n")
-        for line in range(0, depth):
+        for line in range(0, len(mem_array)):
             tmp_binary = bin(line)[2:]
-            file.write(mem_arr[line] + "\n")
+            file.write(mem_array[line] + "\n")
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    image = vga.VGAImage(HEIGHT, WIDTH, IMAGE_PATH, False, 0, 0)
-    image.show_image()
-    image.show_comp_image()
-    mem_arr = vga.MemArray(PIXELS_PER_LINE, image.width, image.height, image.get_mem_pxl_array())
-    write_arr2mem(mem_arr.get_mem_arr(), MEMORY_DEPTH, OUTPUT_FILENAME)
+
+    memory_array = vga.MemArray(TILES_PER_MEM_ROW, IMAGE_PATH, colour_option="green")
+    #memory_array.vga_image.show_tiled_image()
+    write_arr2mem(memory_array.get_mem_arr(), OUTPUT_FILENAME)
+    print("------------------------------------------------")
+    print(f"Input Image : {IMAGE_PATH}")
+    print(f"Output File : {OUTPUT_FILENAME}.mem")
+    print(f"Memory Depth: {len(memory_array.get_mem_arr())} rows")
+    print(f"Memory Width: {len(memory_array.get_mem_arr()[0])} bits")
+    print("------------------------------------------------")
+

@@ -114,7 +114,7 @@ class VGAImage:
 class MemArray:
     # When initialised, class should create a VGA_Image and then use it to generate an array which should represent the
     # frame buffer memory contents
-    def __init__(self, pxl_per_line, image_name, tile_size_pxl=4, colour_option="colour", height=480, width=640,
+    def __init__(self, tiles_per_mem_row, image_name, tile_size_pxl=4, colour_option="colour", height=480, width=640,
                  crop=False, crop_x=0, crop_y=0):
 
         self.vga_image = VGAImage(image_name, height, width, crop, crop_x, crop_y)
@@ -124,16 +124,16 @@ class MemArray:
         line = ""
         pxl_cnt_max = int((self.vga_image.width * self.vga_image.height) / (self.vga_image.tile_size ** 2))
         current_pxl_cnt = 0
-        print(len(self.vga_image.mem_pxl_arr))
+
         # iterate through the pixels in the RGB memory array and transform them to binary and split the 1D array into
         # rows according to the specified row width
         while current_pxl_cnt < pxl_cnt_max:
-            for pxl_id in range(0, pxl_per_line):
+            for pxl_id in range(0, tiles_per_mem_row):
                 curr_pxl = self.vga_image.mem_pxl_arr[(current_pxl_cnt + pxl_id)]
                 line = f'{curr_pxl[2]:04b}' + line  # B
                 line = f'{curr_pxl[1]:04b}' + line  # G
                 line = f'{curr_pxl[0]:04b}' + line  # R
-            current_pxl_cnt += pxl_per_line
+            current_pxl_cnt += tiles_per_mem_row
             self.memory_arr.append(line)
             line = ""
 
@@ -146,7 +146,9 @@ if __name__ == "__main__":
     test_mem_arr = MemArray(8, "/home/tom/Pictures/pulla.jpg", colour_option="green")
     test_mem_arr.vga_image.show_tiled_image()
 
-    print(test_mem_arr.vga_image.get_mem_pxl_array()[8:80])
-    print(test_mem_arr.get_mem_arr()[1:10])
+    print(test_mem_arr.vga_image.get_mem_pxl_array()[24:48])
+    print(test_mem_arr.get_mem_arr()[4:6])
+    for i in range(96, 192, 4):
+        print(test_mem_arr.vga_image.tiled_image.getpixel((i, 0)))
 
 
