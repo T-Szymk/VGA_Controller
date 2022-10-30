@@ -137,12 +137,6 @@ pxl_width_c matches in vga_pkg.vhd */
   wire [FBUFF_ADDR_WIDTH-1:0]  dut_fbuff_addr_s;
 
   pixel_t test_pxl_s, mem_pxl_s, disp_pxl_s;
-  
-  // variables used as golden reference
-  logic   disp_active_golden_s;
-  pixel_t mem_pxl_golden_s;
-
-  bit [FBUFF_DATA_WIDTH-1:0] mem_arr_model [FBUFF_DEPTH-1:0];
 
   int position = 0;
   int r_val    = 0;
@@ -206,22 +200,6 @@ pxl_width_c matches in vga_pkg.vhd */
   );
 
 /******************************************************************************/
-/* MEMORY INITIALISATION                                                      */
-/******************************************************************************/
-  
-  generate
-    if (INIT_FILE != "") begin: use_init_file
-      initial
-        $readmemb(INIT_FILE, mem_arr_model, 0, FBUFF_DEPTH-1);
-    end else begin: init_bram_to_zero
-      integer ram_index;
-      initial
-        for (ram_index = 0; ram_index < FBUFF_DEPTH; ram_index = ram_index + 1)
-          mem_arr_model[ram_index] = {FBUFF_DATA_WIDTH{1'b0}};
-    end
-  endgenerate
-
-/******************************************************************************/
 /* CLOCK/RESET AND IO GENERATION                                              */
 /******************************************************************************/
   initial begin 
@@ -264,66 +242,6 @@ pxl_width_c matches in vga_pkg.vhd */
     join
 
   end
-
-/******************************************************************************/
-/* MEMORY INTERFACE MODELS                                                    */
-/******************************************************************************/
-  // read before write BRAM memory model
-  task static run_memory_model (
-    input  bit [FBUFF_ADDR_WIDTH-1:0 ] addra,
-    input  bit [FBUFF_DATA_WIDTH-1:0]       dina = '0,
-    input  bit                       wea = 0,
-    input  bit                       ena,
-    output bit [FBUFF_DATA_WIDTH-1:0]       douta
-  );
-    begin 
-
-      if(ena) begin
-        douta = vga_model.mem_arr_model[addra];
-        if(wea) 
-            vga_model.mem_arr_model[addra] = dina; 
-      end
-      
-    end
-  endtask
-
-/******************************************************************************/
-
-  // memory address controller model
-  task automatic run_line_buff_ctrl_model (
-
-  );
-    begin
-
-
-
-    end
-  endtask
-
-/******************************************************************************/
-
-  // memory buffer model
-  task automatic run_mem_buff_model (
-  );
-    
-    begin 
-    end
-
-  endtask
-
-/******************************************************************************/
-
-function automatic bit [FBUFF_ADDR_WIDTH-1:0] get_mem_addr(
-  input bit [PXL_CTR_WIDTH-1:0] pxl_val_i,
-  input bit [LN_CTR_WIDTH-1:0]  line_val_i
-);
-
-  bit [PXL_CTR_WIDTH-TILE_SHIFT-1:0] tiled_pxl_val = pxl_val_i[PXL_CTR_WIDTH-1:TILE_SHIFT];
-  bit [LN_CTR_WIDTH-TILE_SHIFT-1:0]  tiled_ln_val  = line_val_i[LN_CTR_WIDTH-1:TILE_SHIFT];
-
-  get_mem_addr = (tiled_pxl_val + ((WIDTH_PX/TILE_WIDTH) * tiled_ln_val)) / TILE_PER_ROW;
-
-endfunction
 
 /******************************************************************************/
 /* MEMORY INTERFACE MODULES                                                   */
