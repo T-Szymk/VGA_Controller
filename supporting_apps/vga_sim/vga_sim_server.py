@@ -83,6 +83,7 @@ def main():
         sock.bind((HOST, PORT))
         sock.listen()
         conn, addr = sock.accept()
+        conn.settimeout(3.0)
 
         with conn:
             # once connected, remove no connection caption
@@ -92,11 +93,17 @@ def main():
             print(f"Connected to from {addr}")
             line_id = 0
 
-            while True:
+            while running:
                 # enter infinite loop to wait for data, receive data, process data (repeat)
-                data = conn.recv(BUFF_SIZE)
+                try: 
+                    data = conn.recv(BUFF_SIZE)
+                except TimeoutError:
+                    for event in pygame.event.get():
+                        # Check for QUIT event
+                        if event.type == pygame.QUIT:
+                            break
 
-                if data != b'':
+                if data != b'':  # empty string only returned when end of file is reached (i.e. server has gone)
 
                     if DEBUG:
                         print(f"Received: {data}")
@@ -116,6 +123,7 @@ def main():
                             line_id = line_id + 1
                 else:
                     break
+
         # Once socket it closed, sit in loop and alert User that the screen must
         # be closed
         print("Left socket Loop. Close Simulation Window.")
