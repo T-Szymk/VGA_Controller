@@ -165,14 +165,13 @@ compile_mem_intf_model: clean_mem_intf_model
                                                           $(RTL)/xilinx_top_clk.vhd \
                                                           $(RTL)/vga_pxl_counter.vhd \
                                                           $(RTL)/vga_pattern_gen.vhd \
-						                                              $(RTL)/vga_memory_intf.vhd \
-						                                              $(RTL)/vga_mem_addr_ctrl.vhd \
-						                                              $(RTL)/vga_mem_buff.vhd \
-						                                              $(RTL)/xilinx_dp_BRAM.vhd \
 						                                              $(RTL)/rst_sync.vhd && \
 	$(MSIM_CMD)/vlog -dpiheader $(TB)/models/dpi/includes/dpiheader.h \
 	                 -sv -pedanticerrors $(RTL)/xilinx_dp_BRAM.sv \
-									 $(TB)/models/vga_mem_intf_model.sv && \
+									                     $(TB)/models/line_ctrl_model/frame_buffer.sv \
+																			 $(TB)/models/line_ctrl_model/line_buff_ctrl.sv \
+																			 $(TB)/models/line_ctrl_model/line_buffers.sv \
+									                     $(TB)/models/vga_mem_intf_model.sv && \
 	$(MSIM_CMD)/vlog $(TB)/models/dpi/src/vga_dpi.c
 
 .PHONY: sim_mem_intf_model
