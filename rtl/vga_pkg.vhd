@@ -73,9 +73,6 @@ PACKAGE vga_pkg IS
   
   -- VIDEO MEMORY CONSTANTS/TYPES ##############################################
 
-  CONSTANT tile_size_c  : INTEGER := 4;
-  CONSTANT tile_shift_c : INTEGER := INTEGER(CEIL(LOG2(REAL(tile_size_c))));
-
   TYPE pxl_width_arr_t IS ARRAY(1 DOWNTO 0) OF INTEGER;
   CONSTANT pxl_width_arr_c : pxl_width_arr_t := (1, 3); 
   --!!!
@@ -85,57 +82,22 @@ PACKAGE vga_pkg IS
   CONSTANT depth_colr_c    : INTEGER := 4;
   CONSTANT pxl_width_c     : INTEGER := depth_colr_c * pxl_width_arr_c(monochrome_en_c); -- Monochrome format
 
-  CONSTANT pxl_per_row_c   : INTEGER := 8;
-  -- width of counter used to count current pixel in memory row beign displayed
-  CONSTANT row_ctr_width_c : INTEGER := INTEGER(CEIL(LOG2(REAL(pxl_per_row_c - 1))));
+  CONSTANT tile_width_c  : INTEGER := 4; -- tile width or height in pixels
+  CONSTANT total_tiles_c : INTEGER := (height_px_c * width_px_c) / (tile_width_c**2);
+  CONSTANT tiles_per_row_c : INTEGER := 4; -- count of how many tiles are contained in a row of the frame buffer
+  CONSTANT fbuff_data_width_c : INTEGER := tiles_per_row_c * pxl_width_c;
+  CONSTANT fbuff_depth_c : INTEGER := (total_tiles_c / tiles_per_row_c);
+  CONSTANT fbuff_addr_width_c : INTEGER :=  INTEGER(CEIL(LOG2(REAL(fbuff_depth_c - 1))));
 
-  CONSTANT mem_row_width_c : INTEGER := pxl_per_row_c * pxl_width_c;
-  CONSTANT mem_depth_c     : INTEGER := INTEGER(CEIL(REAL(disp_pxl_max_c)/REAL(pxl_per_row_c * tile_size_c * tile_size_c)));
-  -- width of memory address signals
-  CONSTANT mem_addr_width_c : INTEGER := INTEGER(CEIL(LOG2(REAL(mem_depth_c - 1))));
   -- array to contain colours(RGB) in integer format
   SUBTYPE pixel_t   IS STD_LOGIC_VECTOR(pxl_width_c - 1 DOWNTO 0);
-  TYPE pixel_word_t IS ARRAY(pxl_per_row_c - 1 DOWNTO 0) OF pixel_t; 
   TYPE colr_arr_t   IS ARRAY(2 DOWNTO 0) OF INTEGER RANGE ((2**depth_colr_c) - 1) DOWNTO 0;
-
-  -- buffer management subroutines
-  PROCEDURE buff_fill ( 
-    signal mem_word_i : in  std_logic_vector(mem_row_width_c-1 downto 0);
-    signal buff_o     : out pixel_word_t
-  );
-
-  PROCEDURE buff_clr ( 
-    signal buff_o : out pixel_word_t
-  );
 
 END PACKAGE vga_pkg;
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-PACKAGE BODY vga_pkg IS
-
-  PROCEDURE buff_fill ( --------------------------------------------------------
-    signal mem_word_i : in  std_logic_vector(mem_row_width_c-1 downto 0);
-    signal buff_o     : out pixel_word_t ) IS 
-  BEGIN 
-
-    FOR i IN pxl_per_row_c-1 DOWNTO 0 LOOP 
-      buff_o(i) <= mem_word_i(((i * pxl_width_c) + pxl_width_c)-1 
-                              DOWNTO (i * pxl_width_c)); 
-    END LOOP;
-
-  END PROCEDURE buff_fill; -----------------------------------------------------
-
-
-  PROCEDURE buff_clr ( ---------------------------------------------------------
-    signal buff_o : out pixel_word_t ) IS 
-  BEGIN 
-
-    FOR i IN pxl_per_row_c-1 DOWNTO 0 LOOP 
-      buff_o(i) <= (others => '0');
-    END LOOP;
-
-  END PROCEDURE buff_clr; ------------------------------------------------------
-
-END PACKAGE BODY vga_pkg;
+--PACKAGE BODY vga_pkg IS
+--
+--END PACKAGE BODY vga_pkg;

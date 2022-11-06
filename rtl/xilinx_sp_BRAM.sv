@@ -2,7 +2,7 @@
 -- Title      : VGA Controller - Single Port BRAM
 -- Project    : VGA Controller
 ********************************************************************************
--- File       : xilinx_dp_BRAM.sv
+-- File       : xilinx_sp_BRAM.sv
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
 -- Created    : 2022-06-26
@@ -17,22 +17,20 @@
 -- Date        Version  Author  Description
 -- 2022-07-01  1.0      TZS     Created
 -- 2022-07-22  1.1      TZS     Modified to single port RAM
--- 2022-08-27  1.2      TZS     Removed reset
+-- 2022-08-28  1.2      TZS     Remove rst port and corrected filename to sp_ram
 *******************************************************************************/                 
 module xilinx_single_port_ram #(
-  parameter RAM_WIDTH = 18, 
-  parameter RAM_DEPTH = 1024,
-  parameter INIT_FILE = "" 
+  parameter RAM_WIDTH = 18,                       
+  parameter RAM_DEPTH = 1024,                     
+  parameter INIT_FILE = "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem" // Specify name/location of RAM initialization file if using one (leave blank if not)
 ) (
-  input  logic [$clog2(RAM_DEPTH-1)-1:0] addra,
+  input  logic [$clog2(RAM_DEPTH-1)-1:0] addra,  
   input  logic [RAM_WIDTH-1:0]           dina,           
   input  logic                           clka,                           
   input  logic                           wea,                            
   input  logic                           ena,
   output logic [RAM_WIDTH-1:0]           douta          
 );
-
-  timeunit 1ns/1ps;
 
   logic [RAM_WIDTH-1:0] BRAM [RAM_DEPTH-1:0];
 

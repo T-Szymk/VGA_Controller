@@ -97,9 +97,8 @@ def main():
                 # enter infinite loop to wait for data, receive data, process data (repeat)
                 try: 
                     data = conn.recv(BUFF_SIZE)
-                except TimeoutError:
+                except TimeoutError: # Create timeout and check for QUIT event to prevent the OS from thinking application is not responding
                     for event in pygame.event.get():
-                        # Check for QUIT event
                         if event.type == pygame.QUIT:
                             break
 
