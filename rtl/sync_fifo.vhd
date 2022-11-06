@@ -29,21 +29,21 @@ use IEEE.math_real.all;
 
 entity sync_fifo is 
   generic (
-  	FIFO_WIDTH : integer := 36;
-  	FIFO_DEPTH : integer := 10
+    FIFO_WIDTH : integer := 36;
+    FIFO_DEPTH : integer := 10
   );
   port (
-  	clk          : in  std_logic;
-  	clr_n_in     : in  std_logic;
-  	we_in        : in  std_logic;
-  	rd_in        : in  std_logic;
-  	data_in      : in  std_logic_vector(FIFO_WIDTH - 1 downto 0);
-  	empty_out    : out std_logic;
-  	full_out     : out std_logic;
+    clk          : in  std_logic;
+    clr_n_in     : in  std_logic;
+    we_in        : in  std_logic;
+    rd_in        : in  std_logic;
+    data_in      : in  std_logic_vector(FIFO_WIDTH - 1 downto 0);
+    empty_out    : out std_logic;
+    full_out     : out std_logic;
     al_empty_out : out std_logic;
     al_full_out  : out std_logic;
-  	data_out     : out std_logic_vector(FIFO_WIDTH - 1 downto 0)
-	);
+    data_out     : out std_logic_vector(FIFO_WIDTH - 1 downto 0)
+  );
 end entity sync_fifo;
 
 --------------------------------------------------------------------------------
@@ -164,9 +164,9 @@ begin
   full_s  <= '1' when data_cnt_r = FIFO_DEPTH else '0';
   empty_s <= '1' when data_cnt_r = 0 else '0'; 
 
-  data_out  <= data_out_r;
-  empty_out <= empty_s;
-  full_out  <= full_s;
+  data_out     <= data_out_r;
+  empty_out    <= empty_s;
+  full_out     <= full_s;
   al_empty_out <= al_empty_s;
   al_full_out  <= al_full_s;
 
