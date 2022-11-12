@@ -107,22 +107,6 @@ sim_vga_controller_gui: compile_vga_controller
 	vsim -voptargs="+acc" -onfinish stop vga_controller_tb -do \
 	"do_vga_controller_gui.do"
 
-
-# FIFO TESTING #################################################################
-
-.PHONY: compile_fifo
-compile_fifo:
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL)/sync_fifo.vhd
-	vlog -sv -pedanticerrors $(TB)/sync_fifo_tb.sv
-
-.PHONY: sim_fifo
-sim_fifo: compile_fifo
-	vsim -voptargs="+acc" -c -onfinish exit sync_fifo_tb -do "run -all;quit"
-
-.PHONY: sim_fifo_gui
-sim_fifo_gui: compile_fifo
-	vsim -voptargs="+acc" -onfinish stop sync_fifo_tb -do "fifo.do"
-
 # AXI MASTER TESTING ###########################################################
 
 .PHONY: compile_axi_master
