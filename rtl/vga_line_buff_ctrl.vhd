@@ -65,7 +65,7 @@ end entity vga_line_buff_ctrl;
 
 architecture rtl of vga_line_buff_ctrl is 
 
----- SIGNALS/CONSTANTS/VARIABLES/TYPES -----------------------------------------
+  ---- SIGNALS/CONSTANTS/VARIABLES/TYPES ---------------------------------------
 
   type read_buff_states_t is (READ_BUFF_RESET, INIT, READ_BUFF_A, READ_BUFF_B);
   type fill_buff_states_t is (FILL_BUFF_RESET, FILL_A, FILL_B);
@@ -269,20 +269,20 @@ begin --------------------------------------------------------------------------
 
   ---- COUNTER ENABLE LOGIC ----------------------------------------------------
   comb_counter_en: process (ln_cntr_i, pxl_cntr_i) is --------------------------
-
-    variable pxl_cntr_s : unsigned(pxl_ctr_width_g-1 downto 0);
-    variable ln_cntr_s  : unsigned(ln_ctr_width_g-1 downto 0);
+    -- variables used for converting values in conditional statements 
+    variable pxl_cntr_v : unsigned(pxl_ctr_width_g-1 downto 0);
+    variable ln_cntr_v  : unsigned(ln_ctr_width_g-1 downto 0);
 
   begin 
     -- variables used for converting values in conditional statements 
-    pxl_cntr_s := unsigned(pxl_cntr_i);
-    ln_cntr_s  := unsigned(ln_cntr_i);
+    pxl_cntr_v := unsigned(pxl_cntr_i);
+    ln_cntr_v  := unsigned(ln_cntr_i);
 
     if (ln_cntr_s >= disp_start_px_c) and 
        (ln_cntr_s <  disp_end_px_c) then 
 
-      if (pxl_cntr_s >= disp_start_lns_c) and 
-         (pxl_cntr_s < disp_end_lns_c) then 
+      if (pxl_cntr_v >= disp_start_lns_c) and 
+         (pxl_cntr_v < disp_end_lns_c) then 
 
         counter_en_s <= '1';
 
