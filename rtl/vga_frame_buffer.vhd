@@ -38,7 +38,6 @@ entity vga_frame_buffer is
     rd_req_i : in  std_logic;     
     rd_rsp_o : out std_logic;     
     douta_o  : out std_logic_vector(fbuff_data_width_g-1 downto 0)    
-
   );
 end entity vga_frame_buffer;
 

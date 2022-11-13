@@ -34,7 +34,6 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use ieee.math_real.all;
-use work.vga_pkg.all;
 
 entity vga_line_buff_ctrl is
   generic (
@@ -46,7 +45,7 @@ entity vga_line_buff_ctrl is
     tile_width_g        : integer :=   4;
     pxl_ctr_width_g     : integer :=  10;
     ln_ctr_width_g      : integer :=  10;
-    tile_per_line_g     : integer := 160;
+    tiles_per_line_g    : integer := 160;
     tile_ctr_width_g    : integer :=   8
   );
   port(
@@ -213,7 +212,7 @@ begin --------------------------------------------------------------------------
         
         tile_pxl_cntr_r <= (others => '0');
          
-        if disp_pxl_id_r = (tile_per_line_g - 1) then
+        if disp_pxl_id_r = (tiles_per_line_g - 1) then
           
           disp_pxl_id_r <= (others => '0');
            
@@ -223,7 +222,7 @@ begin --------------------------------------------------------------------------
             tile_lns_cntr_r <= (tile_lns_cntr_r + 1);
           end if;
             
-        else -- if disp_pxl_id_r = (tile_per_line_g - 1) then
+        else -- if disp_pxl_id_r = (tiles_per_line_g - 1) then
          
           disp_pxl_id_r <= disp_pxl_id_r + 1;
         
@@ -278,8 +277,8 @@ begin --------------------------------------------------------------------------
     pxl_cntr_v := unsigned(pxl_cntr_i);
     ln_cntr_v  := unsigned(ln_cntr_i);
 
-    if (ln_cntr_s >= disp_start_px_c) and 
-       (ln_cntr_s <  disp_end_px_c) then 
+    if (ln_cntr_v >= disp_start_px_c) and 
+       (ln_cntr_v <  disp_end_px_c) then 
 
       if (pxl_cntr_v >= disp_start_lns_c) and 
          (pxl_cntr_v < disp_end_lns_c) then 
@@ -306,7 +305,7 @@ begin --------------------------------------------------------------------------
 
     -- during the last cycle of the display pixel of a buffer, set last_disp_pixel to 1
     if (tile_lns_cntr_r = (tile_width_g - 1)) and 
-       (disp_pxl_id_r   = (tile_per_line_g - 1)) and 
+       (disp_pxl_id_r   = (tiles_per_line_g - 1)) and 
        (tile_pxl_cntr_r = (tile_width_g - 1) ) then
  
       last_disp_pixel_s <= '1';

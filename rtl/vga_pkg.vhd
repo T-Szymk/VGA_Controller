@@ -81,12 +81,19 @@ PACKAGE vga_pkg IS
   -- depth of each pxl colour
   CONSTANT depth_colr_c    : INTEGER := 4;
   CONSTANT pxl_width_c     : INTEGER := depth_colr_c * pxl_width_arr_c(monochrome_en_c); -- Monochrome format
+  
+  -- latency of line buffer memory operations in cycles. Is used by counters to 
+  -- ensure that pixel data is requested for display n cycles before it is needed.
+  CONSTANT lbuff_latency_c : INTEGER := 1;
 
-  CONSTANT tile_width_c  : INTEGER := 4; -- tile width or height in pixels
-  CONSTANT total_tiles_c : INTEGER := (height_px_c * width_px_c) / (tile_width_c**2);
-  CONSTANT tiles_per_row_c : INTEGER := 4; -- count of how many tiles are contained in a row of the frame buffer
+  CONSTANT tile_width_c       : INTEGER := 4; -- tile width or height in pixels
+  CONSTANT tiles_per_line_c   : INTEGER := (width_px_c / tile_width_c);
+  CONSTANT lbuff_addr_width_c : INTEGER :=  INTEGER(CEIL(LOG2(REAL(tiles_per_line_c - 1))));
+  CONSTANT tile_ctr_width_c   : INTEGER := INTEGER(CEIL(LOG2(REAL(tiles_per_line_c-1))));
+  CONSTANT total_tiles_c      : INTEGER := (height_px_c * width_px_c) / (tile_width_c**2);
+  CONSTANT tiles_per_row_c    : INTEGER := 4; -- count of how many tiles are contained in a row of the frame buffer
   CONSTANT fbuff_data_width_c : INTEGER := tiles_per_row_c * pxl_width_c;
-  CONSTANT fbuff_depth_c : INTEGER := (total_tiles_c / tiles_per_row_c);
+  CONSTANT fbuff_depth_c      : INTEGER := (total_tiles_c / tiles_per_row_c);
   CONSTANT fbuff_addr_width_c : INTEGER :=  INTEGER(CEIL(LOG2(REAL(fbuff_depth_c - 1))));
 
   -- array to contain colours(RGB) in integer format

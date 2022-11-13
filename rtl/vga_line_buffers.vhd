@@ -25,13 +25,11 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use IEEE.math_real.all;
-use work.vga_pkg.all;
 
 entity vga_line_buffers is 
   generic (
-    colr_pxl_width_g   : integer :=   12;           
-    tile_width_g       : integer :=    4;       
-    width_px_g         : integer :=  640;     
+    pxl_width_g        : integer :=   12;           
+    tile_width_g       : integer :=    4;   
     fbuff_depth_g      : integer := 4800;        
     fbuff_addr_width_g : integer :=   12;             
     fbuff_data_width_g : integer :=   60;             
@@ -48,7 +46,7 @@ entity vga_line_buffers is
     fbuff_data_i     : in  std_logic_vector(fbuff_addr_width_g-1 downto 0);            
     fbuff_rd_rsp_i   : in  std_logic;              
     buff_fill_done_o : out std_logic_vector(1 downto 0);                
-    disp_pxl_o       : out std_logic_vector(colr_pxl_width_g-1 downto 0);          
+    disp_pxl_o       : out std_logic_vector(pxl_width_g-1 downto 0);          
     fbuff_rd_req_o   : out std_logic;              
     fbuff_addra_o    : out std_logic_vector(fbuff_addr_width_g-1 downto 0)            
   );
@@ -82,7 +80,7 @@ architecture rtl OF vga_line_buffers IS
   type fill_lbuff_states_t is (RESET, IDLE, READ_FBUFF, WRITE_LBUFF, COMPLETE);
 
   type buff_addr_arr_t is array (1 downto 0) of std_logic_vector(lbuff_addr_width_g-1 downto 0);
-  type buff_pxl_arr_t  is array (1 downto 0) of std_logic_vector(colr_pxl_width_g-1 downto 0);
+  type buff_pxl_arr_t  is array (1 downto 0) of std_logic_vector(pxl_width_g-1 downto 0);
 
   signal fill_lbuff_states_r : fill_lbuff_states_t;
 
@@ -102,7 +100,7 @@ architecture rtl OF vga_line_buffers IS
                                     
   signal fbuff_rd_req_r : std_logic;
                         
-  signal fbuff_pxl_s   : unsigned(colr_pxl_width_g-1 downto 0); 
+  signal fbuff_pxl_s   : unsigned(pxl_width_g-1 downto 0); 
   signal fbuff_addr_r  : unsigned(fbuff_addr_width_g-1 downto 0); 
   signal fbuff_data_r  : unsigned(fbuff_data_width_g-1 downto 0);
 
@@ -119,9 +117,9 @@ begin --------------------------------------------------------------------------
   begin 
 
     -- select pixel slice within row for write to line buffer
-    fbuff_pxl_s <= fbuff_data_r(((to_integer(lbuff_tile_cntr_r) * colr_pxl_width_g) + 
-                                  colr_pxl_width_g) - 1 downto 
-                                (to_integer(lbuff_tile_cntr_r) * colr_pxl_width_g));
+    fbuff_pxl_s <= fbuff_data_r(((to_integer(lbuff_tile_cntr_r) * pxl_width_g) + 
+                                  pxl_width_g) - 1 downto 
+                                (to_integer(lbuff_tile_cntr_r) * pxl_width_g));
 
   end process comb_fbuff_pxl_assign; -------------------------------------------
 
@@ -130,7 +128,7 @@ begin --------------------------------------------------------------------------
 
     i_line_buff : xilinx_single_port_ram -- holds an entire row of tiles
     generic map (
-      RAM_WIDTH => colr_pxl_width_g,
+      RAM_WIDTH => pxl_width_g,
       RAM_DEPTH => tile_per_line_g,
       INIT_FILE => ""
     )
