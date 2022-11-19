@@ -25,6 +25,7 @@ module vga_model;
 pxl_width_c matches in vga_pkg.vhd */
 //`define MONO 1
 `define USE_SIMULATOR 1
+//`define VHDL_IMPLEMENTATION 1 // use VHDL instead of SV implementation
 
   timeunit 1ns/1ps; 
 
@@ -114,6 +115,7 @@ pxl_width_c matches in vga_pkg.vhd */
   // BRAM width in bits and depth in rows after tiling has been applied.
   parameter FBUFF_DEPTH      = (DISP_PXL_MAX / (TILE_PER_ROW * TILE_WIDTH * TILE_WIDTH));
   parameter FBUFF_ADDR_WIDTH = $clog2(FBUFF_DEPTH-1);
+  parameter FBUFF_LATENCY    = 1;
 
 /******************************************************************************/
 /* VARIABLES AND TYPE DEFINITIONS                                             */
@@ -247,6 +249,8 @@ pxl_width_c matches in vga_pkg.vhd */
 /* MEMORY INTERFACE MODULES                                                   */
 /******************************************************************************/
 
+`ifndef VHDL_IMPLEMENTATION
+
   line_buff_ctrl #(
     .WIDTH_PX          ( WIDTH_PX          ),          
     .HEIGHT_LNS        ( HEIGHT_PX         ),        
@@ -307,6 +311,72 @@ pxl_width_c matches in vga_pkg.vhd */
     .rd_rsp_o ( fbuff_read_rsp_s ),
     .douta    ( fbuff_data_out_s )
   );
+
+`else // VHDL_IMPLEMENTATION
+
+  vga_line_buff_ctrl #(
+    .width_px_g           ( WIDTH_PX          ),          
+    .height_lns_g         ( HEIGHT_PX         ),
+    .lbuff_latency_g      ( FBUFF_LATENCY     ),              
+    .h_b_porch_max_px_g   ( H_B_PORCH_MAX_PX  ),  
+    .v_b_porch_max_lns_g  ( V_B_PORCH_MAX_LNS ), 
+    .tile_width_g         ( TILE_WIDTH        ),        
+    .pxl_ctr_width_g      ( PXL_CTR_WIDTH     ),     
+    .ln_ctr_width_g       ( LN_CTR_WIDTH      ),      
+    .tiles_per_line_g     ( TILE_PER_LINE     ),      
+    .tile_ctr_width_g     ( TILE_CTR_WIDTH    )
+  ) i_line_buff_ctrl (
+    .clk_i            ( clk_px_s         ),
+    .rstn_i           ( rst_sync_s       ),
+    .buff_fill_done_i ( buff_fill_done_s ),
+    .pxl_cntr_i       ( pxl_ctr_s        ),
+    .ln_cntr_i        ( line_ctr_s       ),
+    .buff_fill_req_o  ( buff_fill_req_s  ),
+    .buff_sel_o       ( buff_sel_s       ),
+    .disp_pxl_id_o    ( disp_pxl_id_s    )
+  );
+
+  vga_line_buffers #(
+    .pxl_width_g        ( PXL_WIDTH        ),         
+    .tile_width_g       ( TILE_WIDTH       ),     
+    .fbuff_depth_g      ( FBUFF_DEPTH      ),
+    .fbuff_addr_width_g ( FBUFF_ADDR_WIDTH ),   
+    .fbuff_data_width_g ( FBUFF_DATA_WIDTH ),           
+    .tiles_per_row_g    ( TILE_PER_ROW     ),      
+    .tile_per_line_g    ( TILE_PER_LINE    ),        
+    .lbuff_addr_width_g ( TILE_CTR_WIDTH   )
+  ) i_line_buffers (
+    .clk_i            ( clk_px_s         ),  
+    .rstn_i           ( rst_sync_s       ),   
+    .buff_fill_req_i  ( buff_fill_req_s  ),            
+    .buff_sel_i       ( buff_sel_s       ),       
+    .disp_pxl_id_i    ( disp_pxl_id_s    ),          
+    .fbuff_data_i     ( fbuff_data_out_s ), 
+    .fbuff_rd_rsp_i   ( fbuff_read_rsp_s ),        
+    .buff_fill_done_o ( buff_fill_done_s ),             
+    .disp_pxl_o       ( mem_pxl_s        ),
+    .fbuff_rd_req_o   ( fbuff_read_req_s ),
+    .fbuff_addra_o    ( dut_fbuff_addr_s )  
+  );
+
+  vga_frame_buffer #(
+    .fbuff_addr_width_g ( FBUFF_ADDR_WIDTH ),
+    .fbuff_data_width_g ( FBUFF_DATA_WIDTH ),
+    .fbuff_depth_g      ( FBUFF_DEPTH      ),
+    .init_file_g        ( INIT_FILE        )
+  ) i_frame_buffer (
+    .clk_i    ( clk_px_s         ),
+    .rstn_i   ( rst_sync_s       ),
+    .addra_i  ( dut_fbuff_addr_s ),
+    .dina_i   ( /* nc */         ),     
+    .wea_i    ( 1'b0             ),   
+    .ena_i    ( 1'b1             ),   
+    .rd_req_i ( fbuff_read_req_s ),
+    .rd_rsp_o ( fbuff_read_rsp_s ),
+    .douta_o  ( fbuff_data_out_s )
+  );
+
+`endif // VHDL_IMPLEMENTATION
 
 /******************************************************************************/
 /* DPI Function Management                                                    */

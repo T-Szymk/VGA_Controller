@@ -7,8 +7,6 @@ MSIM_CMD = ~/intelFPGA/20.1/modelsim_ase/bin
 GHDL_CMD = ghdl
 GHDL_OPT = --std=08 -fsynopsys -v
 
-#MODELSIM ?=
-
 RTL = $(PWD)/../rtl
 TB  = $(PWD)/../tb
 RTL_FILES = $(RTL)/vga_pkg.vhd \
@@ -150,7 +148,10 @@ compile_mem_intf_model: clean_mem_intf_model
                                         $(RTL)/xilinx_top_clk.vhd \
                                         $(RTL)/vga_pxl_counter.vhd \
                                         $(RTL)/vga_pattern_gen.vhd \
-						                            $(RTL)/rst_sync.vhd && \
+						                            $(RTL)/rst_sync.vhd \
+																				$(RTL)/vga_frame_buffer.vhd \
+                                        $(RTL)/vga_line_buff_ctrl.vhd \
+                                        $(RTL)/vga_line_buffers.vhd && \
 	$(MSIM_CMD)/vlog -dpiheader $(TB)/models/dpi/includes/dpiheader.h \
 	                 -sv -pedanticerrors $(RTL)/xilinx_sp_BRAM.sv \
 									                     $(TB)/models/line_ctrl_model/frame_buffer.sv \
