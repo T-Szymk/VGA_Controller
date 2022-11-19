@@ -33,7 +33,7 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
-use ieee.math_real.all;
+use IEEE.math_real.all;
 
 entity vga_line_buff_ctrl is
   generic (
@@ -277,11 +277,11 @@ begin --------------------------------------------------------------------------
     pxl_cntr_v := unsigned(pxl_cntr_i);
     ln_cntr_v  := unsigned(ln_cntr_i);
 
-    if (ln_cntr_v >= disp_start_px_c) and 
-       (ln_cntr_v <  disp_end_px_c) then 
+    if (ln_cntr_v >= disp_start_lns_c) and 
+       (ln_cntr_v <  disp_end_lns_c) then 
 
-      if (pxl_cntr_v >= disp_start_lns_c) and 
-         (pxl_cntr_v < disp_end_lns_c) then 
+      if (pxl_cntr_v >= disp_start_px_c) and 
+         (pxl_cntr_v < disp_end_px_c) then 
 
         counter_en_s <= '1';
 

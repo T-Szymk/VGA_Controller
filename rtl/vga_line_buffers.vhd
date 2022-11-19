@@ -113,7 +113,7 @@ begin --------------------------------------------------------------------------
   lbuff_en_s      <= (others => '1'); -- read enable of line buffer is always set
   lbuff_rd_addr_s <= disp_pxl_id_i;
 
-  comb_fbuff_pxl_assign : process (lbuff_tile_cntr_r) is -----------------------
+  comb_fbuff_pxl_assign : process (lbuff_tile_cntr_r, fbuff_data_r) is ---------
   begin 
 
     -- select pixel slice within row for write to line buffer

@@ -178,20 +178,27 @@ clean_mem_intf:
 .PHONY: compile_mem_intf
 compile_mem_intf: clean_mem_intf
 	mkdir mem_intf && cd mem_intf && \
-	$(GHDL_CMD) -a $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
+	$(MSIM_CMD)/vlib mem_intf && \
+	$(MSIM_CMD)/vmap work mem_intf && \
+	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 \
+	                           $(RTL)/vga_pkg.vhd \
 	                           $(RTL)/vga_line_buff_ctrl.vhd \
 														 $(RTL)/xilinx_sp_BRAM.vhd \
 														 $(RTL)/vga_frame_buffer.vhd \
 														 $(RTL)/vga_line_buffers.vhd \
-														 $(RTL)/vga_memory_intf.vhd \
-												     $(TB)/tb_vga_memory_intf.vhd
+														 $(RTL)/vga_memory_intf.vhd && \
+	$(MSIM_CMD)/vlog -sv -pedanticerrors \
+	                           $(TB)/tb_vga_memory_intf.sv
 
 .PHONY: sim_mem_intf
 sim_mem_intf: compile_mem_intf
 	cd mem_intf && \
-	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_memory_intf --stop-time=20ms --wave=tb_vga_memory_intf.ghw --max-stack-alloc=256 && \
-	gtkwave tb_vga_memory_intf.ghw -c 16
+	$(MSIM_CMD)/vsim -voptargs="+acc" -c tb_vga_memory_intf
 
+.PHONY: sim_mem_intf_gui
+sim_mem_intf_gui: compile_mem_intf
+	cd mem_intf && \
+	$(MSIM_CMD)/vsim -voptargs="+acc" -do ../mem_intf.do -onfinish stop tb_vga_memory_intf
 
 # MEM ADDR TESTING #################################################
 .PHONY: clean_mem_addr_control
