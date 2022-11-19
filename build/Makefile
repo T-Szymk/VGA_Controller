@@ -140,10 +140,10 @@ clean_mem_intf_model:
 .PHONY: compile_mem_intf_model
 compile_mem_intf_model: clean_mem_intf_model
 	mkdir mem_intf_model && cd mem_intf_model && \
-	vlib vga_lib && vmap work vga_lib && \
+	$(MSIM_CMD)/vlib vga_lib && \
+	$(MSIM_CMD)/vmap work vga_lib && \
 	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 \
 	                                      $(RTL)/vga_pkg.vhd \
-                                        $(RTL)/ram_pkg.vhd \
                                         $(RTL)/vga_clk_div.vhd \
                                         $(RTL)/vga_controller.vhd \
                                         $(RTL)/vga_colr_mux.vhd \
@@ -152,7 +152,7 @@ compile_mem_intf_model: clean_mem_intf_model
                                         $(RTL)/vga_pattern_gen.vhd \
 						                            $(RTL)/rst_sync.vhd && \
 	$(MSIM_CMD)/vlog -dpiheader $(TB)/models/dpi/includes/dpiheader.h \
-	                 -sv -pedanticerrors $(RTL)/xilinx_dp_BRAM.sv \
+	                 -sv -pedanticerrors $(RTL)/xilinx_sp_BRAM.sv \
 									                     $(TB)/models/line_ctrl_model/frame_buffer.sv \
 																			 $(TB)/models/line_ctrl_model/line_buff_ctrl.sv \
 																			 $(TB)/models/line_ctrl_model/line_buffers.sv \
@@ -162,13 +162,13 @@ compile_mem_intf_model: clean_mem_intf_model
 .PHONY: sim_mem_intf_model
 sim_mem_intf_model: compile_mem_intf_model
 	cd mem_intf_model && \
-	vsim -voptargs="+acc" -c -onfinish stop vga_model -do "run 16 ms"
+	$(MSIM_CMD)/vsim -voptargs="+acc" -c -onfinish stop vga_model -do "run 16 ms"
 
 .PHONY: sim_mem_intf_model_gui
 sim_mem_intf_model_gui: compile_mem_intf_model
 	python3 ../supporting_apps/vga_sim/vga_sim_server.py &
 	cd mem_intf_model && \
-	vsim -voptargs="+acc" -onfinish stop vga_model -do ../../build/mem_intf_model.do
+	$(MSIM_CMD)/vsim -voptargs="+acc" -onfinish stop vga_model -do ../../build/mem_intf_model.do
 
 # MEM INTF TESTING #################################################
 .PHONY: clean_mem_intf

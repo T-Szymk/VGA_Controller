@@ -125,7 +125,7 @@ pxl_width_c matches in vga_pkg.vhd */
   logic                     rstn_s, rst_sync_s;
   logic [PXL_CTR_WIDTH-1:0] pxl_ctr_s;
   logic [LN_CTR_WIDTH-1:0]  line_ctr_s;
-  logic                     colr_en_s;
+  logic                     blank_pxln_s;
   logic                     v_sync_s, h_sync_s;
   logic                     test_switch_s;
   logic                     kill_simulation_s = 0; // will finish simulation once set to 1
@@ -176,13 +176,13 @@ pxl_width_c matches in vga_pkg.vhd */
   );
 
   vga_controller i_vga_controller (
-    .clk_i       (clk_px_s),
-    .rstn_i      (rst_sync_s),
-    .pxl_ctr_i   (pxl_ctr_s),
-    .line_ctr_i  (line_ctr_s),
-    .colr_en_out (colr_en_s),
-    .v_sync_out  (v_sync_s),
-    .h_sync_out  (h_sync_s)
+    .clk_i        (clk_px_s),
+    .rstn_i       (rst_sync_s),
+    .pxl_ctr_i    (pxl_ctr_s),
+    .line_ctr_i   (line_ctr_s),
+    .blank_pxln_o (blank_pxln_s),
+    .v_sync_o     (v_sync_s),
+    .h_sync_o     (h_sync_s)
   );
 
   vga_pattern_gen i_vga_pattern_gen (
@@ -195,7 +195,7 @@ pxl_width_c matches in vga_pkg.vhd */
     .test_colr_i (test_pxl_s),
     .mem_colr_i  (mem_pxl_s), // (mem_pxl_golden_s),
     .en_i        (test_switch_s),
-    .blank_i     (colr_en_s),
+    .blank_i     (blank_pxln_s),
     .colr_out    (disp_pxl_s)
   );
 
