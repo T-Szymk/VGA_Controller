@@ -33,7 +33,8 @@
 -- 2022-06-26  1.7      TZS     Tidied up formatting in module.
 --                              Added reset synchroniser
 --                              Added switch for test pattern
--- 2022-07-19 1.8       TZS     Added input debouncer and updated connections                     
+-- 2022-07-19 1.8       TZS     Added input debouncer and updated connections 
+-- 2022-11-19 1.9       TZS     Removed unused mem_blank signal                    
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -47,14 +48,14 @@ entity vga_top is
   );
   port (
     -- clock and asynch reset
-    clk_i  : in std_logic;
-    rstn_i : in std_logic;
+    clk_i       : in std_logic;
+    rstn_i      : in std_logic;
     -- io
     sw_0_i      : in std_logic;
     rst_led_o   : out std_logic;
     -- VGA signals
-    v_sync_out  : out std_logic;
-    h_sync_out  : out std_logic;
+    v_sync_o  : out std_logic;
+    h_sync_o  : out std_logic;
     r_colr_out  : out std_logic_vector(4-1 downto 0);
     g_colr_out  : out std_logic_vector(4-1 downto 0);
     b_colr_out  : out std_logic_vector(4-1 downto 0)
@@ -129,13 +130,13 @@ ARCHITECTURE structural of vga_top IS
 
   component vga_controller is
     port (
-      clk_i       : in  std_logic;
-      rstn_i      : in  std_logic;
-      pxl_ctr_i   : in  std_logic_vector((pxl_ctr_width_c - 1) downto 0);
-      line_ctr_i  : in  std_logic_vector((line_ctr_width_c - 1) downto 0);
-      colr_en_out : out std_logic;
-      v_sync_out  : out std_logic;
-      h_sync_out  : out std_logic
+      clk_i        : in  std_logic;
+      rstn_i       : in  std_logic;
+      pxl_ctr_i    : in  std_logic_vector((pxl_ctr_width_c - 1) downto 0);
+      line_ctr_i   : in  std_logic_vector((line_ctr_width_c - 1) downto 0);
+      blank_pxln_o : out std_logic;
+      v_sync_o     : out std_logic;
+      h_sync_o     : out std_logic
     );
   end component vga_controller;
 
@@ -157,7 +158,6 @@ ARCHITECTURE structural of vga_top IS
       rstn_i       : in  std_logic;
       pxl_ctr_i    : in  std_logic_vector(pxl_ctr_width_c - 1 downto 0);
       line_ctr_i   : in  std_logic_vector(line_ctr_width_c - 1 downto 0);
-      disp_blank_o : out std_logic;
       disp_pxl_o   : out pixel_t
     );
     end component;
@@ -251,13 +251,13 @@ BEGIN --------------------------------------------------------------------------
 
   i_vga_controller : vga_controller
     port map (
-      clk_i       => pxl_clk_s,
-      rstn_i      => rst_sync_s,
-      pxl_ctr_i   => pxl_ctr_s,
-      line_ctr_i  => line_ctr_s,
-      colr_en_out => colr_en_s,
-      v_sync_out  => v_sync_s,
-      h_sync_out  => h_sync_s
+      clk_i        => pxl_clk_s,
+      rstn_i       => rst_sync_s,
+      pxl_ctr_i    => pxl_ctr_s,
+      line_ctr_i   => line_ctr_s,
+      blank_pxln_o => colr_en_s,
+      v_sync_o     => v_sync_s,
+      h_sync_o     => h_sync_s
     );
   
   i_vga_pattern_gen : vga_pattern_gen
@@ -276,7 +276,6 @@ BEGIN --------------------------------------------------------------------------
       rstn_i       => rst_sync_s,
       pxl_ctr_i    => pxl_ctr_s,
       line_ctr_i   => line_ctr_s,
-      disp_blank_o => mem_blank_s,
       disp_pxl_o   => mem_pxl_s
     );
   
@@ -289,13 +288,13 @@ BEGIN --------------------------------------------------------------------------
       colr_out    => disp_pxl_s
     );
 
-  blank_s <= colr_en_s or mem_blank_s;
+  blank_s <= colr_en_s;
 
   rst_led_o <= rstn_i;
 
    -- output assignments
-  v_sync_out <= v_sync_s;
-  h_sync_out <= h_sync_s;
+  v_sync_o <= v_sync_s;
+  h_sync_o <= h_sync_s;
 
   -- Note that this needs to be modified if the colour depth changes
   -- TODO: this needs to be refactored to become statically configurable

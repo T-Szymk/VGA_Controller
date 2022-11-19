@@ -98,7 +98,7 @@ module line_buffers #(
       // mux read logic address signals if buff_sel is set, else mux in the address from the write logic
       assign lbuff_addra_s[buff_idx] = (buff_sel_i[buff_idx] == 1'b1) ? lbuff_rd_addra_s : lbuff_wr_addra_r[buff_idx];
 
-      xilinx_single_port_ram #(
+      xilinx_sp_BRAM #(
         .RAM_WIDTH ( COLR_PXL_WIDTH ),
         .RAM_DEPTH ( TILE_PER_LINE  ),
         .INIT_FILE ( ""             )

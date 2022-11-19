@@ -15,6 +15,7 @@
 -- Revisions:
 -- Date        Version  Author  Description
 -- 2022-06-28  1.0      TZS     Created
+-- 2022-11-19  1.1      TZS     Upadtes made to match latest mem_intf
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -23,7 +24,8 @@ use work.vga_pkg.all;
 
 entity tb_vga_memory_intf is 
 generic (
-  CLK_PERIOD : time := 40 ns
+  CLK_PERIOD  : time   := 40 ns;
+  init_file_g : string := "" -- keep this blank when using GHDL unless bit vector file exists!
 );
 end entity tb_vga_memory_intf;
 
@@ -31,12 +33,14 @@ end entity tb_vga_memory_intf;
 architecture tb of tb_vga_memory_intf is
 
   component vga_memory_intf is 
+    generic (
+      init_file_g : string := ""
+    );
     port (
       clk_i        : in  std_logic;
       rstn_i       : in  std_logic;
       pxl_ctr_i    : in  std_logic_vector(pxl_ctr_width_c - 1 downto 0);
       line_ctr_i   : in  std_logic_vector(line_ctr_width_c - 1 downto 0);
-      disp_blank_o : out std_logic;
       disp_pxl_o   : out pixel_t
     );
   end component;
@@ -44,7 +48,6 @@ architecture tb of tb_vga_memory_intf is
   signal clk_s, rstn_s : std_logic := '0';
   signal pxl_ctr_s     : unsigned(pxl_ctr_width_c-1 downto 0) := (others => '0');
   signal line_ctr_s    : unsigned(line_ctr_width_c-1 downto 0) := (others => '0');
-  signal blank_s       : std_logic;
   signal displ_pxl_s   : pixel_t;
 
 begin --------------------------------------------------------------------------
@@ -94,12 +97,14 @@ begin --------------------------------------------------------------------------
   end process;                                                       -----------
 
   i_dut : vga_memory_intf
+    generic map (
+      init_file_g => init_file_g
+    )
     port map (
       clk_i        => clk_s,
       rstn_i       => rstn_s,
       pxl_ctr_i    => std_logic_vector(pxl_ctr_s),
       line_ctr_i   => std_logic_vector(line_ctr_s),
-      disp_blank_o => blank_s,
       disp_pxl_o   => displ_pxl_s
     );
 

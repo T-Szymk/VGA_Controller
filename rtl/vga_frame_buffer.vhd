@@ -47,7 +47,7 @@ architecture rtl of vga_frame_buffer is
 
 -----COMPONENT DECLARATION -----------------------------------------------------
 
-  component xilinx_single_port_ram  -- SV component
+  component xilinx_sp_BRAM
     generic (
       RAM_WIDTH : integer := 18;
       RAM_DEPTH : integer := 2048;
@@ -76,7 +76,7 @@ begin --------------------------------------------------------------------------
 
 ---- COMPONENT INSTANTIATION ---------------------------------------------------
 
-i_sp_ram : xilinx_single_port_ram
+i_sp_ram : xilinx_sp_BRAM
 generic map (
   RAM_WIDTH => fbuff_data_width_g,
   RAM_DEPTH => fbuff_depth_g,

@@ -25,7 +25,7 @@ use work.vga_pkg.all;
 
 entity vga_memory_intf is 
   generic (
-    init_file_g : string := "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem"
+    init_file_g : string := "" 
   );
   port (
     clk_i        : in  std_logic;
@@ -83,7 +83,7 @@ architecture structural of vga_memory_intf is
       buff_fill_req_i  : in  std_logic_vector(1 downto 0);               
       buff_sel_i       : in  std_logic_vector(1 downto 0);          
       disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_g-1 downto 0);             
-      fbuff_data_i     : in  std_logic_vector(fbuff_addr_width_g-1 downto 0);            
+      fbuff_data_i     : in  std_logic_vector(fbuff_data_width_g-1 downto 0);            
       fbuff_rd_rsp_i   : in  std_logic;              
       buff_fill_done_o : out std_logic_vector(1 downto 0);                
       disp_pxl_o       : out std_logic_vector(pxl_width_c-1 downto 0);          
@@ -204,6 +204,7 @@ begin --------------------------------------------------------------------------
   fbuff_din_s <= (others => '0'); -- fbuff data in = 0
   fbuff_we_s  <= '0';             -- write disabled
   fbuff_en_s  <= '1';             -- enable is always set
+  disp_pxl_o  <= disp_pxl_s;
 
 end architecture structural;
 

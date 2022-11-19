@@ -30,14 +30,14 @@ USE WORK.VGA_PKG.ALL;
 
 ENTITY vga_controller IS 
   PORT (
-    clk_i      : IN STD_LOGIC;
-    rstn_i     : IN STD_LOGIC;
-    pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
-    line_ctr_i : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
+    clk_i        : IN STD_LOGIC;
+    rstn_i       : IN STD_LOGIC;
+    pxl_ctr_i    : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
+    line_ctr_i   : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
 
-    colr_en_out : OUT STD_LOGIC;
-    v_sync_out  : OUT STD_LOGIC;
-    h_sync_out  : OUT STD_LOGIC
+    blank_pxln_o : OUT STD_LOGIC;
+    v_sync_o     : OUT STD_LOGIC;
+    h_sync_o     : OUT STD_LOGIC
   );
 END ENTITY vga_controller;
 
@@ -52,12 +52,12 @@ ARCHITECTURE rtl OF vga_controller IS
 
   SIGNAL c_state, n_state : state_t;
 
-  SIGNAL pxl_ctr_s  : INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
-  SIGNAL line_ctr_s : INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
+  SIGNAL pxl_ctr_s    : INTEGER RANGE (pxl_ctr_max_c - 1) DOWNTO 0;
+  SIGNAL line_ctr_s   : INTEGER RANGE (line_ctr_max_c - 1) DOWNTO 0;
 
-  SIGNAL v_sync_r  : STD_LOGIC;
-  SIGNAL h_sync_r  : STD_LOGIC;
-  SIGNAL colr_en_r : STD_LOGIC; 
+  SIGNAL v_sync_r     : STD_LOGIC;
+  SIGNAL h_sync_r     : STD_LOGIC;
+  SIGNAL blank_pxln_r : STD_LOGIC; 
 
 BEGIN 
 
@@ -148,7 +148,7 @@ BEGIN
 
       h_sync_r <= '1';
       v_sync_r <= '1';
-      colr_en_r <= '0';
+      blank_pxln_r <= '0';
 
     ELSIF RISING_EDGE(clk_i) THEN
       
@@ -170,20 +170,20 @@ BEGIN
 
       -- colr_en conditions
       IF c_state = H_B_PORCH AND pxl_ctr_s = (h_b_porch_max_px_c - 1) THEN
-        colr_en_r <= '0';
+        blank_pxln_r <= '0';
       ELSIF c_state = DISPLAY AND pxl_ctr_s = (h_disp_max_px_c - 1) THEN
-        colr_en_r <= '1';
+        blank_pxln_r <= '1';
       END IF;
 
     END IF;
 
   END PROCESS sync_out;  -------------------------------------------------------
 
-  h_sync_out  <= h_sync_r;
-  v_sync_out  <= v_sync_r;
-  colr_en_out <= colr_en_r;
-  pxl_ctr_s   <= TO_INTEGER(UNSIGNED(pxl_ctr_i));
-  line_ctr_s  <= TO_INTEGER(UNSIGNED(line_ctr_i));
+  h_sync_o     <= h_sync_r;
+  v_sync_o     <= v_sync_r;
+  blank_pxln_o <= blank_pxln_r;
+  pxl_ctr_s    <= TO_INTEGER(UNSIGNED(pxl_ctr_i));
+  line_ctr_s   <= TO_INTEGER(UNSIGNED(line_ctr_i));
   
 END ARCHITECTURE rtl;
 

@@ -2,8 +2,8 @@
 
 .DEFAULT_GOAL := default
 
-#MSIM_CMD = ~/intelFPGA/20.1/modelsim_ase/bin
-MSIM_CMD = /home/tom/questa2019/questasim/linux_x86_64
+MSIM_CMD = ~/intelFPGA/20.1/modelsim_ase/bin
+#MSIM_CMD = /home/tom/questa2019/questasim/linux_x86_64
 GHDL_CMD = ghdl
 GHDL_OPT = --std=08 -fsynopsys -v
 
@@ -141,15 +141,16 @@ clean_mem_intf_model:
 compile_mem_intf_model: clean_mem_intf_model
 	mkdir mem_intf_model && cd mem_intf_model && \
 	vlib vga_lib && vmap work vga_lib && \
-	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
-                                                          $(RTL)/ram_pkg.vhd \
-                                                          $(RTL)/vga_clk_div.vhd \
-                                                          $(RTL)/vga_controller.vhd \
-                                                          $(RTL)/vga_colr_mux.vhd \
-                                                          $(RTL)/xilinx_top_clk.vhd \
-                                                          $(RTL)/vga_pxl_counter.vhd \
-                                                          $(RTL)/vga_pattern_gen.vhd \
-						                                              $(RTL)/rst_sync.vhd && \
+	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 \
+	                                      $(RTL)/vga_pkg.vhd \
+                                        $(RTL)/ram_pkg.vhd \
+                                        $(RTL)/vga_clk_div.vhd \
+                                        $(RTL)/vga_controller.vhd \
+                                        $(RTL)/vga_colr_mux.vhd \
+                                        $(RTL)/xilinx_top_clk.vhd \
+                                        $(RTL)/vga_pxl_counter.vhd \
+                                        $(RTL)/vga_pattern_gen.vhd \
+						                            $(RTL)/rst_sync.vhd && \
 	$(MSIM_CMD)/vlog -dpiheader $(TB)/models/dpi/includes/dpiheader.h \
 	                 -sv -pedanticerrors $(RTL)/xilinx_dp_BRAM.sv \
 									                     $(TB)/models/line_ctrl_model/frame_buffer.sv \
@@ -178,16 +179,17 @@ clean_mem_intf:
 compile_mem_intf: clean_mem_intf
 	mkdir mem_intf && cd mem_intf && \
 	$(GHDL_CMD) -a $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
-	                           $(RTL)/vga_mem_addr_ctrl.vhd \
-														 $(RTL)/vga_mem_buff.vhd \
-														 $(RTL)/xilinx_dp_BRAM.vhd \
+	                           $(RTL)/vga_line_buff_ctrl.vhd \
+														 $(RTL)/xilinx_sp_BRAM.vhd \
+														 $(RTL)/vga_frame_buffer.vhd \
+														 $(RTL)/vga_line_buffers.vhd \
 														 $(RTL)/vga_memory_intf.vhd \
 												     $(TB)/tb_vga_memory_intf.vhd
 
 .PHONY: sim_mem_intf
 sim_mem_intf: compile_mem_intf
 	cd mem_intf && \
-	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_memory_intf --stop-time=20ms --wave=tb_vga_memory_intf.ghw && \
+	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_memory_intf --stop-time=20ms --wave=tb_vga_memory_intf.ghw --max-stack-alloc=256 && \
 	gtkwave tb_vga_memory_intf.ghw -c 16
 
 
@@ -214,52 +216,6 @@ sim_mem_addr_control: clean_mem_addr_control compile_mem_addr_control
 	$(GHDL_CMD) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_addr_ctrl.vhd && \
 	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_mem_addr_ctrl --stop-time=200ms --wave=tb_vga_mem_addr_ctrl.ghw && \
 	gtkwave tb_vga_mem_addr_ctrl.ghw -c 16
-
-# MEM BUFF TESTING #############################################################
-### TESTING GHDL FLOW ==========================================================
-.PHONY: sim_mem_buff_ghdl
-sim_mem_buff_ghdl: clean_mem_buff_ghdl compile_mem_buff_ghdl
-	cd mem_buff && \
-	$(GHDL_CMD) -a $(GHDL_OPT) ../$(TB)/tb_vga_mem_buff.vhd && \
-	$(GHDL_CMD) --elab-run $(GHDL_OPT) tb_vga_mem_buff --stop-time=50ms --wave=tb_vga_mem_buff.ghw && \
-	gtkwave tb_vga_mem_buff.ghw -c 16
-
-.PHONY: compile_mem_buff_ghdl
-compile_mem_buff_ghdl: clean_mem_buff_ghdl
-	@mkdir -p mem_buff && cd mem_buff && \
-	$(GHDL_CMD) -a $(GHDL_OPT) ../$(RTL)/vga_pkg.vhd \
-	                           ../$(RTL)/vga_mem_buff.vhd
-
-.PHONY: clean_mem_buff_ghdl
-clean_mem_buff_ghdl:
-	rm -rf ./mem_buff
-
-.PHONY: check_mem_buff_ghdl
-check_mem_buff_ghdl:
-	$(GHDL_CMD) -s $(GHDL_OPT) $(RTL)/vga_pkg.vhd \
-	                           $(RTL)/vga_mem_buff.vhd \
-												     $(TB)/tb_vga_mem_buff.vhd
-### QUESTA FLOW ================================================================
-.PHONY: sim_mem_buff_gui
-sim_mem_buff_gui: compile_mem_buff
-	cd mem_buff && \
-	$(MSIM_CMD)/vsim -voptargs="+acc" tb_vga_mem_buff -do \
-	"add wave -position insertpoint sim:/tb_vga_mem_buff/i_dut/*; run 100us"
-
-.PHONY: compile_mem_buff
-compile_mem_buff: clean_mem_buff
-	mkdir -p mem_buff && cd mem_buff && \
-	$(MSIM_CMD)/vlib vga_lib && $(MSIM_CMD)/vmap work vga_lib && \
-	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(RTL)/vga_pkg.vhd \
-	                                                        $(RTL)/vga_mem_buff.vhd \
-												                                  $(TB)/tb_vga_mem_buff.vhd \
-																													&& \
-	$(MSIM_CMD)/vlog -sv -pedanticerrors $(RTL)/xilinx_dp_BRAM.sv
-
-
-.PHONY: clean_mem_buff
-clean_mem_buff:
-	rm -rf ./mem_buff
 
 # FPGA BUILD ###################################################################
 

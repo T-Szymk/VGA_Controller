@@ -6,7 +6,7 @@
 -- Author(s)  : Thomas Szymkowiak
 -- Company    : TUNI
 -- Created    : 2022-06-26
--- Design     : xilinx_single_port_ram
+-- Design     : xilinx_sp_BRAM
 -- Platform   : -
 -- Standard   : SystemVerilog '17
 ********************************************************************************
@@ -19,7 +19,7 @@
 -- 2022-07-22  1.1      TZS     Modified to single port RAM
 -- 2022-08-28  1.2      TZS     Remove rst port and corrected filename to sp_ram
 *******************************************************************************/                 
-module xilinx_single_port_ram #(
+module xilinx_sp_BRAM #(
   parameter RAM_WIDTH = 18,                       
   parameter RAM_DEPTH = 1024,                     
   parameter INIT_FILE = "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem" // Specify name/location of RAM initialization file if using one (leave blank if not)

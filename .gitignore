@@ -3,3 +3,4 @@
 **/transcript
 **/vga_lib/*
 **/vhdl_ls.toml
+**/dpiheader.h

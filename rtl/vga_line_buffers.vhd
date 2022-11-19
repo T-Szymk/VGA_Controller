@@ -43,7 +43,7 @@ entity vga_line_buffers is
     buff_fill_req_i  : in  std_logic_vector(1 downto 0);               
     buff_sel_i       : in  std_logic_vector(1 downto 0);          
     disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_g-1 downto 0);             
-    fbuff_data_i     : in  std_logic_vector(fbuff_addr_width_g-1 downto 0);            
+    fbuff_data_i     : in  std_logic_vector(fbuff_data_width_g-1 downto 0);            
     fbuff_rd_rsp_i   : in  std_logic;              
     buff_fill_done_o : out std_logic_vector(1 downto 0);                
     disp_pxl_o       : out std_logic_vector(pxl_width_g-1 downto 0);          
@@ -57,7 +57,7 @@ architecture rtl OF vga_line_buffers IS
   
   ---- COMPONENT DECLARATIONS --------------------------------------------------
   
-  component xilinx_single_port_ram  -- SV component
+  component xilinx_sp_BRAM  
     generic (
       RAM_WIDTH : integer := 18;
       RAM_DEPTH : integer := 2048;
@@ -126,7 +126,7 @@ begin --------------------------------------------------------------------------
   ---- BUFFER INSTANCE AND ADDRESS SIGNAL GENERATION ---------------------------
   generate_lbuffs : for buffer_i in 0 to 1 generate ----------------------------
 
-    i_line_buff : xilinx_single_port_ram -- holds an entire row of tiles
+    i_line_buff : xilinx_sp_BRAM -- holds an entire row of tiles
     generic map (
       RAM_WIDTH => pxl_width_g,
       RAM_DEPTH => tile_per_line_g,
@@ -179,7 +179,7 @@ begin --------------------------------------------------------------------------
         
           -- Start read from frame buffer and move to writing line buffer once 
           -- completed
-          fbuff_rd_req_r <= '1';
+          fbuff_rd_req_r <= '0';
             
           if fbuff_rd_rsp_i = '1' then 
                

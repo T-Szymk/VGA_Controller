@@ -89,7 +89,7 @@ module frame_buffer #(
     end
   end
 
-  xilinx_single_port_ram #(
+  xilinx_sp_BRAM #(
     .RAM_WIDTH( FBUFF_WIDTH ),
     .RAM_DEPTH( FBUFF_DEPTH ),
     .INIT_FILE( INIT_FILE )

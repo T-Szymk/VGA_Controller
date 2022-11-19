@@ -66,9 +66,9 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       pxl_ctr_i  : IN STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
       line_ctr_i : IN STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
 
-      colr_en_out : OUT STD_LOGIC;
-      v_sync_out  : OUT STD_LOGIC;
-      h_sync_out  : OUT STD_LOGIC
+      blank_pxln_o : OUT STD_LOGIC;
+      v_sync_o     : OUT STD_LOGIC;
+      h_sync_o     : OUT STD_LOGIC
     );
   END COMPONENT; 
 
@@ -177,13 +177,13 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
   SIGNAL clk, rst_n      : STD_LOGIC := '0';
   
-  SIGNAL h_sync_out_dut_old  : STD_LOGIC := '1';
-  SIGNAL v_sync_out_dut_old  : STD_LOGIC := '1';
-  SIGNAL colr_en_out_dut_old : STD_LOGIC := '0';
+  SIGNAL h_sync_o_dut_old  : STD_LOGIC := '1';
+  SIGNAL v_sync_o_dut_old  : STD_LOGIC := '1';
+  SIGNAL colr_en_o_dut_old : STD_LOGIC := '0';
 
-  SIGNAL h_sync_out_dut      : STD_LOGIC := '1';
-  SIGNAL v_sync_out_dut      : STD_LOGIC := '1'; 
-  SIGNAL colr_en_out_dut     : STD_LOGIC := '0';
+  SIGNAL h_sync_o_dut      : STD_LOGIC := '1';
+  SIGNAL v_sync_o_dut      : STD_LOGIC := '1'; 
+  SIGNAL colr_en_o_dut     : STD_LOGIC := '0';
 
   SIGNAL pxl_ctr_s  : STD_LOGIC_VECTOR((pxl_ctr_width_c - 1) DOWNTO 0);
   SIGNAL line_ctr_s : STD_LOGIC_VECTOR((line_ctr_width_c - 1) DOWNTO 0);
@@ -222,9 +222,9 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       pxl_ctr_i   => pxl_ctr_s,  
       line_ctr_i  => line_ctr_s,
 
-      colr_en_out => colr_en_out_dut,        
-      v_sync_out  => v_sync_out_dut,       
-      h_sync_out  => h_sync_out_dut       
+      blank_pxln_o => colr_en_o_dut,        
+      v_sync_o     => v_sync_o_dut,       
+      h_sync_o     => h_sync_o_dut       
     );
 
   -- RESET ---------------------------------------------------------------------
@@ -252,15 +252,15 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
     IF rst_n = '0' THEN
 
-      h_sync_out_dut_old  <= '1';
-      v_sync_out_dut_old  <= '1';
-      colr_en_out_dut_old <= '0';
+      h_sync_o_dut_old  <= '1';
+      v_sync_o_dut_old  <= '1';
+      colr_en_o_dut_old <= '0';
 
     ELSIF RISING_EDGE(clk) THEN
   
-      h_sync_out_dut_old  <= h_sync_out_dut;
-      v_sync_out_dut_old  <= v_sync_out_dut;
-      colr_en_out_dut_old <= colr_en_out_dut;
+      h_sync_o_dut_old  <= h_sync_o_dut;
+      v_sync_o_dut_old  <= v_sync_o_dut;
+      colr_en_o_dut_old <= colr_en_o_dut;
 
     END IF;
 
@@ -292,7 +292,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
     ELSIF RISING_EDGE(clk) THEN
   
       -- V_SYNC CHECK
-      IF falling_edge_detect(v_sync_out_dut, v_sync_out_dut_old) = '1' THEN
+      IF falling_edge_detect(v_sync_o_dut, v_sync_o_dut_old) = '1' THEN
 
         IF v_sync_timer_en_s = '1' THEN 
 
@@ -324,7 +324,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       END IF;
   
-      IF rising_edge_detect(v_sync_out_dut, v_sync_out_dut_old) = '1' THEN
+      IF rising_edge_detect(v_sync_o_dut, v_sync_o_dut_old) = '1' THEN
         
         -- measure the time between the start and end of v_sync pulse
         assert_time(v_sync_tmr_start, v_sync_time_g, "V_SYNC");
@@ -332,7 +332,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       END IF;
 
       -- H_SYNC CHECK
-      IF falling_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
+      IF falling_edge_detect(h_sync_o_dut, h_sync_o_dut_old) = '1' THEN
 
         IF h_sync_timer_en_s = '1' THEN 
           
@@ -359,7 +359,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       END IF;
   
-      IF rising_edge_detect(h_sync_out_dut, h_sync_out_dut_old) = '1' THEN
+      IF rising_edge_detect(h_sync_o_dut, h_sync_o_dut_old) = '1' THEN
         
         -- measure the time between the start and end of h_sync pulse
         assert_time(h_sync_tmr_start, h_sync_time_g, "H_SYNC");
@@ -367,7 +367,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
       END IF;
       
       -- DISPLAY CHECK
-      IF rising_edge_detect(colr_en_out_dut, colr_en_out_dut_old) = '1' THEN
+      IF rising_edge_detect(colr_en_o_dut, colr_en_o_dut_old) = '1' THEN
 
         IF display_timer_en_s = '1' THEN
         
@@ -396,7 +396,7 @@ ARCHITECTURE tb OF vga_controller_tb IS ----------------------------------------
 
       END IF; 
 
-      IF falling_edge_detect(colr_en_out_dut, colr_en_out_dut_old) = '1' THEN
+      IF falling_edge_detect(colr_en_o_dut, colr_en_o_dut_old) = '1' THEN
 
         -- measure the time between the start and end of display pulse
         assert_time(display_tmr_start, display_time_g, "DISPLAY");
