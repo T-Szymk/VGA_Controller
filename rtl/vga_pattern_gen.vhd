@@ -82,9 +82,9 @@ ARCHITECTURE behavioral OF vga_pattern_gen IS
 BEGIN 
 
 --------------------------------------------------------------------------------
--- RGB DEPTH = 3 Implementation
+-- RGB DEPTH = 4 Implementation
 --------------------------------------------------------------------------------
-  gen_RGB_depth_3 : if monochrome_en_c = 0 and depth_colr_c = 3 generate
+  gen_RGB_depth_4 : if monochrome_en_c = 0 and depth_colr_c = 4 generate
     -- convert to integer to make assignment expressions more compact
     pxl_ctr_int_s  <= TO_INTEGER(UNSIGNED(pxl_ctr_i));
     line_ctr_int_s <= TO_INTEGER(UNSIGNED(line_ctr_i));
@@ -156,7 +156,7 @@ BEGIN
     colr_out <= STD_LOGIC_VECTOR(TO_UNSIGNED(colr_rgb_4(2), 4)) & 
                 STD_LOGIC_VECTOR(TO_UNSIGNED(colr_rgb_4(1), 4)) & 
                 STD_LOGIC_VECTOR(TO_UNSIGNED(colr_rgb_4(0), 4)); 
-  end generate gen_RGB_depth_3;
+  end generate gen_RGB_depth_4;
 --------------------------------------------------------------------------------
 -- RGB DEPTH = 1 Implementation
 --------------------------------------------------------------------------------

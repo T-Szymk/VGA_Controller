@@ -209,8 +209,7 @@ pxl_width_c matches in vga_pkg.vhd */
     rstn_s = 0;
 
     test_switch_s = 1; // 1 = use memory, 0 = use pattern generator
-    // release reset 10 cycles after start of simulation
-    #(10 * TOP_CLK_PERIOD_NS) rstn_s = 1; 
+    #(10 * TOP_CLK_PERIOD_NS) rstn_s = 1; // release reset 10 cycles after start of simulation
   end
 
   always #(TOP_CLK_PERIOD_NS/2) clk_s = ~clk_s;

@@ -1,59 +1,77 @@
 # Script to build VGA_controller project on FPGA
 # Target platform: Digilent Arty A7-100
 
-set PROJECT $::env(PROJECT)
-set PROJECT_DIR [pwd]/${PROJECT}
+set ARTY_PART xc7a100tcsg324-1
 
-set SRC_FILES "\
-	../rtl/vga_pkg.vhd \
-	../rtl/vga_colr_mux.vhd \
-	../rtl/xilinx_top_clk.vhd \
-	../rtl/vga_pxl_counter.vhd \
-	../rtl/vga_pattern_gen.vhd \
-	../rtl/vga_controller.vhd \
-	../rtl/vga_top.vhd \
+set PROJECT $::env(PROJECT)
+set TOP_DIR "[pwd]/../.."
+
+set RTL_DIR    ${TOP_DIR}/rtl
+set TB_DIR     ${TOP_DIR}/tb
+set BUILD_DIR  ${TOP_DIR}/build
+set CONSTR_DIR ${TOP_DIR}/constraints
+set PROJECT_DIR ${BUILD_DIR}/fpga_build/${PROJECT}
+                               
+set BRAM_INIT_FILE "pulla.mem"
+set CONSTR_FILE "${CONSTR_DIR}/Arty-A7-100-Master.xdc"
+
+set SRC_FILES " \
+  ${TOP_DIR}/supporting_apps/mem_file_gen/${BRAM_INIT_FILE} \
+	${RTL_DIR}/vga_pkg.vhd \
+  ${RTL_DIR}/xilinx_top_clk.vhd \
+  ${RTL_DIR}/xilinx_sp_BRAM.sv \
+  ${RTL_DIR}/rst_sync.vhd \
+  ${RTL_DIR}/input_dbounce.vhd \
+  ${RTL_DIR}/vga_controller.vhd \
+  ${RTL_DIR}/vga_colr_mux.vhd \
+  ${RTL_DIR}/vga_pxl_counter.vhd \
+  ${RTL_DIR}/vga_pattern_gen.vhd \
+  ${RTL_DIR}/vga_frame_buffer.vhd \
+  ${RTL_DIR}/vga_line_buff_ctrl.vhd \
+  ${RTL_DIR}/vga_line_buffers.vhd \
+  ${RTL_DIR}/vga_memory_intf.vhd \
+  ${RTL_DIR}/vga_top.vhd \
 "
 
 set SIM_FILES "\
-  ../rtl/vga_clk_div.vhd \
-  ../tb/vga_tb.vhd \
+  ${RTL_DIR}/vga_clk_div.vhd \
+  ${TB_DIR}/vga_tb.vhd \
 "
 
 set SYNTH_GENERICS "
-  CONF_SIM=0 \
-  CONF_TEST_PATT=1
+  conf_sim_g=0 \
+  init_file_g=${BRAM_INIT_FILE} \
 "
 
-create_project ${PROJECT} ./${PROJECT} -part xc7a100tcsg324-1 -force
+create_project ${PROJECT} ./${PROJECT} -part ${ARTY_PART} -force
 
 add_files -norecurse ${SRC_FILES}
-add_files -norecurse -fileset sim_1 ${SIM_FILES}
-add_files -fileset constrs_1 "../constraints/Arty-A7-100-Master.xdc"
+add_files -norecurse -fileset sim_1 ${SIM_FILES} ${SRC_FILES}
+add_files -fileset constrs_1 ${CONSTR_FILE}
 
 set_property top vga_top [current_fileset]
 set_property top vga_tb [current_fileset -simset]
 
 set_property file_type {VHDL 2008} [get_files "*.vhd"]
 
+# configure defualt properties for
+set_property -name {xsim.simulate.runtime} -value {0ns} -objects [get_filesets sim_1]
+set_property -name {xsim.simulate.log_all_signals} -value {true} -objects [get_filesets sim_1]
+
 # generate clock wizard 
 create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name clk_wiz_0
 set_property -dict [list CONFIG.PRIM_IN_FREQ {100.000} \
                          CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {25.000} \
-                         CONFIG.USE_LOCKED {false} \
+                         CONFIG.USE_LOCKED {true} \
                          CONFIG.RESET_TYPE {ACTIVE_LOW} \
                          CONFIG.CLKIN1_JITTER_PS {80.0} \
-                         CONFIG.MMCM_DIVCLK_DIVIDE {5} \
-                         CONFIG.MMCM_CLKFBOUT_MULT_F {36.500} \
-                         CONFIG.MMCM_CLKIN1_PERIOD {8.000} \
                          CONFIG.MMCM_CLKOUT0_DIVIDE_F {36.500} \
                          CONFIG.RESET_PORT {resetn} \
                          CONFIG.CLKOUT1_JITTER {312.659} \
                          CONFIG.CLKOUT1_PHASE_ERROR {245.713}] \
                          [get_ips clk_wiz_0]
 
-generate_target {instantiation_template} [get_files ${PROJECT_DIR}/${PROJECT}.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
-update_compile_order -fileset sources_1
-set_property generate_synth_checkpoint false [get_files ${PROJECT_DIR}/${PROJECT}.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
+generate_target all [get_ips clk_wiz_0]
 
 # set synthesis generics
 set_property generic ${SYNTH_GENERICS} [current_fileset]

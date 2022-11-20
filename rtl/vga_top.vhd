@@ -43,22 +43,22 @@ use work.vga_pkg.all;
 entity vga_top is
   generic (
     -- 1 for simulation, 0 for synthesis
-    CONF_SIM       : integer := 0;
-    INIT_FILE      : string  := "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/gb.mem"
+    conf_sim_g   : integer := 0;
+    init_file_g  : string  := "pulla.mem"
   );
   port (
     -- clock and asynch reset
-    clk_i       : in std_logic;
-    rstn_i      : in std_logic;
+    clk_i     : in  std_logic;
+    rstn_i    : in  std_logic;
     -- io
-    sw_0_i      : in std_logic;
-    rst_led_o   : out std_logic;
+    sw_0_i    : in  std_logic;
+    rst_led_o : out std_logic;
     -- VGA signals
     v_sync_o  : out std_logic;
     h_sync_o  : out std_logic;
-    r_colr_out  : out std_logic_vector(4-1 downto 0);
-    g_colr_out  : out std_logic_vector(4-1 downto 0);
-    b_colr_out  : out std_logic_vector(4-1 downto 0)
+    r_colr_o  : out std_logic_vector(depth_colr_c-1 downto 0);
+    g_colr_o  : out std_logic_vector(depth_colr_c-1 downto 0);
+    b_colr_o  : out std_logic_vector(depth_colr_c-1 downto 0)
   );
 end entity vga_top;
 
@@ -151,7 +151,7 @@ ARCHITECTURE structural of vga_top IS
 
   component vga_memory_intf is 
     generic (
-      INIT_FILE : string := "../supporting_apps/mem_file_gen/mem_file.mem"
+      init_file_g : string := "../supporting_apps/mem_file_gen/mem_file.mem"
     );
     port (
       clk_i        : in  std_logic;
@@ -193,7 +193,7 @@ ARCHITECTURE structural of vga_top IS
 
 BEGIN --------------------------------------------------------------------------
 
-  gen_clk_src: IF CONF_SIM = 1 GENERATE -- Used in simulation ****************
+  gen_clk_src: IF conf_sim_g = 1 GENERATE -- Used in simulation ****************
 
     i_vga_clk_div : vga_clk_div 
       generic map (
@@ -269,7 +269,7 @@ BEGIN --------------------------------------------------------------------------
 
   i_vga_memory_intf : vga_memory_intf
     generic map (
-      INIT_FILE => INIT_FILE
+      init_file_g => init_file_g
     )
     port map (
       clk_i        => pxl_clk_s,
@@ -288,8 +288,7 @@ BEGIN --------------------------------------------------------------------------
       colr_out    => disp_pxl_s
     );
 
-  blank_s <= colr_en_s;
-
+  blank_s   <= colr_en_s;
   rst_led_o <= rstn_i;
 
    -- output assignments
@@ -298,9 +297,9 @@ BEGIN --------------------------------------------------------------------------
 
   -- Note that this needs to be modified if the colour depth changes
   -- TODO: this needs to be refactored to become statically configurable
-  r_colr_out <= (others => '1') when disp_pxl_s(2) = '1' else (others => '0');
-  g_colr_out <= (others => '1') when disp_pxl_s(1) = '1' else (others => '0');
-  b_colr_out <= (others => '1') when disp_pxl_s(0) = '1' else (others => '0');
+  r_colr_o <= (others => '1') when disp_pxl_s(2) = '1' else (others => '0');
+  g_colr_o <= (others => '1') when disp_pxl_s(1) = '1' else (others => '0');
+  b_colr_o <= (others => '1') when disp_pxl_s(0) = '1' else (others => '0');
 
 end architecture structural;
 

@@ -247,7 +247,10 @@ module tb_vga_memory_intf;
     #(5*PXL_CLK_PERIOD_NS);
     $display("[%0t]: Initialising frame buffer.", $time);
 
-    init_fbuff_en_s = 1'b1;
+    init_fbuff_en_s   = 1'b1;
+    init_fbuff_wen_s  = 1'b1;
+
+    @(negedge clk);
     
     /* initialise fbuff so that each scan line as different data from the 
        previous line and each tile has a different value from the previous tile 
@@ -277,9 +280,8 @@ module tb_vga_memory_intf;
       end
       
       init_fbuff_addr_s = fbuff_row;
-      init_fbuff_wen_s  = 1'b1;
        
-      @(posedge clk);
+      @(negedge clk);
       
     end
 

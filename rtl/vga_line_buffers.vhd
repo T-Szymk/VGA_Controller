@@ -107,8 +107,6 @@ architecture rtl OF vga_line_buffers IS
 begin --------------------------------------------------------------------------
 
   --- INTERMEDIATE SIGNAL ASSIGNMENT LOGIC -------------------------------------
-  
-  lbuff_din_s(fill_select_r) <= std_logic_vector(fbuff_pxl_s);
 
   lbuff_en_s      <= (others => '1'); -- read enable of line buffer is always set
   lbuff_rd_addr_s <= disp_pxl_id_i;
@@ -140,6 +138,9 @@ begin --------------------------------------------------------------------------
       ena   => lbuff_en_s(buffer_i),  
       douta => lbuff_dout_s(buffer_i)
     );
+
+    -- set both lbuff din as we controls what is written to the line_buff
+    lbuff_din_s(buffer_i)  <= std_logic_vector(fbuff_pxl_s); 
     
     lbuff_addr_s(buffer_i) <= lbuff_rd_addr_s when buff_sel_i(buffer_i) = '1' else 
                               lbuff_wr_addr_r(buffer_i);

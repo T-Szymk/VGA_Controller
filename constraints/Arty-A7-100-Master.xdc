@@ -15,54 +15,54 @@ set_false_path -to [get_ports rst_led_o]
 
 # get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -max 5.000 [get_ports g_colr_out[*]]
+  -max 5.000 [get_ports g_colr_o[*]]
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -min 0.000 [get_ports g_colr_out[*]]
+  -min 0.000 [get_ports g_colr_o[*]]
 
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -max 5.000 [get_ports r_colr_out[*]]
+  -max 5.000 [get_ports r_colr_o[*]]
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -min 0.000 [get_ports r_colr_out[*]]
+  -min 0.000 [get_ports r_colr_o[*]]
 
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -max 5.000 [get_ports b_colr_out[*]]
+  -max 5.000 [get_ports b_colr_o[*]]
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -min 0.000 [get_ports b_colr_out[*]]
+  -min 0.000 [get_ports b_colr_o[*]]
 
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -max 5.000 [get_ports h_sync_out]
+  -max 5.000 [get_ports h_sync_o]
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -min 0.000 [get_ports h_sync_out]
+  -min 0.000 [get_ports h_sync_o]
 
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -max 5.000 [get_ports v_sync_out]
+  -max 5.000 [get_ports v_sync_o]
 set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
-  -min 0.000 [get_ports v_sync_out]
+  -min 0.000 [get_ports v_sync_o]
 
-set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports clk_i]
+set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports { clk_i }]
 
-set_property -dict {PACKAGE_PIN A10 IOSTANDARD LVCMOS33} [get_ports rstn_i]
-set_property -dict {PACKAGE_PIN A8 IOSTANDARD LVCMOS33} [get_ports {sw_0_i}]
+set_property -dict {PACKAGE_PIN A10 IOSTANDARD LVCMOS33} [get_ports { rstn_i }]
+set_property -dict {PACKAGE_PIN A8 IOSTANDARD LVCMOS33} [get_ports  { sw_0_i }]
 
 set_property -dict { PACKAGE_PIN H5 IOSTANDARD LVCMOS33 } [get_ports { rst_led_o }];
 
-set_property -dict {PACKAGE_PIN E15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[0]}]
-set_property -dict {PACKAGE_PIN E16 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[1]}]
-set_property -dict {PACKAGE_PIN D15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[2]}]
-set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS33} [get_ports {g_colr_out[3]}]
+## Pmod Header JB
+set_property -dict {PACKAGE_PIN E15 IOSTANDARD LVCMOS33} [get_ports { g_colr_o[0] }]
+set_property -dict {PACKAGE_PIN E16 IOSTANDARD LVCMOS33} [get_ports { g_colr_o[1] }]
+set_property -dict {PACKAGE_PIN D15 IOSTANDARD LVCMOS33} [get_ports { g_colr_o[2] }]
+set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS33} [get_ports { g_colr_o[3] }]
+set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports { h_sync_o    }]
+set_property -dict {PACKAGE_PIN J18 IOSTANDARD LVCMOS33} [get_ports { v_sync_o    }]
 
-set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports h_sync_out]
-set_property -dict {PACKAGE_PIN J18 IOSTANDARD LVCMOS33} [get_ports v_sync_out]
-
-set_property -dict {PACKAGE_PIN G13 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[0]}]
-set_property -dict {PACKAGE_PIN B11 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[1]}]
-set_property -dict {PACKAGE_PIN A11 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[2]}]
-set_property -dict {PACKAGE_PIN D12 IOSTANDARD LVCMOS33} [get_ports {r_colr_out[3]}]
-
-set_property -dict {PACKAGE_PIN D13 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[0]}]
-set_property -dict {PACKAGE_PIN B18 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[1]}]
-set_property -dict {PACKAGE_PIN A18 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[2]}]
-set_property -dict {PACKAGE_PIN K16 IOSTANDARD LVCMOS33} [get_ports {b_colr_out[3]}]
+## Pmod Header JA
+set_property -dict {PACKAGE_PIN G13 IOSTANDARD LVCMOS33} [get_ports { r_colr_o[0] }]
+set_property -dict {PACKAGE_PIN B11 IOSTANDARD LVCMOS33} [get_ports { r_colr_o[1] }]
+set_property -dict {PACKAGE_PIN A11 IOSTANDARD LVCMOS33} [get_ports { r_colr_o[2] }]
+set_property -dict {PACKAGE_PIN D12 IOSTANDARD LVCMOS33} [get_ports { r_colr_o[3] }]
+set_property -dict {PACKAGE_PIN D13 IOSTANDARD LVCMOS33} [get_ports { b_colr_o[0] }]
+set_property -dict {PACKAGE_PIN B18 IOSTANDARD LVCMOS33} [get_ports { b_colr_o[1] }]
+set_property -dict {PACKAGE_PIN A18 IOSTANDARD LVCMOS33} [get_ports { b_colr_o[2] }]
+set_property -dict {PACKAGE_PIN K16 IOSTANDARD LVCMOS33} [get_ports { b_colr_o[3] }]
 
 ## Switches
 #set_property -dict {PACKAGE_PIN A8 IOSTANDARD LVCMOS33} [get_ports {sw_in[0]}]

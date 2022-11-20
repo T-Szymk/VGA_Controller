@@ -199,7 +199,7 @@ sim_mem_intf: compile_mem_intf
 .PHONY: sim_mem_intf_gui
 sim_mem_intf_gui: compile_mem_intf
 	cd mem_intf && \
-	$(MSIM_CMD)/vsim -voptargs="+acc" -do ../mem_intf.do -onfinish stop tb_vga_memory_intf
+	$(MSIM_CMD)/vsim -voptargs="+acc" -do ../do_vga_mem_intf.do -onfinish stop tb_vga_memory_intf
 
 # MEM ADDR TESTING #################################################
 .PHONY: clean_mem_addr_control
@@ -228,9 +228,11 @@ sim_mem_addr_control: clean_mem_addr_control compile_mem_addr_control
 # FPGA BUILD ###################################################################
 
 .PHONY: fpga
-fpga:
-	vivado -mode batch -source ./fpga_build.tcl
+fpga: clean_fpga
+	mkdir -p fpga_build
+	cd fpga_build && \
+	vivado -mode batch -notrace -source ../fpga_build.tcl
 
 .PHONY: clean_fpga
 clean_fpga:
-	rm -rf $(PROJECT)
+	rm -rf fpga_build
