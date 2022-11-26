@@ -75,6 +75,7 @@ generate_target all [get_ips clk_wiz_0]
 
 # set synthesis generics
 set_property generic ${SYNTH_GENERICS} [current_fileset]
+set_property generic ${SYNTH_GENERICS} [get_filesets sim_1]
 
 # elaborate 
 synth_design -rtl -name rtl_1

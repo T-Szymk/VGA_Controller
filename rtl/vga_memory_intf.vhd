@@ -68,12 +68,13 @@ architecture structural of vga_memory_intf is
 
   component vga_line_buffers is 
     generic (
-      pxl_width_g        : integer :=   12;           
-      tile_width_g       : integer :=    4;    
-      fbuff_depth_g      : integer := 4800;        
-      fbuff_addr_width_g : integer :=   12;             
-      fbuff_data_width_g : integer :=   60;             
-      tiles_per_row_g    : integer :=    5;          
+      pxl_width_g        : integer :=   12;
+      tile_width_g       : integer :=    4;
+      fbuff_depth_g      : integer := 4800;
+      fbuff_addr_width_g : integer :=   13;
+      fbuff_data_width_g : integer :=   48;
+      lbuff_addr_width_g : integer :=    8;
+      tiles_per_row_g    : integer :=    4;
       tile_per_line_g    : integer :=  160  
     );
     port(
@@ -81,11 +82,11 @@ architecture structural of vga_memory_intf is
       rstn_i           : in  std_logic;      
       buff_fill_req_i  : in  std_logic_vector(1 downto 0);               
       buff_sel_i       : in  std_logic_vector(1 downto 0);          
-      disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_c-1 downto 0);             
+      disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_g-1 downto 0);             
       fbuff_data_i     : in  std_logic_vector(fbuff_data_width_g-1 downto 0);            
       fbuff_rd_rsp_i   : in  std_logic;              
       buff_fill_done_o : out std_logic_vector(1 downto 0);                
-      disp_pxl_o       : out std_logic_vector(pxl_width_c-1 downto 0);          
+      disp_pxl_o       : out std_logic_vector(pxl_width_g-1 downto 0);          
       fbuff_rd_req_o   : out std_logic;              
       fbuff_addra_o    : out std_logic_vector(fbuff_addr_width_g-1 downto 0)            
     );
@@ -116,7 +117,7 @@ architecture structural of vga_memory_intf is
   signal buff_fill_done_s : std_logic_vector(1 downto 0);
   signal buff_fill_req_s  : std_logic_vector(1 downto 0);              
   signal buff_sel_s       : std_logic_vector(1 downto 0);         
-  signal disp_pxl_id_s    : std_logic_vector(tile_ctr_width_c-1 downto 0); 
+  signal disp_pxl_id_s    : std_logic_vector(lbuff_addr_width_c-1 downto 0); 
   signal fbuff_dout_s     : std_logic_vector(fbuff_data_width_c-1 downto 0);            
   signal fbuff_rd_rsp_s   : std_logic; 
   signal disp_pxl_s       : std_logic_vector(pxl_width_c-1 downto 0);          
@@ -141,7 +142,7 @@ begin --------------------------------------------------------------------------
     pxl_ctr_width_g     => pxl_ctr_width_c,         
     ln_ctr_width_g      => line_ctr_width_c,        
     tiles_per_line_g    => tiles_per_line_c,         
-    tile_ctr_width_g    => tile_ctr_width_c        
+    tile_ctr_width_g    => lbuff_addr_width_c        
   )
   port map (
     clk_i            => clk_i,                  
@@ -160,7 +161,8 @@ begin --------------------------------------------------------------------------
     tile_width_g       => tile_width_c,    
     fbuff_depth_g      => fbuff_depth_c,            
     fbuff_addr_width_g => fbuff_addr_width_c,                 
-    fbuff_data_width_g => fbuff_data_width_c,                 
+    fbuff_data_width_g => fbuff_data_width_c,
+    lbuff_addr_width_g => lbuff_addr_width_c,                 
     tiles_per_row_g    => tiles_per_row_c,              
     tile_per_line_g    => tiles_per_line_c                
   )

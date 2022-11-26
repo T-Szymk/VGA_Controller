@@ -20,7 +20,6 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.math_real.all;
-use work.vga_pkg.all;
 
 entity vga_frame_buffer is 
   generic (
@@ -82,7 +81,7 @@ i_sp_ram : xilinx_sp_BRAM
 generic map (
   RAM_WIDTH  => fbuff_data_width_g,
   RAM_DEPTH  => fbuff_depth_g,
-  ADDR_WIDTH => fbuff_addr_width_c,
+  ADDR_WIDTH => fbuff_addr_width_g,
   INIT_FILE  => init_file_g
 )
 port map (

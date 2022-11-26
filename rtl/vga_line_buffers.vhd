@@ -25,16 +25,16 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use IEEE.math_real.all;
-use work.vga_pkg.all;
 
 
 entity vga_line_buffers is 
   generic (
     pxl_width_g        : integer :=   12;           
-    tile_width_g       : integer :=    4;   
+    tile_width_g       : integer :=    4;
     fbuff_depth_g      : integer := 4800;        
     fbuff_addr_width_g : integer :=   13;             
-    fbuff_data_width_g : integer :=   48;             
+    fbuff_data_width_g : integer :=   48;
+    lbuff_addr_width_g : integer :=    8;          
     tiles_per_row_g    : integer :=    4;          
     tile_per_line_g    : integer :=  160 -- 640 / 4    
   );
@@ -43,11 +43,11 @@ entity vga_line_buffers is
     rstn_i           : in  std_logic;      
     buff_fill_req_i  : in  std_logic_vector(1 downto 0);               
     buff_sel_i       : in  std_logic_vector(1 downto 0);          
-    disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_c-1 downto 0);             
+    disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_g-1 downto 0);             
     fbuff_data_i     : in  std_logic_vector(fbuff_data_width_g-1 downto 0);            
     fbuff_rd_rsp_i   : in  std_logic;              
     buff_fill_done_o : out std_logic_vector(1 downto 0);                
-    disp_pxl_o       : out std_logic_vector(pxl_width_c-1 downto 0);          
+    disp_pxl_o       : out std_logic_vector(pxl_width_g-1 downto 0);          
     fbuff_rd_req_o   : out std_logic;              
     fbuff_addra_o    : out std_logic_vector(fbuff_addr_width_g-1 downto 0)            
   );
@@ -77,13 +77,10 @@ architecture rtl OF vga_line_buffers IS
 
   ---- SIGNALS/CONSTANTS/VARIABLES/TYPES ---------------------------------------
 
-  --constant tile_ctr_width_c : integer := integer(ceil(log2(real(tiles_per_row_g - 1))));
-  --constant tile_ctr_width_c : integer := 3;
-
   type fill_lbuff_states_t is (RESET, IDLE, READ_FBUFF, WRITE_LBUFF, FINAL);
 
-  type buff_addr_arr_t is array (1 downto 0) of std_logic_vector(lbuff_addr_width_c-1 downto 0);
-  type buff_pxl_arr_t  is array (1 downto 0) of std_logic_vector(pxl_width_c-1 downto 0);
+  type buff_addr_arr_t is array (1 downto 0) of std_logic_vector(lbuff_addr_width_g-1 downto 0);
+  type buff_pxl_arr_t  is array (1 downto 0) of std_logic_vector(pxl_width_g-1 downto 0);
 
   signal fill_lbuff_c_state_r, fill_lbuff_n_state_r : fill_lbuff_states_t;
 
@@ -92,18 +89,18 @@ architecture rtl OF vga_line_buffers IS
   signal fill_select_r      : integer range 0 to 1;
                                                
   signal lbuff_addr_s      : buff_addr_arr_t;
-  signal lbuff_wr_addr_r   : unsigned(lbuff_addr_width_c-1 downto 0);
-  signal lbuff_rd_addr_s   : std_logic_vector(lbuff_addr_width_c-1 downto 0);
-  signal lbuff_din_s       : std_logic_vector(pxl_width_c-1 downto 0);
+  signal lbuff_wr_addr_r   : unsigned(lbuff_addr_width_g-1 downto 0);
+  signal lbuff_rd_addr_s   : std_logic_vector(lbuff_addr_width_g-1 downto 0);
+  signal lbuff_din_s       : std_logic_vector(pxl_width_g-1 downto 0);
   signal lbuff_dout_s      : buff_pxl_arr_t;
   signal lbuff_we_r        : std_logic_vector(1 downto 0);
   signal lbuff_en_s        : std_logic_vector(1 downto 0);
   signal lbuff_cntr_en_r   : std_logic;
-  signal lbuff_tile_cntr_r : unsigned(tile_ctr_width_c-1 downto 0);
+  signal lbuff_tile_cntr_r : unsigned(lbuff_addr_width_g-1 downto 0);
                                     
   signal fbuff_rd_req_r : std_logic;
                         
-  signal fbuff_pxl_s   : unsigned(pxl_width_c-1 downto 0); 
+  signal fbuff_pxl_s   : unsigned(pxl_width_g-1 downto 0); 
   signal fbuff_addr_r  : unsigned(fbuff_addr_width_g-1 downto 0); 
   signal fbuff_data_r  : unsigned(fbuff_data_width_g-1 downto 0);
 
@@ -118,9 +115,9 @@ begin --------------------------------------------------------------------------
   begin 
 
     -- select pixel slice within row for write to line buffer
-    fbuff_pxl_s <= fbuff_data_r(((to_integer(lbuff_tile_cntr_r) * pxl_width_c) + 
-                                  pxl_width_c) - 1 downto 
-                                (to_integer(lbuff_tile_cntr_r) * pxl_width_c));
+    fbuff_pxl_s <= fbuff_data_r(((to_integer(lbuff_tile_cntr_r) * pxl_width_g) + 
+                                  pxl_width_g) - 1 downto 
+                                (to_integer(lbuff_tile_cntr_r) * pxl_width_g));
 
   end process comb_fbuff_pxl_assign; -------------------------------------------
 
@@ -130,9 +127,9 @@ begin --------------------------------------------------------------------------
 
     i_line_buff0 : xilinx_sp_BRAM
     generic map (
-      RAM_WIDTH  => pxl_width_c,
-      RAM_DEPTH  => tiles_per_line_c,
-      ADDR_WIDTH => lbuff_addr_width_c,
+      RAM_WIDTH  => pxl_width_g,
+      RAM_DEPTH  => tile_per_line_g,
+      ADDR_WIDTH => lbuff_addr_width_g,
       INIT_FILE  => ""
     )
     port map (
@@ -147,6 +144,7 @@ begin --------------------------------------------------------------------------
     -- set both lbuff din as we controls what is written to the line_buff
     lbuff_din_s  <= std_logic_vector(fbuff_pxl_s); 
     
+    -- it is not possible to read from and write to the same buffer simultaneously
     lbuff_addr_s(buffer_i) <= lbuff_rd_addr_s when buff_sel_i(buffer_i) = '1' else 
                               std_logic_vector(lbuff_wr_addr_r);
 
@@ -315,7 +313,21 @@ begin --------------------------------------------------------------------------
         end if;
 
       end if;
+      
+      assert (lbuff_tile_cntr_r <= tiles_per_row_g)
+      report "Tile counter overflow detected." & lf &
+              "    Tile Counter: " & integer'image(to_integer(lbuff_tile_cntr_r)) & lf &
+              "    Tiles per row: " & integer'image(tiles_per_row_g)
+      severity error;
+
+      assert (lbuff_wr_addr_r <= tile_per_line_g) 
+      report "Line buffer address overflow detected." & lf &
+             "    LB Write Addr: " & integer'image(to_integer(lbuff_wr_addr_r)) & lf &
+             "    LB depth: " & integer'image(tile_per_line_g)
+      severity error;
+
     end if;
+
   end process tile_addr_counters; ----------------------------------------------
 
   ---- BUFFER FILL IN PROGRESS + FILL SELECT LOGIC -----------------------------
@@ -357,6 +369,12 @@ begin --------------------------------------------------------------------------
       end if;
     end if;
   end process in_progress_select; ----------------------------------------------
+
+  ---- ASSERTIONS --------------------------------------------------------------
+
+  assert fbuff_data_width_g = (tiles_per_row_g * pxl_width_g)
+    report "Data width of frame buffer must match the bit width of the tiles within each row!"
+    severity error;
 
   --- OUTPUT ASSIGNMENTS -------------------------------------------------------
 

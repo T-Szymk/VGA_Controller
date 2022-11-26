@@ -183,7 +183,6 @@ ARCHITECTURE structural of vga_top IS
   signal h_sync_s       : std_logic;
   signal colr_en_s      : std_logic;
   signal blank_s        : std_logic;
-  signal mem_blank_s    : std_logic;
   signal test_switch_s  : std_logic;
   signal pxl_ctr_s      : std_logic_vector((pxl_ctr_width_c - 1) downto 0);
   signal line_ctr_s     : std_logic_vector((line_ctr_width_c - 1) downto 0);
@@ -297,9 +296,9 @@ BEGIN --------------------------------------------------------------------------
 
   -- Note that this needs to be modified if the colour depth changes
   -- TODO: this needs to be refactored to become statically configurable
-  r_colr_o <= (others => '1') when disp_pxl_s(2) = '1' else (others => '0');
-  g_colr_o <= (others => '1') when disp_pxl_s(1) = '1' else (others => '0');
-  b_colr_o <= (others => '1') when disp_pxl_s(0) = '1' else (others => '0');
+  r_colr_o <= disp_pxl_s(depth_colr_c-1 downto 0);
+  g_colr_o <= disp_pxl_s((2*depth_colr_c)-1 downto depth_colr_c);
+  b_colr_o <= disp_pxl_s((3*depth_colr_c)-1 downto (2*depth_colr_c));
 
 end architecture structural;
 

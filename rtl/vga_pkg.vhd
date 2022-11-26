@@ -89,7 +89,6 @@ PACKAGE vga_pkg IS
   CONSTANT tile_width_c       : INTEGER := 4; -- tile width or height in pixels
   CONSTANT tiles_per_line_c   : INTEGER := (width_px_c / tile_width_c);
   CONSTANT lbuff_addr_width_c : INTEGER :=  INTEGER(CEIL(LOG2(REAL(tiles_per_line_c - 1))));
-  CONSTANT tile_ctr_width_c   : INTEGER := INTEGER(CEIL(LOG2(REAL(tiles_per_line_c-1))));
   CONSTANT total_tiles_c      : INTEGER := (height_px_c * width_px_c) / (tile_width_c**2);
   CONSTANT tiles_per_row_c    : INTEGER := 4; -- count of how many tiles are contained in a row of the frame buffer
   CONSTANT fbuff_data_width_c : INTEGER := tiles_per_row_c * pxl_width_c;

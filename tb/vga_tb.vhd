@@ -31,8 +31,9 @@ entity vga_tb is
   generic (
             ref_clk_perd_g : time    := 10 ns;
             max_sim_time_g : time    :=  3 sec;
-            conf_sim       : integer :=  1;
-            conf_test_patt : integer :=  1
+            conf_sim_g     : integer :=  1;
+            conf_test_patt : integer :=  1;
+            init_file_g    : string  := "pulla.mem"
   );
 end entity vga_tb;
 
@@ -42,7 +43,8 @@ architecture tb of vga_tb is
 
   component vga_top is 
     generic (
-      CONF_SIM       : integer := 1
+      conf_sim_g   : integer := 0;
+      init_file_g  : string  := "pulla.mem"
     );
     port (
       -- clock and asynch reset
@@ -50,18 +52,20 @@ architecture tb of vga_tb is
       rstn_i : in std_logic;
       -- io
       sw_0_i : in std_logic;
+      rst_led_o : out std_logic;
       -- VGA signals
-      v_sync_out  : out std_logic;
-      h_sync_out  : out std_logic;
-      r_colr_out  : out std_logic_vector(depth_colr_c-1 downto 0);
-      g_colr_out  : out std_logic_vector(depth_colr_c-1 downto 0);
-      b_colr_out  : out std_logic_vector(depth_colr_c-1 downto 0)
+      v_sync_o  : out std_logic;
+      h_sync_o  : out std_logic;
+      r_colr_o  : out std_logic_vector(depth_colr_c-1 downto 0);
+      g_colr_o  : out std_logic_vector(depth_colr_c-1 downto 0);
+      b_colr_o  : out std_logic_vector(depth_colr_c-1 downto 0)
     );
   end component;
 
-  signal clk_s             : std_logic := '0';
-  signal rstn_s           : std_logic := '0';
+  signal clk_s           : std_logic := '0';
+  signal rstn_s          : std_logic := '0';
   signal sw_0_s          : std_logic := '0';
+  signal rst_led_s       : std_logic;
   signal dut_v_sync_out  : std_logic;
   signal dut_h_sync_out  : std_logic;
   signal dut_r_colr_out  : std_logic_vector(depth_colr_c-1 downto 0);
@@ -72,17 +76,19 @@ begin
 
   i_dut : vga_top
     generic map (
-      conf_sim       => conf_sim      
+      conf_sim_g  => conf_sim_g,
+      init_file_g => init_file_g
     )
     port map (
-      clk_i       => clk_s,
-      rstn_i      => rstn_s,
-      sw_0_i      => sw_0_s,
-      v_sync_out  => dut_v_sync_out,
-      h_sync_out  => dut_h_sync_out,
-      r_colr_out  => dut_r_colr_out,
-      g_colr_out  => dut_g_colr_out,
-      b_colr_out  => dut_b_colr_out
+      clk_i     => clk_s,
+      rstn_i    => rstn_s,
+      sw_0_i    => sw_0_s,
+      rst_led_o => rst_led_s,
+      v_sync_o  => dut_v_sync_out,
+      h_sync_o  => dut_h_sync_out,
+      r_colr_o  => dut_r_colr_out,
+      g_colr_o  => dut_g_colr_out,
+      b_colr_o  => dut_b_colr_out
     );
 
   rstn_s <= '1' after (10 * ref_clk_perd_g); -- de-assert reset after 4 cycles 

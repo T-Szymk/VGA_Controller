@@ -2,30 +2,31 @@
 
 .DEFAULT_GOAL := default
 
-MSIM_CMD = ~/intelFPGA/20.1/modelsim_ase/bin
-#MSIM_CMD = /home/tom/questa2019/questasim/linux_x86_64
+USE_MSIM = 1
+#MSIM_CMD = ~/intelFPGA/20.1/modelsim_ase/bin
+MSIM_CMD = /home/tom/questa2019/questasim/linux_x86_64
 GHDL_CMD = ghdl
 GHDL_OPT = --std=08 -fsynopsys -v
 
 RTL = $(PWD)/../rtl
 TB  = $(PWD)/../tb
-RTL_FILES = $(RTL)/vga_pkg.vhd \
-            $(RTL)/ram_pkg.vhd \
-            $(RTL)/vga_clk_div.vhd \
-            $(RTL)/vga_controller.vhd \
-            $(RTL)/vga_colr_mux.vhd \
-            $(RTL)/xilinx_top_clk.vhd \
-            $(RTL)/vga_pxl_counter.vhd \
-            $(RTL)/vga_pattern_gen.vhd \
-            $(RTL)/vga_memory_intf.vhd \
-            $(RTL)/vga_mem_addr_ctrl.vhd \
-            $(RTL)/vga_mem_buff.vhd \
-            $(RTL)/xilinx_dp_BRAM.vhd \
-            $(RTL)/rst_sync.vhd \
-            $(RTL)/vga_top.vhd 
-TB_FILES =  $(TB)/vga_tb.vhd \
-            $(TB)/vga_colr_mux_tb.vhd \
-            $(TB)/vga_controller_tb.vhd
+MEM_DIR = $(PWD)/../supporting_apps/mem_file_gen
+RTL_FILES_VHDL = $(RTL)/vga_pkg.vhd \
+                 $(RTL)/input_dbounce.vhd \
+                 $(RTL)/vga_clk_div.vhd \
+                 $(RTL)/vga_controller.vhd \
+                 $(RTL)/vga_colr_mux.vhd \
+                 $(RTL)/xilinx_top_clk.vhd \
+                 $(RTL)/vga_pxl_counter.vhd \
+                 $(RTL)/vga_pattern_gen.vhd \
+                 $(RTL)/vga_memory_intf.vhd \
+						     $(RTL)/vga_frame_buffer.vhd \
+                 $(RTL)/vga_line_buff_ctrl.vhd \
+                 $(RTL)/vga_line_buffers.vhd \
+                 $(RTL)/rst_sync.vhd \
+                 $(RTL)/vga_top.vhd 
+RTL_VILES_SV  =  $(RTL)/xilinx_sp_BRAM.sv
+TB_FILES_VHDL =  $(TB)/vga_tb.vhd
 
 PROJECT = vga_controller
 
@@ -36,34 +37,42 @@ default: clean compile
 
 .PHONY: clean
 clean:
-	rm -rf vga_lib
 	rm -rf vga_top
 
 .PHONY: lib
 lib:
-ifdef MODELSIM
-	vlib vga_lib
-	vmap work vga_lib
+ifdef USE_MSIM
+	mkdir vga_top && cd vga_top && \
+	$(MSIM_CMD)/vlib vga_lib
+	$(MSIM_CMD)/vmap work vga_lib
 endif
 
 .PHONY: compile
 compile: clean lib
-ifdef MODELSIM
-	vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES)
-	vcom -pedanticerrors -check_synthesis -2008 $(TB_FILES)
+ifdef USE_MSIM
+	cd vga_top && \
+	$(MSIM_CMD)/vlog -sv -pedanticerrors $(RTL_VILES_SV) &&\
+	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(RTL_FILES_VHDL) &&\
+	$(MSIM_CMD)/vcom -pedanticerrors -check_synthesis -2008 $(TB_FILES_VHDL)
 else
 	@mkdir -p vga_top && cd vga_top && \
-	$(GHDL_CMD) -a $(GHDL_OPT) $(RTL_FILES) $(TB_FILES)
+	$(GHDL_CMD) -a $(GHDL_OPT) $(RTL_FILES_VHDL) $(TB_FILES_VHDL)
 endif
 
 .PHONY: sim_vga_top
 sim_vga_top: compile
-	vsim -voptargs="+acc" -c -onfinish exit vga_tb -do "do_vga_top.do"
+	cd vga_top && \
+	vsim -voptargs="+acc" \
+	-Ginit_file_g="$(MEM_DIR)/pulla.mem" \
+	-c -onfinish exit vga_tb -do "../do_vga_top.do"
 	
 .PHONY: sim_vga_top_gui
 sim_vga_top_gui: compile
-ifdef MODELSIM
-	vsim -voptargs="+acc" -onfinish stop vga_tb -do "do_vga_top_gui.do"
+ifdef USE_MSIM
+	cd vga_top && \
+	vsim -voptargs="+acc" \
+	-Ginit_file_g="$(MEM_DIR)/pulla.mem" \
+	-onfinish stop vga_tb -do "../do_vga_top_gui.do"
 else 
 	cd vga_top && \
 	$(GHDL_CMD) --elab-run $(GHDL_OPT) vga_tb --stop-time=50ms --wave=vga_tb.ghw && \
