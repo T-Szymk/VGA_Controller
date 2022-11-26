@@ -147,7 +147,7 @@ module line_buffers #(
           READ_FBUFF : begin /*-----------------------------------------------*/
             /* Start read from frame buffer and move to writing line buffer once 
                completed */
-            fbuff_rd_req_r       <= 1'b0;
+            fbuff_rd_req_r <= 1'b0;
             
             if (fbuff_rd_rsp_i == 1'b1) begin 
 

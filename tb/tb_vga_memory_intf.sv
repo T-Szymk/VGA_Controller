@@ -23,7 +23,7 @@ module tb_vga_memory_intf;
   
   parameter INIT_FILE = "";
 
-  parameter SIMULATION_RUNTIME = 100ms;
+  parameter SIMULATION_RUNTIME = 50ms;
 
   parameter PXL_CLK_FREQ_HZ   =    25_000_000;
   parameter PXL_CLK_PERIOD_NS = 1_000_000_000 / PXL_CLK_FREQ_HZ;
@@ -169,8 +169,7 @@ module tb_vga_memory_intf;
     .fbuff_addr_width_g ( FBUFF_ADDR_WIDTH ),   
     .fbuff_data_width_g ( FBUFF_DATA_WIDTH ),           
     .tiles_per_row_g    ( TILE_PER_ROW     ),      
-    .tile_per_line_g    ( TILE_PER_LINE    ),        
-    .lbuff_addr_width_g ( TILE_CTR_WIDTH   )
+    .tile_per_line_g    ( TILE_PER_LINE    )
   ) i_line_buffers (
     .clk_i            ( clk              ),  
     .rstn_i           ( rstn             ),   

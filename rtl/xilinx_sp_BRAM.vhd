@@ -31,11 +31,12 @@ use std.textio.all;
 entity xilinx_sp_BRAM is
   generic (
     RAM_WIDTH  : integer := 18;           
-    RAM_DEPTH  : integer := 1024;         
+    RAM_DEPTH  : integer := 1024;
+    ADDR_WIDTH : integer := 8;         
     INIT_FILE  : string := "RAM_INIT.dat" 
   );
   port (
-    addra  : in  std_logic_vector(INTEGER(CEIL(LOG2(REAL(RAM_DEPTH - 1))))-1 downto 0); 
+    addra  : in  std_logic_vector(ADDR_WIDTH-1 downto 0); 
     dina   : in  std_logic_vector(RAM_WIDTH-1 downto 0);           
     clka   : in  std_logic;                                        
     wea    : in  std_logic;                                        

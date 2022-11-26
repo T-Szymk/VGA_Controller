@@ -20,11 +20,12 @@
 -- 2022-08-28  1.2      TZS     Remove rst port and corrected filename to sp_ram
 *******************************************************************************/                 
 module xilinx_sp_BRAM #(
-  parameter RAM_WIDTH = 18,                       
-  parameter RAM_DEPTH = 1024,                     
-  parameter INIT_FILE = "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem" // Specify name/location of RAM initialization file if using one (leave blank if not)
+  parameter RAM_WIDTH  = 18,                       
+  parameter RAM_DEPTH  = 1024,
+  parameter ADDR_WIDTH = 8,                     
+  parameter INIT_FILE  = "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem" // Specify name/location of RAM initialization file if using one (leave blank if not)
 ) (
-  input  logic [$clog2(RAM_DEPTH-1)-1:0] addra,  
+  input  logic [ADDR_WIDTH-1:0] addra,  
   input  logic [RAM_WIDTH-1:0]           dina,           
   input  logic                           clka,                           
   input  logic                           wea,                            

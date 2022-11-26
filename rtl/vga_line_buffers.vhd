@@ -25,28 +25,29 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use IEEE.math_real.all;
+use work.vga_pkg.all;
+
 
 entity vga_line_buffers is 
   generic (
     pxl_width_g        : integer :=   12;           
     tile_width_g       : integer :=    4;   
     fbuff_depth_g      : integer := 4800;        
-    fbuff_addr_width_g : integer :=   12;             
-    fbuff_data_width_g : integer :=   60;             
-    tiles_per_row_g    : integer :=    5;          
-    tile_per_line_g    : integer :=  160; -- 640 / 4       
-    lbuff_addr_width_g : integer :=    8  -- $clog2(tile_per_line_g)    
+    fbuff_addr_width_g : integer :=   13;             
+    fbuff_data_width_g : integer :=   48;             
+    tiles_per_row_g    : integer :=    4;          
+    tile_per_line_g    : integer :=  160 -- 640 / 4    
   );
   port(
     clk_i            : in  std_logic;     
     rstn_i           : in  std_logic;      
     buff_fill_req_i  : in  std_logic_vector(1 downto 0);               
     buff_sel_i       : in  std_logic_vector(1 downto 0);          
-    disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_g-1 downto 0);             
+    disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_c-1 downto 0);             
     fbuff_data_i     : in  std_logic_vector(fbuff_data_width_g-1 downto 0);            
     fbuff_rd_rsp_i   : in  std_logic;              
     buff_fill_done_o : out std_logic_vector(1 downto 0);                
-    disp_pxl_o       : out std_logic_vector(pxl_width_g-1 downto 0);          
+    disp_pxl_o       : out std_logic_vector(pxl_width_c-1 downto 0);          
     fbuff_rd_req_o   : out std_logic;              
     fbuff_addra_o    : out std_logic_vector(fbuff_addr_width_g-1 downto 0)            
   );
@@ -59,12 +60,13 @@ architecture rtl OF vga_line_buffers IS
   
   component xilinx_sp_BRAM  
     generic (
-      RAM_WIDTH : integer := 18;
-      RAM_DEPTH : integer := 2048;
-      INIT_FILE : string := "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem"
+      RAM_WIDTH  : integer := 18;
+      RAM_DEPTH  : integer := 2048;
+      ADDR_WIDTH : integer := 8;
+      INIT_FILE  : string  := ""
     );
     port (
-      addra : in  std_logic_vector(integer(ceil(log2(real(RAM_DEPTH - 1))))-1 downto 0);      
+      addra : in  std_logic_vector(ADDR_WIDTH-1 downto 0);      
       dina  : in  std_logic_vector(RAM_WIDTH-1 downto 0);      
       clka  : in  std_logic;      
       wea   : in  std_logic;     
@@ -75,32 +77,33 @@ architecture rtl OF vga_line_buffers IS
 
   ---- SIGNALS/CONSTANTS/VARIABLES/TYPES ---------------------------------------
 
-  constant tile_counter_width_c : integer := integer(ceil(log2(real(tiles_per_row_g - 1))));
+  --constant tile_ctr_width_c : integer := integer(ceil(log2(real(tiles_per_row_g - 1))));
+  --constant tile_ctr_width_c : integer := 3;
 
-  type fill_lbuff_states_t is (RESET, IDLE, READ_FBUFF, WRITE_LBUFF, COMPLETE);
+  type fill_lbuff_states_t is (RESET, IDLE, READ_FBUFF, WRITE_LBUFF, FINAL);
 
-  type buff_addr_arr_t is array (1 downto 0) of std_logic_vector(lbuff_addr_width_g-1 downto 0);
-  type buff_pxl_arr_t  is array (1 downto 0) of std_logic_vector(pxl_width_g-1 downto 0);
+  type buff_addr_arr_t is array (1 downto 0) of std_logic_vector(lbuff_addr_width_c-1 downto 0);
+  type buff_pxl_arr_t  is array (1 downto 0) of std_logic_vector(pxl_width_c-1 downto 0);
 
-  signal fill_lbuff_states_r : fill_lbuff_states_t;
+  signal fill_lbuff_c_state_r, fill_lbuff_n_state_r : fill_lbuff_states_t;
 
   signal fill_in_progress_r : std_logic_vector(1 downto 0);
   signal lbuff_fill_done_r  : std_logic_vector(1 downto 0);
   signal fill_select_r      : integer range 0 to 1;
                                                
-  signal lbuff_addr_s     : buff_addr_arr_t;
-  signal lbuff_wr_addr_r  : buff_addr_arr_t;
-  signal lbuff_rd_addr_s  : std_logic_vector(lbuff_addr_width_g-1 downto 0);
-  signal lbuff_din_s      : buff_pxl_arr_t;
-  signal lbuff_dout_s     : buff_pxl_arr_t;
-  signal lbuff_we_r       : std_logic_vector(1 downto 0);
-  signal lbuff_en_s       : std_logic_vector(1 downto 0);
+  signal lbuff_addr_s      : buff_addr_arr_t;
+  signal lbuff_wr_addr_r   : unsigned(lbuff_addr_width_c-1 downto 0);
+  signal lbuff_rd_addr_s   : std_logic_vector(lbuff_addr_width_c-1 downto 0);
+  signal lbuff_din_s       : std_logic_vector(pxl_width_c-1 downto 0);
+  signal lbuff_dout_s      : buff_pxl_arr_t;
+  signal lbuff_we_r        : std_logic_vector(1 downto 0);
+  signal lbuff_en_s        : std_logic_vector(1 downto 0);
   signal lbuff_cntr_en_r   : std_logic;
-  signal lbuff_tile_cntr_r : unsigned(tile_counter_width_c-1 downto 0);
+  signal lbuff_tile_cntr_r : unsigned(tile_ctr_width_c-1 downto 0);
                                     
   signal fbuff_rd_req_r : std_logic;
                         
-  signal fbuff_pxl_s   : unsigned(pxl_width_g-1 downto 0); 
+  signal fbuff_pxl_s   : unsigned(pxl_width_c-1 downto 0); 
   signal fbuff_addr_r  : unsigned(fbuff_addr_width_g-1 downto 0); 
   signal fbuff_data_r  : unsigned(fbuff_data_width_g-1 downto 0);
 
@@ -115,24 +118,26 @@ begin --------------------------------------------------------------------------
   begin 
 
     -- select pixel slice within row for write to line buffer
-    fbuff_pxl_s <= fbuff_data_r(((to_integer(lbuff_tile_cntr_r) * pxl_width_g) + 
-                                  pxl_width_g) - 1 downto 
-                                (to_integer(lbuff_tile_cntr_r) * pxl_width_g));
+    fbuff_pxl_s <= fbuff_data_r(((to_integer(lbuff_tile_cntr_r) * pxl_width_c) + 
+                                  pxl_width_c) - 1 downto 
+                                (to_integer(lbuff_tile_cntr_r) * pxl_width_c));
 
   end process comb_fbuff_pxl_assign; -------------------------------------------
 
   ---- BUFFER INSTANCE AND ADDRESS SIGNAL GENERATION ---------------------------
+
   generate_lbuffs : for buffer_i in 0 to 1 generate ----------------------------
 
-    i_line_buff : xilinx_sp_BRAM -- holds an entire row of tiles
+    i_line_buff0 : xilinx_sp_BRAM
     generic map (
-      RAM_WIDTH => pxl_width_g,
-      RAM_DEPTH => tile_per_line_g,
-      INIT_FILE => ""
+      RAM_WIDTH  => pxl_width_c,
+      RAM_DEPTH  => tiles_per_line_c,
+      ADDR_WIDTH => lbuff_addr_width_c,
+      INIT_FILE  => ""
     )
     port map (
       addra => lbuff_addr_s(buffer_i),     
-      dina  => lbuff_din_s(buffer_i),    
+      dina  => lbuff_din_s,    
       clka  => clk_i,    
       wea   => lbuff_we_r(buffer_i),   
       ena   => lbuff_en_s(buffer_i),  
@@ -140,15 +145,68 @@ begin --------------------------------------------------------------------------
     );
 
     -- set both lbuff din as we controls what is written to the line_buff
-    lbuff_din_s(buffer_i)  <= std_logic_vector(fbuff_pxl_s); 
+    lbuff_din_s  <= std_logic_vector(fbuff_pxl_s); 
     
     lbuff_addr_s(buffer_i) <= lbuff_rd_addr_s when buff_sel_i(buffer_i) = '1' else 
-                              lbuff_wr_addr_r(buffer_i);
+                              std_logic_vector(lbuff_wr_addr_r);
 
   end generate generate_lbuffs; ------------------------------------------------
 
   ---- FILL LINE BUFFER FSM ----------------------------------------------------
-  buff_fill_fsm : process (clk_i, rstn_i) is -----------------------------------
+  buff_fill_fsm : process (clk_i, rstn_i) is
+  begin
+    if rstn_i = '0' then
+      fill_lbuff_c_state_r <= RESET;
+    elsif rising_edge(clk_i) then 
+      fill_lbuff_c_state_r <= fill_lbuff_n_state_r;
+    end if;  
+  end process buff_fill_fsm; ---------------------------------------------------
+
+  n_state : process (ALL) is ---------------------------------------------------
+  begin 
+
+    fill_lbuff_n_state_r <= fill_lbuff_c_state_r;
+
+    case fill_lbuff_c_state_r is 
+      
+      when RESET =>  
+        
+        fill_lbuff_n_state_r <= IDLE;
+
+      when IDLE => 
+     
+        if fill_in_progress_r /= "00" then 
+          fill_lbuff_n_state_r <= READ_FBUFF;
+        end if;
+      
+      when READ_FBUFF => 
+
+        if fbuff_rd_rsp_i = '1' then
+          fill_lbuff_n_state_r <= WRITE_LBUFF;
+        end if;
+
+      when WRITE_LBUFF => 
+
+        if lbuff_tile_cntr_r = (tiles_per_row_g - 1) then 
+          if (lbuff_wr_addr_r = (tile_per_line_g - 1))  then 
+            fill_lbuff_n_state_r <= FINAL;
+          else 
+            fill_lbuff_n_state_r <= READ_FBUFF;
+          end if;
+        end if;
+
+      when FINAL => 
+
+        fill_lbuff_n_state_r <= IDLE;
+
+      when others =>
+
+        fill_lbuff_n_state_r <= RESET;
+
+    end case;
+  end process n_state; ---------------------------------------------------------
+
+  out_assign : process (clk_i, rstn_i) is --------------------------------------
   begin 
 
     if rstn_i = '0' then
@@ -159,21 +217,19 @@ begin --------------------------------------------------------------------------
       lbuff_fill_done_r   <= (others => '0');
       fbuff_addr_r        <= (others => '0');
       fbuff_data_r        <= (others => '0');
-      fill_lbuff_states_r <= RESET;
 
     elsif rising_edge(clk_i) then 
 
-      case fill_lbuff_states_r is 
+      case fill_lbuff_c_state_r is 
       
         when RESET =>                                                       ----
           
-          fill_lbuff_states_r <= IDLE;
+          -- do nothing
         
         when IDLE =>                                                        ----
           
           if fill_in_progress_r /= "00" then 
             fbuff_rd_req_r <= '1';
-            fill_lbuff_states_r <= READ_FBUFF;
           end if;
 
         when READ_FBUFF =>                                                  ----
@@ -194,7 +250,6 @@ begin --------------------------------------------------------------------------
             fbuff_data_r              <= unsigned(fbuff_data_i);
             lbuff_cntr_en_r           <= '1';
             lbuff_we_r(fill_select_r) <= '1';
-            fill_lbuff_states_r       <= WRITE_LBUFF;
 
           end if;
 
@@ -203,39 +258,33 @@ begin --------------------------------------------------------------------------
           -- Write each tile from frame buffer row into the line buffer. Once
           -- complete, either perform another frame buffer read or finish 
           
-            if lbuff_tile_cntr_r = (tiles_per_row_g - 1) then 
+            if to_integer(lbuff_tile_cntr_r) = (tiles_per_row_g - 1) then 
               
               lbuff_cntr_en_r           <= '0';
               lbuff_we_r(fill_select_r) <= '0'; -- stop writing once at row limit
 
-              if unsigned(lbuff_wr_addr_r(fill_select_r)) = (tile_per_line_g - 1) then
-
+              if to_integer(lbuff_wr_addr_r) = (tile_per_line_g - 1) then
                 -- indicate that the buffer being filled is now full 
                 -- (only a single buffer should be in progress at any time)
-                lbuff_fill_done_r   <= fill_in_progress_r; 
-                fill_lbuff_states_r <= COMPLETE;
-
+                lbuff_fill_done_r <= fill_in_progress_r;
               else
-                fbuff_rd_req_r      <= '1';
-                fill_lbuff_states_r <= READ_FBUFF;
-
+                fbuff_rd_req_r <= '1';
               end if;
             end if;
         
-        when COMPLETE =>                                                    ---- 
+        when FINAL =>                                                    ---- 
 
           -- Clear remaining control states and move to idle as line buffer 
           -- has been written 
-          lbuff_fill_done_r   <= (others => '0');
-          fill_lbuff_states_r <= IDLE;
+          lbuff_fill_done_r <= (others => '0');
         
         when others =>                                                      ----            
           
-          fill_lbuff_states_r <= RESET;
+          -- do nothing
 
       end case;
     end if;
-  end process buff_fill_fsm; ---------------------------------------------------
+  end process out_assign; ---------------------------------------------------
 
   ---- LINE BUFFER ADDRESS + TILE COUNTER LOGIC --------------------------------
 
@@ -244,7 +293,7 @@ begin --------------------------------------------------------------------------
 
     if rstn_i = '0' then 
 
-      lbuff_wr_addr_r   <= (others => (others => '0'));
+      lbuff_wr_addr_r   <= (others => '0');
       lbuff_tile_cntr_r <= (others => '0');
 
     elsif rising_edge(clk_i) then 
@@ -252,25 +301,17 @@ begin --------------------------------------------------------------------------
       if lbuff_cntr_en_r = '1' then 
 
         -- increment line buffer address counter
-        if unsigned(lbuff_wr_addr_r(fill_select_r)) = (tile_per_line_g - 1) then
-          
-          lbuff_wr_addr_r(fill_select_r) <= (others => '0');
-        
+        if lbuff_wr_addr_r = (tile_per_line_g - 1) then
+          lbuff_wr_addr_r <= (others => '0');
         else 
-          
-          lbuff_wr_addr_r(fill_select_r) <= std_logic_vector(unsigned(lbuff_wr_addr_r(fill_select_r)) + 1); -- 'bleurgh' TODO: refactor this to clean up type conversion 
-        
+          lbuff_wr_addr_r <= lbuff_wr_addr_r + 1; -- 'bleurgh' TODO: refactor this to clean up type conversion 
         end if;
 
         -- increment tile in row counter
         if lbuff_tile_cntr_r = (tiles_per_row_g - 1) then
-          
           lbuff_tile_cntr_r <= (others => '0');
-        
         else 
-          
           lbuff_tile_cntr_r <= lbuff_tile_cntr_r + 1;
-        
         end if;
 
       end if;
@@ -306,17 +347,13 @@ begin --------------------------------------------------------------------------
         end if;
 
       else
-        -- TODO: Investigate whether this can be optimised as only one buffer
-        -- fill should be progressed at any time.
+
         if lbuff_fill_done_r(0) = '1' then 
-
-          fill_in_progress_r(0) <= '0';
-          
+          fill_in_progress_r(0) <= '0';          
         elsif lbuff_fill_done_r(1) = '1' then
-
-          fill_in_progress_r(1) <= '0'; 
-          
+          fill_in_progress_r(1) <= '0';           
         end if;
+
       end if;
     end if;
   end process in_progress_select; ----------------------------------------------

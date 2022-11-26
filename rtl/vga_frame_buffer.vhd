@@ -20,6 +20,7 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.math_real.all;
+use work.vga_pkg.all;
 
 entity vga_frame_buffer is 
   generic (
@@ -49,12 +50,13 @@ architecture rtl of vga_frame_buffer is
 
   component xilinx_sp_BRAM
     generic (
-      RAM_WIDTH : integer := 18;
-      RAM_DEPTH : integer := 2048;
-      INIT_FILE : string := "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem"
+      RAM_WIDTH  : integer := 18;
+      RAM_DEPTH  : integer := 2048;
+      ADDR_WIDTH : integer := 8;
+      INIT_FILE  : string := "/home/tom/Development/VGA_Controller/supporting_apps/mem_file_gen/mem_file.mem"
     );
     port (
-      addra : in  std_logic_vector(INTEGER(CEIL(LOG2(REAL(RAM_DEPTH - 1))))-1 downto 0);      
+      addra : in  std_logic_vector(ADDR_WIDTH-1 downto 0);      
       dina  : in  std_logic_vector(RAM_WIDTH-1 downto 0);      
       clka  : in  std_logic;      
       wea   : in  std_logic;     
@@ -78,9 +80,10 @@ begin --------------------------------------------------------------------------
 
 i_sp_ram : xilinx_sp_BRAM
 generic map (
-  RAM_WIDTH => fbuff_data_width_g,
-  RAM_DEPTH => fbuff_depth_g,
-  INIT_FILE => init_file_g
+  RAM_WIDTH  => fbuff_data_width_g,
+  RAM_DEPTH  => fbuff_depth_g,
+  ADDR_WIDTH => fbuff_addr_width_c,
+  INIT_FILE  => init_file_g
 )
 port map (
   addra => addra_i,    

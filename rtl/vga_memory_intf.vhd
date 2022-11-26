@@ -74,15 +74,14 @@ architecture structural of vga_memory_intf is
       fbuff_addr_width_g : integer :=   12;             
       fbuff_data_width_g : integer :=   60;             
       tiles_per_row_g    : integer :=    5;          
-      tile_per_line_g    : integer :=  160; -- 640 / 4       
-      lbuff_addr_width_g : integer :=    8  -- $clog2(tile_per_line_g)    
+      tile_per_line_g    : integer :=  160  
     );
     port(
       clk_i            : in  std_logic;     
       rstn_i           : in  std_logic;      
       buff_fill_req_i  : in  std_logic_vector(1 downto 0);               
       buff_sel_i       : in  std_logic_vector(1 downto 0);          
-      disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_g-1 downto 0);             
+      disp_pxl_id_i    : in  std_logic_vector(lbuff_addr_width_c-1 downto 0);             
       fbuff_data_i     : in  std_logic_vector(fbuff_data_width_g-1 downto 0);            
       fbuff_rd_rsp_i   : in  std_logic;              
       buff_fill_done_o : out std_logic_vector(1 downto 0);                
@@ -163,8 +162,7 @@ begin --------------------------------------------------------------------------
     fbuff_addr_width_g => fbuff_addr_width_c,                 
     fbuff_data_width_g => fbuff_data_width_c,                 
     tiles_per_row_g    => tiles_per_row_c,              
-    tile_per_line_g    => tiles_per_line_c,              
-    lbuff_addr_width_g => lbuff_addr_width_c                 
+    tile_per_line_g    => tiles_per_line_c                
   )
   port map (
     clk_i            => clk_i,      

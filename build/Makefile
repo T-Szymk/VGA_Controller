@@ -194,7 +194,7 @@ compile_mem_intf: clean_mem_intf
 .PHONY: sim_mem_intf
 sim_mem_intf: compile_mem_intf
 	cd mem_intf && \
-	$(MSIM_CMD)/vsim -voptargs="+acc" -c tb_vga_memory_intf
+	$(MSIM_CMD)/vsim -voptargs="+acc" -c tb_vga_memory_intf -do "run -all"
 
 .PHONY: sim_mem_intf_gui
 sim_mem_intf_gui: compile_mem_intf
