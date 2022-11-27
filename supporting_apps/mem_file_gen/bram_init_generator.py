@@ -8,11 +8,11 @@ WIDTH = 640
 COLOUR_DEPTH = 4
 PIXEL_WIDTH = 3 * COLOUR_DEPTH
 TILES_PER_MEM_ROW = 4  # defines how many
-TILE_SIZE = 4
+TILE_SIZE = 2
 MEMORY_WIDTH = TILES_PER_MEM_ROW * PIXEL_WIDTH
 MEMORY_DEPTH = math.ceil((HEIGHT * WIDTH) / (TILES_PER_MEM_ROW * (TILE_SIZE ** 2)))
 
-IMAGE_NAME = "pulla"
+IMAGE_NAME = "lake"
 IMAGE_EXT = ".jpg"
 IMAGE_PATH = f"/home/tom/Pictures/{IMAGE_NAME}{IMAGE_EXT}"
 OUTPUT_FILENAME = IMAGE_NAME
@@ -41,8 +41,8 @@ def write_arr2mem(mem_array, output_filename):
 
 if __name__ == '__main__':
 
-    memory_array = vga.MemArray(TILES_PER_MEM_ROW, IMAGE_PATH, colour_option="green")
-    #memory_array.vga_image.show_tiled_image()
+    memory_array = vga.MemArray(TILES_PER_MEM_ROW, IMAGE_PATH, TILE_SIZE, colour_option="colour")
+    memory_array.vga_image.show_tiled_image()
     write_arr2mem(memory_array.get_mem_arr(), OUTPUT_FILENAME)
     print("------------------------------------------------")
     print(f"Input Image : {IMAGE_PATH}")

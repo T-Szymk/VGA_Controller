@@ -33,7 +33,7 @@ entity vga_tb is
             max_sim_time_g : time    :=  3 sec;
             conf_sim_g     : integer :=  1;
             conf_test_patt : integer :=  1;
-            init_file_g    : string  := "pulla.mem"
+            init_file_g    : string  := "lake.mem"
   );
 end entity vga_tb;
 
@@ -44,7 +44,7 @@ architecture tb of vga_tb is
   component vga_top is 
     generic (
       conf_sim_g   : integer := 0;
-      init_file_g  : string  := "pulla.mem"
+      init_file_g  : string  := "lake.mem"
     );
     port (
       -- clock and asynch reset

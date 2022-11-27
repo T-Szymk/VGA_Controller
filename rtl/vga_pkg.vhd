@@ -83,10 +83,10 @@ PACKAGE vga_pkg IS
   CONSTANT pxl_width_c     : INTEGER := depth_colr_c * pxl_width_arr_c(monochrome_en_c); -- Monochrome format
   
   -- latency of line buffer memory operations in cycles. Is used by counters to 
-  -- ensure that pixel data is requested for display n cycles before it is needed.
+  -- ensure that pixel data is requested for display n cycles before it is needed for display.
   CONSTANT lbuff_latency_c : INTEGER := 1;
 
-  CONSTANT tile_width_c       : INTEGER := 4; -- tile width or height in pixels
+  CONSTANT tile_width_c       : INTEGER := 2; -- tile width or height in pixels
   CONSTANT tiles_per_line_c   : INTEGER := (width_px_c / tile_width_c);
   CONSTANT lbuff_addr_width_c : INTEGER :=  INTEGER(CEIL(LOG2(REAL(tiles_per_line_c - 1))));
   CONSTANT total_tiles_c      : INTEGER := (height_px_c * width_px_c) / (tile_width_c**2);

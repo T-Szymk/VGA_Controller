@@ -44,7 +44,7 @@ entity vga_top is
   generic (
     -- 1 for simulation, 0 for synthesis
     conf_sim_g   : integer := 0;
-    init_file_g  : string  := "pulla.mem"
+    init_file_g  : string  := "lake.mem"
   );
   port (
     -- clock and asynch reset
@@ -296,9 +296,9 @@ BEGIN --------------------------------------------------------------------------
 
   -- Note that this needs to be modified if the colour depth changes
   -- TODO: this needs to be refactored to become statically configurable
-  r_colr_o <= disp_pxl_s(depth_colr_c-1 downto 0);
+  r_colr_o <= disp_pxl_s((3*depth_colr_c)-1 downto (2*depth_colr_c));
   g_colr_o <= disp_pxl_s((2*depth_colr_c)-1 downto depth_colr_c);
-  b_colr_o <= disp_pxl_s((3*depth_colr_c)-1 downto (2*depth_colr_c));
+  b_colr_o <= disp_pxl_s(depth_colr_c-1 downto 0);
 
 end architecture structural;
 

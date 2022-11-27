@@ -76,7 +76,7 @@ architecture rtl of vga_line_buff_ctrl is
   constant disp_end_lns_c   : integer := v_b_porch_max_lns_g + height_lns_g;
   
   -- width of counter which is used to count either the number of pixels or lines within a tile
-  constant tile_pxl_ctr_width_c : integer := (INTEGER(CEIL(LOG2(REAL(tile_width_g - 1))))); 
+  constant tile_pxl_ctr_width_c : integer := (INTEGER(CEIL(LOG2(REAL(tile_width_g))))); 
 
   signal last_disp_pixel_s : std_logic; -- pulse which is 1 for a cycle during the final cycle of the last pixel in the display buffer 
   signal counter_en_s      : std_logic; -- register enable used to control display counters

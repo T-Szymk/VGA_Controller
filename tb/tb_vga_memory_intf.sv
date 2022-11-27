@@ -72,7 +72,7 @@ module tb_vga_memory_intf;
   parameter LN_CTR_WIDTH   = $clog2(LINE_CTR_MAX - 1);
 
   // set size n of tile (nxn). If not tiling is desired, set to 1. 
-  parameter TILE_WIDTH     = 4;
+  parameter TILE_WIDTH     = 2;
   parameter TILE_PER_LINE  = WIDTH_PX / TILE_WIDTH;
   parameter TILE_CTR_WIDTH = $clog2(TILE_PER_LINE);
   parameter TOTAL_TILES    = (HEIGHT_PX * WIDTH_PX) / (TILE_WIDTH ** 2);
@@ -124,7 +124,7 @@ module tb_vga_memory_intf;
   logic [FBUFF_DATA_WIDTH-1:0] init_fbuff_data_in_s;
   logic                        init_fbuff_wen_s;
 
-  logic [(HEIGHT_PX/4)-1:0][(WIDTH_PX/4)-1:0][PXL_WIDTH-1:0] ref_fbuff_array; // reference array to be used to verify display pixel values
+  logic [(HEIGHT_PX/TILE_WIDTH)-1:0][(WIDTH_PX/TILE_WIDTH)-1:0][PXL_WIDTH-1:0] ref_fbuff_array; // reference array to be used to verify display pixel values
   logic [PXL_WIDTH-1:0] ref_pixel = '0;
 
   int ref_tile_val  = 0;
@@ -167,7 +167,8 @@ module tb_vga_memory_intf;
     .tile_width_g       ( TILE_WIDTH       ),     
     .fbuff_depth_g      ( FBUFF_DEPTH      ),
     .fbuff_addr_width_g ( FBUFF_ADDR_WIDTH ),   
-    .fbuff_data_width_g ( FBUFF_DATA_WIDTH ),           
+    .fbuff_data_width_g ( FBUFF_DATA_WIDTH ),
+    .lbuff_addr_width_g ( TILE_CTR_WIDTH   ),           
     .tiles_per_row_g    ( TILE_PER_ROW     ),      
     .tile_per_line_g    ( TILE_PER_LINE    )
   ) i_line_buffers (
@@ -267,7 +268,7 @@ module tb_vga_memory_intf;
           count_direction = ~count_direction;
           counter         = (count_direction) ? '0 : '1;
 
-          line_counter = (line_counter == ((HEIGHT_PX/4) - 1)) ? 0 : line_counter + 1;
+          line_counter = (line_counter == ((HEIGHT_PX/TILE_WIDTH) - 1)) ? 0 : line_counter + 1;
 
         end else begin
 
@@ -353,8 +354,8 @@ module tb_vga_memory_intf;
           (pxl_cntr_s >= (H_B_PORCH_MAX_PX)) && 
           (pxl_cntr_s < (H_DISP_MAX_PX)) ) begin 
 
-        ref_tile_val = (pxl_cntr_s - (H_B_PORCH_MAX_PX)) / 4;
-        ref_line_val = (ln_cntr_s  - V_B_PORCH_MAX_LNS) / 4;
+        ref_tile_val = (pxl_cntr_s - (H_B_PORCH_MAX_PX)) / TILE_WIDTH;
+        ref_line_val = (ln_cntr_s  - V_B_PORCH_MAX_LNS) / TILE_WIDTH;
 
         ref_pixel = ref_fbuff_array[ref_line_val][ref_tile_val];
 

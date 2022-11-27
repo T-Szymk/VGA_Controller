@@ -5,7 +5,7 @@ set DefaultRadix HEXADECIMAL
 
 add wave -expand -group vga_tb sim:/vga_tb/i_dut/*
 add wave -group mem_intf sim:/vga_tb/i_dut/i_vga_memory_intf/*
-add wave -group mem_intf -group line_buff_ctrl insertpoint sim:/vga_tb/i_dut/i_vga_memory_intf/i_line_buff_ctrl/*
+add wave -group mem_intf -group line_buff_ctrl sim:/vga_tb/i_dut/i_vga_memory_intf/i_line_buff_ctrl/*
 add wave -group mem_intf -group line_buffs sim:/vga_tb/i_dut/i_vga_memory_intf/i_line_buffs/*
 add wave -group mem_intf -group line_buffs -group line_buff0_BRAM sim:/vga_tb/i_dut/i_vga_memory_intf/i_line_buffs/generate_lbuffs(0)/i_line_buff0/*
 add wave -group mem_intf -group line_buffs -group line_buff1_BRAM sim:/vga_tb/i_dut/i_vga_memory_intf/i_line_buffs/generate_lbuffs(1)/i_line_buff0/*
