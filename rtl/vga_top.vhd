@@ -177,7 +177,6 @@ ARCHITECTURE structural of vga_top IS
 
   -- intermediate signals between components
   signal rst_sync_s     : std_logic;
-  signal rst_int_s      : std_logic;
   signal pxl_clk_s      : std_logic;
   signal v_sync_s       : std_logic;
   signal h_sync_s       : std_logic;
@@ -205,7 +204,15 @@ BEGIN --------------------------------------------------------------------------
         clk_px_out  => pxl_clk_s
       ); 
 
-      rst_int_s <= rstn_i;
+    i_rst_sync : rst_sync
+      generic map (
+        SYNC_STAGES => 3
+      )
+      port map (
+        clk_i       => pxl_clk_s,
+        rstn_i      => rstn_i,
+        sync_rstn_o => rst_sync_s
+      );
 
   else generate ---------------------------------------------------------------- 
       
@@ -213,21 +220,11 @@ BEGIN --------------------------------------------------------------------------
       port map (
       	clk_i      => clk_i,
       	rstn_i     => rstn_i,
-        locked_o   => rst_int_s,
+        locked_o   => rst_sync_s,
       	clk_px_o   => pxl_clk_s
       );
 
   end generate gen_clk_src; -- Used in synthesis -------------------------------
-
-  i_rst_sync : rst_sync
-    generic map (
-      SYNC_STAGES => 3
-    )
-    port map (
-      clk_i       => pxl_clk_s,
-      rstn_i      => rst_int_s,
-      sync_rstn_o => rst_sync_s
-    );
 
   i_input_debounce : input_dbounce
     generic map (

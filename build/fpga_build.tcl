@@ -2,6 +2,10 @@
 # Target platform: Digilent Arty A7-100
 
 set ARTY_PART xc7a100tcsg324-1
+set ZYBO_PART xc7z010clg400-1
+
+set FPGA_PART ${ARTY_PART}
+
 
 set PROJECT $::env(PROJECT)
 set TOP_DIR "[pwd]/../.."
@@ -43,7 +47,7 @@ set SYNTH_GENERICS "
   init_file_g=${BRAM_INIT_FILE} \
 "
 
-create_project ${PROJECT} ./${PROJECT} -part ${ARTY_PART} -force
+create_project ${PROJECT} ./${PROJECT} -part ${FPGA_PART} -force
 
 add_files -norecurse ${SRC_FILES}
 add_files -norecurse -fileset sim_1 ${SIM_FILES} ${SRC_FILES}
