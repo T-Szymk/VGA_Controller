@@ -119,8 +119,8 @@ class MemArray:
 
         self.vga_image = VGAImage(image_name, height, width, crop, crop_x, crop_y)
         self.vga_image.create_tiled_image(tile_size_pxl, colour_option)
-
         self.memory_arr = []
+
         line = ""
         pxl_cnt_max = int((self.vga_image.width * self.vga_image.height) / (self.vga_image.tile_size ** 2))
         current_pxl_cnt = 0
@@ -143,7 +143,9 @@ class MemArray:
 
 if __name__ == "__main__":
 
-    test_mem_arr = MemArray(8, "/home/tom/Pictures/pulla.jpg", colour_option="green")
+    test_mem_arr = MemArray(8, "/home/tom/Pictures/pulla.jpg", colour_option="colour")
+    test_mem_arr.vga_image.show_image()
+    test_mem_arr.vga_image.show_tmp_image()
     test_mem_arr.vga_image.show_tiled_image()
 
     print(test_mem_arr.vga_image.get_mem_pxl_array()[24:48])
