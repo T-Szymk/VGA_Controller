@@ -90,9 +90,10 @@ module frame_buffer #(
   end
 
   xilinx_sp_BRAM #(
-    .RAM_WIDTH( FBUFF_WIDTH ),
-    .RAM_DEPTH( FBUFF_DEPTH ),
-    .INIT_FILE( INIT_FILE )
+    .RAM_WIDTH  ( FBUFF_WIDTH ),
+    .RAM_DEPTH  ( FBUFF_DEPTH ),
+    .ADDR_WIDTH ( FBUFF_ADDR_WIDTH ),
+    .INIT_FILE  ( INIT_FILE )
   ) i_xilinx_sp_ram (
     .addra ( addra_i ),
     .dina  ( dina_i  ),
