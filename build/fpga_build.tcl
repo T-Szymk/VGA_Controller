@@ -16,7 +16,7 @@ set BUILD_DIR  ${TOP_DIR}/build
 set CONSTR_DIR ${TOP_DIR}/constraints
 set PROJECT_DIR ${BUILD_DIR}/fpga_build/${PROJECT}
                                
-set BRAM_INIT_FILE "lake.mem"
+set BRAM_INIT_FILE "scouse_slip.mem"
 set CONSTR_FILE "${CONSTR_DIR}/Arty-A7-100-Master.xdc"
 
 set SRC_FILES " \

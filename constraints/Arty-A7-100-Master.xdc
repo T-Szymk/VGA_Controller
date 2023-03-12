@@ -13,30 +13,30 @@ set_false_path -from [get_ports sw_0_i]
 
 set_false_path -to [get_ports rst_led_o]
 
-# get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+# Set some estimates delay on outputs to improve timing.
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -max 5.000 [get_ports g_colr_o[*]]
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -min 0.000 [get_ports g_colr_o[*]]
 
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -max 5.000 [get_ports r_colr_o[*]]
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -min 0.000 [get_ports r_colr_o[*]]
 
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -max 5.000 [get_ports b_colr_o[*]]
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -min 0.000 [get_ports b_colr_o[*]]
 
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -max 5.000 [get_ports h_sync_o]
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -min 0.000 [get_ports h_sync_o]
 
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -max 5.000 [get_ports v_sync_o]
-set_output_delay -clock [get_clocks -of_objects [get_pins gen_clk_src.i_clk_gen/i_clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0]] \
+set_output_delay -clock [get_clocks -of_objects [get_nets pxl_clk_s]] \
   -min 0.000 [get_ports v_sync_o]
 
 set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports { clk_i }]

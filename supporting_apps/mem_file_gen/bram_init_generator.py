@@ -7,8 +7,8 @@ HEIGHT = 480
 WIDTH = 640
 COLOUR_DEPTH = 4
 PIXEL_WIDTH = 3 * COLOUR_DEPTH
-TILES_PER_MEM_ROW = 4  # defines how many
-TILE_SIZE = 4
+TILES_PER_MEM_ROW = 4  # defines how many tiles are contained within each row of BRAM
+TILE_SIZE = 2
 MEMORY_WIDTH = TILES_PER_MEM_ROW * PIXEL_WIDTH
 MEMORY_DEPTH = math.ceil((HEIGHT * WIDTH) / (TILES_PER_MEM_ROW * (TILE_SIZE ** 2)))
 
@@ -46,7 +46,7 @@ def write_arr2mem(mem_array, output_filename):
 
 if __name__ == '__main__':
 
-    memory_array = vga.MemArray(TILES_PER_MEM_ROW, IMAGE_PATH, colour_option="colour")
+    memory_array = vga.MemArray(TILES_PER_MEM_ROW, IMAGE_PATH, TILE_SIZE, colour_option="colour")
     memory_array.vga_image.show_tiled_image()
     write_arr2mem(memory_array.get_mem_arr(), OUTPUT_FILENAME)
     print("------------------------------------------------")
