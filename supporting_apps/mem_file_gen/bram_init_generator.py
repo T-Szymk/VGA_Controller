@@ -12,9 +12,9 @@ TILE_SIZE = 4
 MEMORY_WIDTH = TILES_PER_MEM_ROW * PIXEL_WIDTH
 MEMORY_DEPTH = math.ceil((HEIGHT * WIDTH) / (TILES_PER_MEM_ROW * (TILE_SIZE ** 2)))
 
-IMAGE_NAME = "pulla"
-IMAGE_EXT = ".jpg"
-IMAGE_PATH = f"/home/tom/Pictures/{IMAGE_NAME}{IMAGE_EXT}"
+IMAGE_NAME = "scouse_slip"
+IMAGE_EXT = ".png"
+IMAGE_PATH = f"../images/{IMAGE_NAME}{IMAGE_EXT}"
 OUTPUT_FILENAME = IMAGE_NAME
 
 
@@ -46,7 +46,7 @@ def write_arr2mem(mem_array, output_filename):
 
 if __name__ == '__main__':
 
-    memory_array = vga.MemArray(TILES_PER_MEM_ROW, IMAGE_PATH, colour_option="green")
+    memory_array = vga.MemArray(TILES_PER_MEM_ROW, IMAGE_PATH, colour_option="colour")
     memory_array.vga_image.show_tiled_image()
     write_arr2mem(memory_array.get_mem_arr(), OUTPUT_FILENAME)
     print("------------------------------------------------")
